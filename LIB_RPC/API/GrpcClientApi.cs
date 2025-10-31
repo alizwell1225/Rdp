@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using LIB_RPC.Abstractions;
 
 namespace LIB_RPC.API
 {
@@ -8,7 +9,7 @@ namespace LIB_RPC.API
     /// Lightweight API wrapper around ClientConnection + GrpcConfig + GrpcLogger
     /// Exposes connect/upload/download/list/send functionality and forwards progress/log events.
     /// </summary>
-    public sealed class GrpcClientApi : IAsyncDisposable
+    public sealed class GrpcClientApi : IClientApi
     {
         private GrpcConfig _config;
         private readonly GrpcLogger _logger;
@@ -20,7 +21,7 @@ namespace LIB_RPC.API
         public event Action<double>? OnScreenshotProgress;
         public event Action<string>? OnServerFileCompleted;
         public event Action<string, string>? OnServerFileError;
-        public event Action<RdpGrpc.Proto.JsonEnvelope>? OnServerJson;
+        public event Action<JsonMessage>? OnServerJson;
 
         public GrpcClientApi(GrpcConfig? config = null)
         {
@@ -46,7 +47,13 @@ namespace LIB_RPC.API
             _conn.OnScreenshotProgress += pct => OnScreenshotProgress?.Invoke(pct);
             _conn.OnServerFileCompleted += p => OnServerFileCompleted?.Invoke(p);
             _conn.OnServerFileError += (p, e) => OnServerFileError?.Invoke(p, e);
-            _conn.OnServerJson += env => OnServerJson?.Invoke(env);
+            _conn.OnServerJson += env => OnServerJson?.Invoke(new JsonMessage
+            {
+                Id = env.Id,
+                Type = env.Type,
+                Json = env.Json,
+                Timestamp = env.Timestamp
+            });
             await _conn.ConnectAsync();
         }
 
@@ -57,10 +64,16 @@ namespace LIB_RPC.API
             _conn = null;
         }
 
-        public async Task<RdpGrpc.Proto.JsonAck> SendJsonAsync(string type, string json, CancellationToken ct = default)
+        public async Task<JsonAcknowledgment> SendJsonAsync(string type, string json, CancellationToken ct = default)
         {
             if (_conn == null) throw new InvalidOperationException("Not connected");
-            return await _conn.SendJsonAsync(type, json, ct);
+            var ack = await _conn.SendJsonAsync(type, json, ct);
+            return new JsonAcknowledgment
+            {
+                Id = ack.Id,
+                Success = ack.Success,
+                Error = ack.Error
+            };
         }
 
         public async Task SendJsonFireAndForgetAsync(string type, string json, CancellationToken ct = default)
@@ -69,10 +82,16 @@ namespace LIB_RPC.API
             await _conn.SendJsonFireAndForgetAsync(type, json, ct);
         }
 
-        public async Task<RdpGrpc.Proto.FileTransferStatus> UploadFileAsync(string filePath, CancellationToken ct = default)
+        public async Task<FileTransferResult> UploadFileAsync(string filePath, CancellationToken ct = default)
         {
             if (_conn == null) throw new InvalidOperationException("Not connected");
-            return await _conn.UploadFileAsync(filePath, ct);
+            var status = await _conn.UploadFileAsync(filePath, ct);
+            return new FileTransferResult
+            {
+                Path = status.Path,
+                Success = status.Success,
+                Error = status.Error
+            };
         }
 
         public async Task DownloadFileAsync(string remotePath, string localPath, CancellationToken ct = default)

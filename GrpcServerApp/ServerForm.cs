@@ -1,4 +1,3 @@
-using RdpGrpc;
 using System;
 using System.IO;
 using System.Linq;
@@ -6,17 +5,18 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using LIB_RPC;
 using LIB_RPC.API;
+using LIB_RPC.Abstractions;
 
 namespace GrpcServerApp
 {
     public partial class ServerForm : Form
     {
-        //private GrpcServerController _controller = new GrpcServerController();
-        private GrpcServerApi _controller = new GrpcServerApi();
+        private readonly IServerApi _controller;
 
         public ServerForm()
         {
             InitializeComponent();
+            _controller = new GrpcServerApi();
             // wire controller events
             _controller.OnLog += line => BeginInvoke(new Action(() => _log.AppendText(line + Environment.NewLine)));
             _controller.OnFileAdded += path => BeginInvoke(new Action(() =>

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using LIB_RPC.Abstractions;
 
 namespace LIB_RPC
 {
@@ -9,14 +10,16 @@ namespace LIB_RPC
     {
         private readonly GrpcConfig _config;
         private readonly GrpcLogger _logger;
+        private readonly IScreenCapture _screenCapture;
         private IHost? _host;
         // Event raised when a file is added to storage (upload or push)
         public event EventHandler<string>? FileAdded;
 
-        public ServerHost(GrpcConfig config, GrpcLogger logger)
+        public ServerHost(GrpcConfig config, GrpcLogger logger, IScreenCapture? screenCapture = null)
         {
             _config = config;
             _logger = logger;
+            _screenCapture = screenCapture ?? new ScreenCapture();
         }
 
         public async Task StartAsync(CancellationToken cancellationToken = default)
@@ -28,6 +31,7 @@ namespace LIB_RPC
                 {
                     services.AddSingleton(_config);
                     services.AddSingleton(_logger);
+                    services.AddSingleton(_screenCapture);
                     services.AddSingleton<InternalAuthInterceptor>();
                     // Register RemoteChannelService so we can resolve and call broadcast methods from UI layer
                     services.AddSingleton<RemoteChannelService>();

@@ -1,6 +1,8 @@
-﻿namespace LIB_RPC.API
+﻿using LIB_RPC.Abstractions;
+
+namespace LIB_RPC.API
 {
-    public class GrpcServerApi : IAsyncDisposable
+    public class GrpcServerApi : IServerApi
     {
         private ServerHost? _host;
         private GrpcLogger? _logger;

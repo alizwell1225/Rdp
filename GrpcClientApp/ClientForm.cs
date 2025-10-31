@@ -1,4 +1,3 @@
-using RdpGrpc;
 using System;
 using System.Drawing;
 using System.IO;
@@ -6,12 +5,13 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using LIB_RPC;
 using LIB_RPC.API;
+using LIB_RPC.Abstractions;
 
 namespace GrpcClientApp
 {
     public partial class ClientForm : Form
     {
-        private GrpcClientApi? _api;
+        private IClientApi? _api;
         private GrpcConfig? _config;
         private bool _isConnected = false;
 

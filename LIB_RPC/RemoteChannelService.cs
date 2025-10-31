@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Grpc.Core;
 using RdpGrpc.Proto;
+using LIB_RPC.Abstractions;
 
 namespace LIB_RPC
 {
@@ -8,6 +9,7 @@ namespace LIB_RPC
     {
         private readonly GrpcConfig _config;
         private readonly GrpcLogger _logger;
+        private readonly IScreenCapture _screenCapture;
         private readonly ConcurrentDictionary<string, DuplexClient> _duplexClients = new();
         private readonly ConcurrentDictionary<string, IServerStreamWriter<FileChunk>> _filePushClients = new();
         // Event raised when a file has been uploaded successfully to the server storage
@@ -16,10 +18,11 @@ namespace LIB_RPC
 
         private sealed record DuplexClient(string Id, IServerStreamWriter<JsonEnvelope> Writer, object WriteLock);
 
-        public RemoteChannelService(GrpcConfig config, GrpcLogger logger)
+        public RemoteChannelService(GrpcConfig config, GrpcLogger logger, IScreenCapture screenCapture)
         {
             _config = config;
             _logger = logger;
+            _screenCapture = screenCapture;
             _config.EnsureFolders();
         }
 
@@ -243,7 +246,7 @@ namespace LIB_RPC
         {
             try
             {
-                var data = ScreenCapture.CapturePrimaryPng();
+                var data = _screenCapture.CapturePrimaryPng();
                 var chunkSize = _config.MaxChunkSizeBytes;
                 var total = (int)Math.Ceiling((double)data.Length / chunkSize);
                 for (int i = 0; i < total; i++)
