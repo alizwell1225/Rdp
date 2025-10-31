@@ -27,8 +27,14 @@ namespace LIB_RDP.Builders
         /// <summary>
         /// 設定主機名稱或IP位址
         /// </summary>
+        /// <param name="hostName">主機名稱或IP位址</param>
+        /// <returns>建構器實例</returns>
+        /// <exception cref="ArgumentException">當主機名稱為空時拋出</exception>
         public RdpConnectionBuilder WithHost(string hostName)
         {
+            if (string.IsNullOrWhiteSpace(hostName))
+                throw new ArgumentException("主機名稱不能為空", nameof(hostName));
+                
             _hostName = hostName;
             return this;
         }
@@ -36,19 +42,36 @@ namespace LIB_RDP.Builders
         /// <summary>
         /// 設定使用者憑證
         /// </summary>
+        /// <param name="userName">使用者名稱</param>
+        /// <param name="password">密碼</param>
+        /// <param name="domain">網域（選填）</param>
+        /// <returns>建構器實例</returns>
+        /// <exception cref="ArgumentException">當使用者名稱為空時拋出</exception>
         public RdpConnectionBuilder WithCredentials(string userName, string password, string domain = "")
         {
+            if (string.IsNullOrWhiteSpace(userName))
+                throw new ArgumentException("使用者名稱不能為空", nameof(userName));
+                
             _userName = userName;
-            _password = password;
-            _domain = domain;
+            _password = password ?? string.Empty;
+            _domain = domain ?? string.Empty;
             return this;
         }
         
         /// <summary>
         /// 設定畫面解析度
         /// </summary>
+        /// <param name="width">寬度（像素）</param>
+        /// <param name="height">高度（像素）</param>
+        /// <returns>建構器實例</returns>
+        /// <exception cref="ArgumentOutOfRangeException">當解析度超出有效範圍時拋出</exception>
         public RdpConnectionBuilder WithResolution(int width, int height)
         {
+            if (width <= 0 || width > 4096)
+                throw new ArgumentOutOfRangeException(nameof(width), "寬度必須在1到4096之間");
+            if (height <= 0 || height > 2160)
+                throw new ArgumentOutOfRangeException(nameof(height), "高度必須在1到2160之間");
+                
             _screenWidth = width;
             _screenHeight = height;
             return this;
@@ -57,8 +80,14 @@ namespace LIB_RDP.Builders
         /// <summary>
         /// 設定顏色深度
         /// </summary>
+        /// <param name="depth">顏色深度（8, 15, 16, 24, 或 32 位元）</param>
+        /// <returns>建構器實例</returns>
+        /// <exception cref="ArgumentException">當顏色深度無效時拋出</exception>
         public RdpConnectionBuilder WithColorDepth(int depth)
         {
+            if (depth != 8 && depth != 15 && depth != 16 && depth != 24 && depth != 32 && depth != 64)
+                throw new ArgumentException("顏色深度必須是 8, 15, 16, 24, 32 或 64", nameof(depth));
+                
             _colorDepth = depth;
             return this;
         }
@@ -66,8 +95,14 @@ namespace LIB_RDP.Builders
         /// <summary>
         /// 設定連線超時時間（秒）
         /// </summary>
+        /// <param name="timeoutSeconds">超時秒數（5-300秒）</param>
+        /// <returns>建構器實例</returns>
+        /// <exception cref="ArgumentOutOfRangeException">當超時值超出有效範圍時拋出</exception>
         public RdpConnectionBuilder WithTimeout(int timeoutSeconds)
         {
+            if (timeoutSeconds < 5 || timeoutSeconds > 300)
+                throw new ArgumentOutOfRangeException(nameof(timeoutSeconds), "連線超時必須在5到300秒之間");
+                
             _connectionTimeout = timeoutSeconds;
             return this;
         }
