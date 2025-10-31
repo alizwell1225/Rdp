@@ -92,24 +92,40 @@ namespace LIB_RPC
 
         /// <summary>
         /// Loads configuration from a JSON file.
+        /// Returns the builder unchanged if the file does not exist.
         /// </summary>
         public GrpcConfigBuilder FromFile(string filePath)
         {
-            if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+            if (string.IsNullOrWhiteSpace(filePath))
                 return this;
-
-            var json = File.ReadAllText(filePath);
-            var config = JsonSerializer.Deserialize<GrpcConfig>(json);
-            if (config != null)
+                
+            if (!File.Exists(filePath))
             {
-                _host = config.Host;
-                _port = config.Port;
-                _password = config.Password;
-                _maxChunkSizeBytes = config.MaxChunkSizeBytes;
-                _storageRoot = config.StorageRoot;
-                _enableConsoleLog = config.EnableConsoleLog;
-                _logFilePath = config.LogFilePath;
+                // Log or notify that file is missing - consider logging in production
+                return this;
             }
+
+            try
+            {
+                var json = File.ReadAllText(filePath);
+                var config = JsonSerializer.Deserialize<GrpcConfig>(json);
+                if (config != null)
+                {
+                    _host = config.Host;
+                    _port = config.Port;
+                    _password = config.Password;
+                    _maxChunkSizeBytes = config.MaxChunkSizeBytes;
+                    _storageRoot = config.StorageRoot;
+                    _enableConsoleLog = config.EnableConsoleLog;
+                    _logFilePath = config.LogFilePath;
+                }
+            }
+            catch (Exception)
+            {
+                // Silently continue with existing values on error
+                // Consider logging or throwing in production scenarios
+            }
+            
             return this;
         }
 

@@ -15,7 +15,7 @@ namespace LIB_RPC
     {
         public byte[] CapturePrimaryPng()
         {
-#if NET6_0_OR_GREATER && WINDOWS
+#if NET8_0_OR_GREATER && WINDOWS
             var bounds = System.Windows.Forms.Screen.PrimaryScreen!.Bounds;
             using var bmp = new Bitmap(bounds.Width, bounds.Height);
             using (var g = Graphics.FromImage(bmp))
