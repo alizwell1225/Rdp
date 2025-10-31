@@ -8,7 +8,7 @@ namespace LIB_RDP.Interfaces
     /// <summary>
     /// RDP連線介面
     /// </summary>
-    public interface IRdpConnection
+    public interface IRdpConnection : IDisposable
     {
         /// <summary>
         /// 同步連線到遠端主機

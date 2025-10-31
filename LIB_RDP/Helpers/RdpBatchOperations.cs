@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using LIB_RDP.Core;
 using LIB_RDP.Interfaces;
 using LIB_RDP.Models;
 
@@ -78,6 +79,7 @@ namespace LIB_RDP.Helpers
         public int DisconnectByHosts(List<string> hostNames)
         {
             int disconnectedCount = 0;
+            var logger = RdpLogger.Instance;
             
             foreach (var hostName in hostNames)
             {
@@ -89,9 +91,9 @@ namespace LIB_RDP.Helpers
                         connection.Disconnect();
                         disconnectedCount++;
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // 記錄但繼續處理其他連線
+                        logger.LogWarning($"斷開連線 {hostName} 時發生錯誤: {ex.Message}", connection.ConnectionId);
                     }
                 }
             }
@@ -135,6 +137,7 @@ namespace LIB_RDP.Helpers
         public int ReconfigureConnections(RdpConfig config, List<string> connectionIds = null)
         {
             int configuredCount = 0;
+            var logger = RdpLogger.Instance;
             var connections = connectionIds != null
                 ? _manager.AllConnections.Where(c => connectionIds.Contains(c.ConnectionId))
                 : _manager.AllConnections;
@@ -146,9 +149,9 @@ namespace LIB_RDP.Helpers
                     connection.Configure(config);
                     configuredCount++;
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // 記錄但繼續處理其他連線
+                    logger.LogWarning($"配置連線 {connection.ConnectionId} 時發生錯誤: {ex.Message}", connection.ConnectionId);
                 }
             }
             

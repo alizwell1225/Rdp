@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using LIB_RDP.Models;
@@ -7,7 +8,7 @@ namespace LIB_RDP.Interfaces
     /// <summary>
     /// RDP連線管理器介面
     /// </summary>
-    public interface IRdpManager
+    public interface IRdpManager : IDisposable
     {
         /// <summary>
         /// 建立新的RDP連線

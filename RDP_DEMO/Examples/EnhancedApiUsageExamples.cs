@@ -16,6 +16,8 @@ namespace RDP_DEMO.Examples
     /// </summary>
     public class EnhancedApiUsageExamples
     {
+        private const string DEFAULT_GROUP_NAME = "預設群組";
+        
         private readonly IRdpManager _manager;
         private readonly RdpBatchOperations _batchOps;
         private readonly IRdpConfigurationManager _configManager;
@@ -135,14 +137,14 @@ namespace RDP_DEMO.Examples
         /// 範例5：建立和儲存新的連線配置
         /// </summary>
         public void Example5_CreateAndSaveProfile(
-            string name, string host, string user, string pass, string group = "預設群組")
+            string name, string host, string user, string pass, string group = null)
         {
             var profile = new RdpConnectionProfile
             {
                 Name = name,
                 HostName = host,
                 UserName = user,
-                GroupName = group,
+                GroupName = group ?? DEFAULT_GROUP_NAME,
                 Config = new RdpConfig
                 {
                     ScreenWidth = 1920,
@@ -317,7 +319,7 @@ namespace RDP_DEMO.Examples
         public void Cleanup()
         {
             _manager.DisconnectAll();
-            (_manager as IDisposable)?.Dispose();
+            _manager.Dispose();
         }
     }
 }
