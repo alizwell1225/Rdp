@@ -6,6 +6,9 @@ using RdpGrpc.Proto;
 
 namespace LIB_RPC
 {
+    /// <summary>
+    /// Low-level client connection handling gRPC communication with the remote channel service.
+    /// </summary>
     public sealed class ClientConnection : IAsyncDisposable
     {
         private readonly GrpcConfig _config;
@@ -17,15 +20,51 @@ namespace LIB_RPC
         private AsyncServerStreamingCall<FileChunk>? _filePushStream;
         private readonly ConcurrentDictionary<string, TaskCompletionSource<JsonAck>> _pending = new();
 
+        /// <summary>
+        /// Event raised when a JSON acknowledgment is received.
+        /// </summary>
         public event Action<JsonAck>? OnJsonAck;
-        public event Action<JsonEnvelope>? OnServerJson; // for server-pushed duplex messages
-        public event Action<string, double>? OnUploadProgress; // (path, percent 0-100)
-        public event Action<string, double>? OnDownloadProgress; // (path, percent 0-100)
-        public event Action<double>? OnScreenshotProgress; // percent 0-100
-        public event Action<string, double>? OnServerFileProgress; // (path, percent)
-        public event Action<string>? OnServerFileCompleted; // path
-        public event Action<string, string>? OnServerFileError; // (path, error)
+        
+        /// <summary>
+        /// Event raised when server pushes a JSON message via duplex stream.
+        /// </summary>
+        public event Action<JsonEnvelope>? OnServerJson;
+        
+        /// <summary>
+        /// Event raised during file upload progress with path and percentage (0-100).
+        /// </summary>
+        public event Action<string, double>? OnUploadProgress;
+        
+        /// <summary>
+        /// Event raised during file download progress with path and percentage (0-100).
+        /// </summary>
+        public event Action<string, double>? OnDownloadProgress;
+        
+        /// <summary>
+        /// Event raised during screenshot capture progress with percentage (0-100).
+        /// </summary>
+        public event Action<double>? OnScreenshotProgress;
+        
+        /// <summary>
+        /// Event raised during server file push progress with path and percentage.
+        /// </summary>
+        public event Action<string, double>? OnServerFileProgress;
+        
+        /// <summary>
+        /// Event raised when server completes pushing a file with the saved path.
+        /// </summary>
+        public event Action<string>? OnServerFileCompleted;
+        
+        /// <summary>
+        /// Event raised when server file push encounters an error with path and error message.
+        /// </summary>
+        public event Action<string, string>? OnServerFileError;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ClientConnection"/> class.
+        /// </summary>
+        /// <param name="config">The gRPC configuration.</param>
+        /// <param name="logger">The logger instance.</param>
         public ClientConnection(GrpcConfig config, GrpcLogger logger)
         {
             _config = config;

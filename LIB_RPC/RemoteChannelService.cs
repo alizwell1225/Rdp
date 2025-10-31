@@ -66,7 +66,7 @@ namespace LIB_RPC
             }
         }
 
-        public async Task BroadcastJsonAsync(string type, string json, CancellationToken ct = default)
+        public Task BroadcastJsonAsync(string type, string json, CancellationToken ct = default)
         {
             var envelope = new JsonEnvelope
             {
@@ -92,6 +92,7 @@ namespace LIB_RPC
                 }
                 ct.ThrowIfCancellationRequested();
             }
+            return Task.CompletedTask;
         }
 
         // FilePush subscription: client opens a stream and we keep its writer for future pushes
