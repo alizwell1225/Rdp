@@ -126,5 +126,6 @@
         private System.Windows.Forms.NumericUpDown numConnections;
         private System.Windows.Forms.DataGridView dgvConnections;
         private System.Windows.Forms.Panel pnlPreviews;
+        private System.Windows.Forms.Button btnSetDemoIP ;
     }
 }
