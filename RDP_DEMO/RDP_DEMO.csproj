@@ -10,11 +10,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Lib_Rdp\LIB_RDP.csproj" />
+    <ProjectReference Include="..\LIB_RDP\LIB_RDP.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Update="FormRDP.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="FormRDP_Proxy.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="FormProxySettings.cs">
       <SubType>Form</SubType>
     </Compile>
   </ItemGroup>
