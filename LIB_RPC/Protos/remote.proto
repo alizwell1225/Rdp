@@ -1,0 +1,82 @@
+syntax = "proto3";
+import "google/protobuf/empty.proto";
+option csharp_namespace = "RdpGrpc.Proto";
+package rdp; // remote desktop helper
+
+message JsonEnvelope {
+  string id = 1;            // correlation id
+  string type = 2;          // message type/category
+  string json = 3;          // raw json payload
+  int64 timestamp = 4;      // unix epoch ms
+}
+
+message JsonAck {
+  string id = 1;            // correlation id from request
+  bool success = 2;
+  string error = 3;         // optional error message
+}
+
+message FileRequest {
+  string path = 1;          // relative or display path
+}
+
+message FileChunk {
+  string path = 1;          // file path/correlation
+  bytes data = 2;           // raw bytes
+  int32 index = 3;          // chunk index starting 0
+  int32 totalChunks = 4;    // total chunk count
+  bool isLast = 5;          // convenience flag
+  string error = 6;         // server or client side error
+}
+
+message FileTransferStatus {
+  string path = 1;
+  bool success = 2;
+  string error = 3;
+}
+
+message ScreenshotRequest {
+  int32 monitorIndex = 1;   // which screen, -1 for primary
+  int32 maxWidth = 2;       // optional resizing
+  int32 maxHeight = 3;
+}
+
+message ScreenshotChunk {
+  int32 index = 1;
+  int32 totalChunks = 2;
+  bytes data = 3;           // png bytes chunked
+  bool isLast = 4;
+  string error = 5;
+}
+
+message ListFilesRequest {
+  // optional directory relative to storage root; empty for root
+  string directory = 1;
+}
+
+message ListFilesResponse {
+  repeated string files = 1;
+}
+
+service RemoteChannel {
+  // Bidirectional JSON messaging
+  rpc JsonStream(stream JsonEnvelope) returns (stream JsonAck);
+
+  // True duplex JSON where both sides can push JsonEnvelope
+  rpc JsonDuplex(stream JsonEnvelope) returns (stream JsonEnvelope);
+
+  // Client uploads a file to server
+  rpc UploadFile(stream FileChunk) returns (FileTransferStatus);
+
+  // Client requests a file; server streams chunks
+  rpc DownloadFile(FileRequest) returns (stream FileChunk);
+
+  // Client requests screenshot; server streams png chunks
+  rpc Screenshot(ScreenshotRequest) returns (stream ScreenshotChunk);
+
+  // Server-initiated file push subscription: client subscribes with empty request and receives pushed FileChunk streams.
+  rpc FilePush(google.protobuf.Empty) returns (stream FileChunk);
+
+  // List files available on server storage root (unary)
+  rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
+}

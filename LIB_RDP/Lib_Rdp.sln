@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.002.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lib_Rdp", "Lib_Rdp.csproj", "{E669A62C-83CC-4202-AE39-27CA8651E346}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E669A62C-83CC-4202-AE39-27CA8651E346}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E669A62C-83CC-4202-AE39-27CA8651E346}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E669A62C-83CC-4202-AE39-27CA8651E346}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E669A62C-83CC-4202-AE39-27CA8651E346}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9AF5819E-7C74-4008-917E-0461AB0802D6}
+	EndGlobalSection
+EndGlobal
