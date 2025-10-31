@@ -2,6 +2,20 @@
 
 提供基本遠端協助功能的 gRPC 共用元件：
 
+## 最新架構改進 (v2.0)
+
+### 主要優化
+- ✅ **抽象層**: 新增 IClientApi、IServerApi、IScreenCapture 介面
+- ✅ **跨平台**: 移除 Windows Forms 依賴，核心庫支持 net8.0
+- ✅ **DTOs**: JsonMessage、JsonAcknowledgment、FileTransferResult 隔離實現細節
+- ✅ **設計模式**: 建造者模式 (GrpcConfigBuilder)、工廠模式 (GrpcApiFactory)
+- ✅ **依賴注入**: 支援 IScreenCapture 注入，便於測試和擴展
+- ✅ **代碼精簡**: 移除重複的 GrpcServerController
+
+詳細架構說明請參考：
+- [架構文檔 (中文)](./ARCHITECTURE.md)
+- [Architecture Documentation (English)](./ARCHITECTURE_EN.md)
+
 功能:
 
 - 雙向 JSON 訊息 (JsonStream) - 用於需要 Ack 的請求/回應模式
@@ -26,6 +40,37 @@
 - `OnServerFileError` `(string path, string error)` - 推送過程錯誤
 
 使用範例：
+
+### 推薦的新 API 使用方式 (v2.0+)
+
+```csharp
+// 使用建造者創建配置
+var config = new GrpcConfigBuilder()
+    .WithHost("server.example.com")
+    .WithPort(50051)
+    .WithPassword("my-secret")
+    .WithMaxChunkSize(128 * 1024)
+    .Build();
+
+// 使用工廠創建客戶端 (返回介面)
+IClientApi client = GrpcApiFactory.CreateClient(config);
+
+// 訂閱事件 (現在使用 DTO 而非 Proto 類型)
+client.OnServerJson += msg => Console.WriteLine($"Type: {msg.Type}, JSON: {msg.Json}");
+client.OnUploadProgress += (f, p) => Console.WriteLine($"Upload {f}: {p:F2}%");
+client.OnDownloadProgress += (f, p) => Console.WriteLine($"Download {f}: {p:F2}%");
+client.OnScreenshotProgress += p => Console.WriteLine($"Screenshot: {p:F2}%");
+
+await client.ConnectAsync();
+var ack = await client.SendJsonAsync("ping", "{ \"msg\": \"hello\" }");
+Console.WriteLine($"Success: {ack.Success}, Error: {ack.Error}");
+
+var result = await client.UploadFileAsync(@"sample.bin");
+await client.DownloadFileAsync("server.bin", "local.bin");
+var png = await client.GetScreenshotAsync();
+```
+
+### 傳統 API 使用方式 (仍然支援，但建議遷移)
 
 ```csharp
 var config = new GrpcConfig { Password = "secret" };
@@ -84,7 +129,26 @@ client.OnServerFileError += (p, err) => Console.WriteLine($"PushFile Error {p}: 
 }
 ```
 
-## 快速使用 - Server
+## 快速使用 - Server (推薦新方式)
+
+```csharp
+// 使用工廠創建伺服器 (返回介面)
+IServerApi server = GrpcApiFactory.CreateServer();
+
+// 訂閱事件
+server.OnLog += msg => Console.WriteLine(msg);
+server.OnFileAdded += path => Console.WriteLine($"File added: {path}");
+
+// 配置並啟動
+server.UpdateConfig("0.0.0.0", 50051);
+await server.StartAsync();
+
+// 廣播和推送
+await server.BroadcastJsonAsync("notification", "{\"message\": \"Hello\"}");
+await server.PushFileAsync(@"C:\file.pdf");
+```
+
+## 快速使用 - Server (傳統方式)
 
 ```csharp
 var config = new GrpcConfig { Port = 50051, Password = "secret" };
@@ -93,7 +157,26 @@ var host = new ServerHost(config, logger);
 await host.StartAsync();
 ```
 
-## 快速使用 - Client
+## 快速使用 - Client (推薦新方式)
+
+```csharp
+// 使用建造者和工廠
+var config = new GrpcConfigBuilder()
+    .WithPassword("secret")
+    .Build();
+    
+IClientApi client = GrpcApiFactory.CreateClient(config);
+await client.ConnectAsync();
+
+// 使用 DTO 而非 Proto 類型
+var ack = await client.SendJsonAsync("ping", "{ \"msg\": \"hello\" }");
+Console.WriteLine($"Success: {ack.Success}");
+
+// Fire & forget (走 duplex, 不等待 Ack)
+await client.SendJsonFireAndForgetAsync("info", "{ \"level\": \"low\" }");
+```
+
+## 快速使用 - Client (傳統方式)
 
 ```csharp
 var config = new GrpcConfig { Password = "secret" };
