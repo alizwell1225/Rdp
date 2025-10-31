@@ -46,6 +46,71 @@ namespace LIB_RPC.Abstractions
         event Action<JsonMessage>? OnServerJson;
 
         /// <summary>
+        /// Event raised when connection to server is established successfully.
+        /// </summary>
+        event Action? OnConnected;
+
+        /// <summary>
+        /// Event raised when disconnected from server.
+        /// </summary>
+        event Action? OnDisconnected;
+
+        /// <summary>
+        /// Event raised when connection attempt fails.
+        /// </summary>
+        event Action<string>? OnConnectionError;
+
+        /// <summary>
+        /// Event raised when file upload starts.
+        /// </summary>
+        event Action<string>? OnUploadStarted;
+
+        /// <summary>
+        /// Event raised when file upload completes successfully.
+        /// </summary>
+        event Action<string>? OnUploadCompleted;
+
+        /// <summary>
+        /// Event raised when file upload fails.
+        /// </summary>
+        event Action<string, string>? OnUploadFailed;
+
+        /// <summary>
+        /// Event raised when file download starts.
+        /// </summary>
+        event Action<string>? OnDownloadStarted;
+
+        /// <summary>
+        /// Event raised when file download completes successfully.
+        /// </summary>
+        event Action<string>? OnDownloadCompleted;
+
+        /// <summary>
+        /// Event raised when file download fails.
+        /// </summary>
+        event Action<string, string>? OnDownloadFailed;
+
+        /// <summary>
+        /// Event raised when screenshot capture starts.
+        /// </summary>
+        event Action? OnScreenshotStarted;
+
+        /// <summary>
+        /// Event raised when screenshot capture completes successfully.
+        /// </summary>
+        event Action<int>? OnScreenshotCompleted;
+
+        /// <summary>
+        /// Event raised when screenshot capture fails.
+        /// </summary>
+        event Action<string>? OnScreenshotFailed;
+
+        /// <summary>
+        /// Event raised when server file push starts.
+        /// </summary>
+        event Action<string>? OnServerFileStarted;
+
+        /// <summary>
         /// Connects to the gRPC server.
         /// </summary>
         Task ConnectAsync(CancellationToken ct = default);

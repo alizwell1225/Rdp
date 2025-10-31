@@ -51,6 +51,71 @@ namespace LIB_RPC.API
         public event Action<JsonMessage>? OnServerJson;
 
         /// <summary>
+        /// Event raised when connection to server is established successfully.
+        /// </summary>
+        public event Action? OnConnected;
+
+        /// <summary>
+        /// Event raised when disconnected from server.
+        /// </summary>
+        public event Action? OnDisconnected;
+
+        /// <summary>
+        /// Event raised when connection attempt fails.
+        /// </summary>
+        public event Action<string>? OnConnectionError;
+
+        /// <summary>
+        /// Event raised when file upload starts.
+        /// </summary>
+        public event Action<string>? OnUploadStarted;
+
+        /// <summary>
+        /// Event raised when file upload completes successfully.
+        /// </summary>
+        public event Action<string>? OnUploadCompleted;
+
+        /// <summary>
+        /// Event raised when file upload fails.
+        /// </summary>
+        public event Action<string, string>? OnUploadFailed;
+
+        /// <summary>
+        /// Event raised when file download starts.
+        /// </summary>
+        public event Action<string>? OnDownloadStarted;
+
+        /// <summary>
+        /// Event raised when file download completes successfully.
+        /// </summary>
+        public event Action<string>? OnDownloadCompleted;
+
+        /// <summary>
+        /// Event raised when file download fails.
+        /// </summary>
+        public event Action<string, string>? OnDownloadFailed;
+
+        /// <summary>
+        /// Event raised when screenshot capture starts.
+        /// </summary>
+        public event Action? OnScreenshotStarted;
+
+        /// <summary>
+        /// Event raised when screenshot capture completes successfully.
+        /// </summary>
+        public event Action<int>? OnScreenshotCompleted;
+
+        /// <summary>
+        /// Event raised when screenshot capture fails.
+        /// </summary>
+        public event Action<string>? OnScreenshotFailed;
+
+        /// <summary>
+        /// Event raised when server file push starts.
+        /// </summary>
+        public event Action<string>? OnServerFileStarted;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="GrpcClientApi"/> class.
         /// </summary>
         /// <param name="config">Optional configuration. If null, default configuration is used.</param>
@@ -83,21 +148,35 @@ namespace LIB_RPC.API
         public async Task ConnectAsync(CancellationToken ct = default)
         {
             if (_conn != null) return;
-            _conn = new ClientConnection(_config, _logger);
-            // forward events
-            _conn.OnUploadProgress += (p, pct) => OnUploadProgress?.Invoke(p, pct);
-            _conn.OnDownloadProgress += (p, pct) => OnDownloadProgress?.Invoke(p, pct);
-            _conn.OnScreenshotProgress += pct => OnScreenshotProgress?.Invoke(pct);
-            _conn.OnServerFileCompleted += p => OnServerFileCompleted?.Invoke(p);
-            _conn.OnServerFileError += (p, e) => OnServerFileError?.Invoke(p, e);
-            _conn.OnServerJson += env => OnServerJson?.Invoke(new JsonMessage
+            
+            try
             {
-                Id = env.Id,
-                Type = env.Type,
-                Json = env.Json,
-                Timestamp = env.Timestamp
-            });
-            await _conn.ConnectAsync();
+                _conn = new ClientConnection(_config, _logger);
+                // forward events
+                _conn.OnUploadProgress += (p, pct) => OnUploadProgress?.Invoke(p, pct);
+                _conn.OnDownloadProgress += (p, pct) => OnDownloadProgress?.Invoke(p, pct);
+                _conn.OnScreenshotProgress += pct => OnScreenshotProgress?.Invoke(pct);
+                _conn.OnServerFileCompleted += p => OnServerFileCompleted?.Invoke(p);
+                _conn.OnServerFileError += (p, e) => OnServerFileError?.Invoke(p, e);
+                _conn.OnServerFileProgress += (p, pct) => OnServerFileStarted?.Invoke(p);
+                _conn.OnServerJson += env => OnServerJson?.Invoke(new JsonMessage
+                {
+                    Id = env.Id,
+                    Type = env.Type,
+                    Json = env.Json,
+                    Timestamp = env.Timestamp
+                });
+                
+                await _conn.ConnectAsync();
+                OnConnected?.Invoke();
+                _logger.Info("Client connected successfully");
+            }
+            catch (Exception ex)
+            {
+                OnConnectionError?.Invoke(ex.Message);
+                _logger.Error($"Connection failed: {ex.Message}");
+                throw;
+            }
         }
 
         /// <summary>
@@ -109,6 +188,8 @@ namespace LIB_RPC.API
             if (_conn == null) return;
             await _conn.DisposeAsync();
             _conn = null;
+            OnDisconnected?.Invoke();
+            _logger.Info("Client disconnected");
         }
 
         /// <summary>
@@ -152,13 +233,40 @@ namespace LIB_RPC.API
         public async Task<FileTransferResult> UploadFileAsync(string filePath, CancellationToken ct = default)
         {
             if (_conn == null) throw new InvalidOperationException("Not connected");
-            var status = await _conn.UploadFileAsync(filePath, ct);
-            return new FileTransferResult
+            
+            try
             {
-                Path = status.Path,
-                Success = status.Success,
-                Error = status.Error
-            };
+                OnUploadStarted?.Invoke(filePath);
+                _logger.Info($"Starting upload: {filePath}");
+                
+                var status = await _conn.UploadFileAsync(filePath, ct);
+                
+                var result = new FileTransferResult
+                {
+                    Path = status.Path,
+                    Success = status.Success,
+                    Error = status.Error
+                };
+                
+                if (result.Success)
+                {
+                    OnUploadCompleted?.Invoke(filePath);
+                    _logger.Info($"Upload completed: {filePath}");
+                }
+                else
+                {
+                    OnUploadFailed?.Invoke(filePath, result.Error);
+                    _logger.Error($"Upload failed: {filePath} - {result.Error}");
+                }
+                
+                return result;
+            }
+            catch (Exception ex)
+            {
+                OnUploadFailed?.Invoke(filePath, ex.Message);
+                _logger.Error($"Upload exception: {filePath} - {ex.Message}");
+                throw;
+            }
         }
 
         /// <summary>
@@ -171,7 +279,23 @@ namespace LIB_RPC.API
         public async Task DownloadFileAsync(string remotePath, string localPath, CancellationToken ct = default)
         {
             if (_conn == null) throw new InvalidOperationException("Not connected");
-            await _conn.DownloadFileAsync(remotePath, localPath, ct);
+            
+            try
+            {
+                OnDownloadStarted?.Invoke(remotePath);
+                _logger.Info($"Starting download: {remotePath} -> {localPath}");
+                
+                await _conn.DownloadFileAsync(remotePath, localPath, ct);
+                
+                OnDownloadCompleted?.Invoke(remotePath);
+                _logger.Info($"Download completed: {remotePath}");
+            }
+            catch (Exception ex)
+            {
+                OnDownloadFailed?.Invoke(remotePath, ex.Message);
+                _logger.Error($"Download failed: {remotePath} - {ex.Message}");
+                throw;
+            }
         }
 
         /// <summary>
@@ -194,7 +318,25 @@ namespace LIB_RPC.API
         public async Task<byte[]> GetScreenshotAsync(CancellationToken ct = default)
         {
             if (_conn == null) throw new InvalidOperationException("Not connected");
-            return await _conn.GetScreenshotAsync(ct);
+            
+            try
+            {
+                OnScreenshotStarted?.Invoke();
+                _logger.Info("Starting screenshot capture");
+                
+                var bytes = await _conn.GetScreenshotAsync(ct);
+                
+                OnScreenshotCompleted?.Invoke(bytes.Length);
+                _logger.Info($"Screenshot completed: {bytes.Length} bytes");
+                
+                return bytes;
+            }
+            catch (Exception ex)
+            {
+                OnScreenshotFailed?.Invoke(ex.Message);
+                _logger.Error($"Screenshot failed: {ex.Message}");
+                throw;
+            }
         }
 
         /// <summary>

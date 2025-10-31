@@ -12,8 +12,39 @@ namespace LIB_RPC
         private readonly GrpcLogger _logger;
         private readonly IScreenCapture _screenCapture;
         private IHost? _host;
+        
         // Event raised when a file is added to storage (upload or push)
         public event EventHandler<string>? FileAdded;
+        
+        // Event raised when file upload from client starts
+        public event EventHandler<string>? FileUploadStarted;
+        
+        // Event raised when file upload from client completes
+        public event EventHandler<string>? FileUploadCompleted;
+        
+        // Event raised when file upload from client fails
+        public event EventHandler<(string Path, string Error)>? FileUploadFailed;
+        
+        // Event raised when server starts pushing a file
+        public event EventHandler<string>? FilePushStarted;
+        
+        // Event raised when server completes pushing a file
+        public event EventHandler<string>? FilePushCompleted;
+        
+        // Event raised when server fails to push a file
+        public event EventHandler<(string Path, string Error)>? FilePushFailed;
+        
+        // Event raised when broadcast is sent
+        public event EventHandler<(string Type, int ClientCount)>? BroadcastSent;
+        
+        // Event raised when broadcast fails
+        public event EventHandler<(string Type, string Error)>? BroadcastFailed;
+        
+        // Event raised when a client connects
+        public event EventHandler<string>? ClientConnected;
+        
+        // Event raised when a client disconnects
+        public event EventHandler<string>? ClientDisconnected;
 
         public ServerHost(GrpcConfig config, GrpcLogger logger, IScreenCapture? screenCapture = null)
         {
@@ -58,7 +89,7 @@ namespace LIB_RPC
                 })
                 .Build();
             _logger.Info($"Starting gRPC server on port {_config.Port}");
-            // Wire up RemoteChannelService FileUploaded event to our FileAdded
+            // Wire up RemoteChannelService events
             try
             {
                 var svc = _host.Services.GetService(typeof(RemoteChannelService)) as RemoteChannelService;
@@ -75,11 +106,71 @@ namespace LIB_RPC
                             _logger.Warn($"FileAdded handler threw: {ex.Message}");
                         }
                     };
+                    
+                    svc.FileUploadStarted += (s, path) =>
+                    {
+                        try
+                        {
+                            FileUploadStarted?.Invoke(this, path);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Warn($"FileUploadStarted handler threw: {ex.Message}");
+                        }
+                    };
+                    
+                    svc.FileUploadCompleted += (s, path) =>
+                    {
+                        try
+                        {
+                            FileUploadCompleted?.Invoke(this, path);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Warn($"FileUploadCompleted handler threw: {ex.Message}");
+                        }
+                    };
+                    
+                    svc.FileUploadFailed += (s, args) =>
+                    {
+                        try
+                        {
+                            FileUploadFailed?.Invoke(this, args);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Warn($"FileUploadFailed handler threw: {ex.Message}");
+                        }
+                    };
+                    
+                    svc.ClientConnected += (s, clientId) =>
+                    {
+                        try
+                        {
+                            ClientConnected?.Invoke(this, clientId);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Warn($"ClientConnected handler threw: {ex.Message}");
+                        }
+                    };
+                    
+                    svc.ClientDisconnected += (s, clientId) =>
+                    {
+                        try
+                        {
+                            ClientDisconnected?.Invoke(this, clientId);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Warn($"ClientDisconnected handler threw: {ex.Message}");
+                        }
+                    };
                 }
             }
             catch (Exception ex)
             {
-                _logger.Warn($"Failed to attach FileUploaded handler: {ex.Message}");
+                _logger.Warn($"Failed to attach event handlers: {ex.Message}");
             }
             await _host.StartAsync(cancellationToken);
         }
@@ -93,20 +184,48 @@ namespace LIB_RPC
             _host = null;
         }
 
-        public Task BroadcastJsonAsync(string type, string json, CancellationToken ct = default)
+        public async Task BroadcastJsonAsync(string type, string json, CancellationToken ct = default)
         {
             if (_host == null) throw new InvalidOperationException("Server not started");
             var svc = _host.Services.GetService(typeof(RemoteChannelService)) as RemoteChannelService
                       ?? throw new InvalidOperationException("RemoteChannelService not resolved");
-            return svc.BroadcastJsonAsync(type, json, ct);
+            
+            try
+            {
+                var clientCount = await svc.BroadcastJsonAsync(type, json, ct);
+                BroadcastSent?.Invoke(this, (type, clientCount));
+                _logger.Info($"Broadcast sent: type={type}, clients={clientCount}");
+            }
+            catch (Exception ex)
+            {
+                BroadcastFailed?.Invoke(this, (type, ex.Message));
+                _logger.Error($"Broadcast failed: type={type}, error={ex.Message}");
+                throw;
+            }
         }
 
-        public Task PushFileAsync(string filePath, CancellationToken ct = default)
+        public async Task PushFileAsync(string filePath, CancellationToken ct = default)
         {
             if (_host == null) throw new InvalidOperationException("Server not started");
             var svc = _host.Services.GetService(typeof(RemoteChannelService)) as RemoteChannelService
                       ?? throw new InvalidOperationException("RemoteChannelService not resolved");
-            return svc.BroadcastFileAsync(filePath, ct);
+            
+            try
+            {
+                FilePushStarted?.Invoke(this, filePath);
+                _logger.Info($"File push started: {filePath}");
+                
+                await svc.BroadcastFileAsync(filePath, ct);
+                
+                FilePushCompleted?.Invoke(this, filePath);
+                _logger.Info($"File push completed: {filePath}");
+            }
+            catch (Exception ex)
+            {
+                FilePushFailed?.Invoke(this, (filePath, ex.Message));
+                _logger.Error($"File push failed: {filePath} - {ex.Message}");
+                throw;
+            }
         }
 
         public async ValueTask DisposeAsync()

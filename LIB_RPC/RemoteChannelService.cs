@@ -12,9 +12,26 @@ namespace LIB_RPC
         private readonly IScreenCapture _screenCapture;
         private readonly ConcurrentDictionary<string, DuplexClient> _duplexClients = new();
         private readonly ConcurrentDictionary<string, IServerStreamWriter<FileChunk>> _filePushClients = new();
+        
         // Event raised when a file has been uploaded successfully to the server storage
         public event EventHandler<string>? FileUploaded;
-    // Allow multiple clients concurrently for duplex and file-push subscriptions
+        
+        // Event raised when file upload starts
+        public event EventHandler<string>? FileUploadStarted;
+        
+        // Event raised when file upload completes
+        public event EventHandler<string>? FileUploadCompleted;
+        
+        // Event raised when file upload fails
+        public event EventHandler<(string Path, string Error)>? FileUploadFailed;
+        
+        // Event raised when client connects (duplex or file push)
+        public event EventHandler<string>? ClientConnected;
+        
+        // Event raised when client disconnects
+        public event EventHandler<string>? ClientDisconnected;
+        
+        // Allow multiple clients concurrently for duplex and file-push subscriptions
 
         private sealed record DuplexClient(string Id, IServerStreamWriter<JsonEnvelope> Writer, object WriteLock);
 
@@ -46,6 +63,8 @@ namespace LIB_RPC
             // Multiple duplex clients are allowed concurrently
             _duplexClients[id] = client;
             _logger.Info($"Duplex client connected {id}, totalDuplex={_duplexClients.Count}");
+            ClientConnected?.Invoke(this, id);
+            
             try
             {
                 await foreach (var msg in requestStream.ReadAllAsync(context.CancellationToken))
@@ -63,10 +82,11 @@ namespace LIB_RPC
             {
                 _duplexClients.TryRemove(id, out _);
                 _logger.Info($"Duplex client disconnected {id}, totalDuplex={_duplexClients.Count}");
+                ClientDisconnected?.Invoke(this, id);
             }
         }
 
-        public Task BroadcastJsonAsync(string type, string json, CancellationToken ct = default)
+        public Task<int> BroadcastJsonAsync(string type, string json, CancellationToken ct = default)
         {
             var envelope = new JsonEnvelope
             {
@@ -75,6 +95,8 @@ namespace LIB_RPC
                 Json = json,
                 Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
             };
+            
+            int successCount = 0;
             foreach (var kvp in _duplexClients.ToArray())
             {
                 var dc = kvp.Value;
@@ -84,6 +106,7 @@ namespace LIB_RPC
                     {
                         dc.Writer.WriteAsync(envelope).GetAwaiter().GetResult();
                     }
+                    successCount++;
                 }
                 catch (Exception ex)
                 {
@@ -92,7 +115,7 @@ namespace LIB_RPC
                 }
                 ct.ThrowIfCancellationRequested();
             }
-            return Task.CompletedTask;
+            return Task.FromResult(successCount);
         }
 
         // FilePush subscription: client opens a stream and we keep its writer for future pushes
@@ -102,6 +125,8 @@ namespace LIB_RPC
             // Allow multiple FilePush subscribers concurrently
             _filePushClients[id] = responseStream;
             _logger.Info($"FilePush subscriber {id} connected, totalFilePush={_filePushClients.Count}");
+            ClientConnected?.Invoke(this, id);
+            
             try
             {
                 // Keep the call open until cancellation
@@ -113,6 +138,7 @@ namespace LIB_RPC
             {
                 _filePushClients.TryRemove(id, out _);
                 _logger.Info($"FilePush subscriber {id} disconnected, totalFilePush={_filePushClients.Count}");
+                ClientDisconnected?.Invoke(this, id);
             }
         }
 
@@ -156,6 +182,8 @@ namespace LIB_RPC
             string? path = null;
             FileStream? fs = null;
             var success = false;
+            var uploadStarted = false;
+            
             try
             {
                 await foreach (var chunk in requestStream.ReadAllAsync(context.CancellationToken))
@@ -166,6 +194,12 @@ namespace LIB_RPC
                         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
                         fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
                         _logger.Info($"Upload start {path}");
+                        
+                        if (!uploadStarted)
+                        {
+                            FileUploadStarted?.Invoke(this, path);
+                            uploadStarted = true;
+                        }
                     }
                     if (chunk.Data.Length > 0) await fs.WriteAsync(chunk.Data.Memory);
                     if (chunk.IsLast)
@@ -179,21 +213,39 @@ namespace LIB_RPC
             catch (Exception ex)
             {
                 _logger.Error($"Upload fail {path}: {ex.Message}");
+                
+                if (!string.IsNullOrWhiteSpace(path))
+                {
+                    FileUploadFailed?.Invoke(this, (path, ex.Message));
+                }
+                
                 return new FileTransferStatus { Path = path ?? string.Empty, Success = false, Error = ex.Message };
             }
             finally
             {
                 if (fs != null) await fs.DisposeAsync();
-                // If upload succeeded, raise FileUploaded event so UI/host can react
+                // If upload succeeded, raise events so UI/host can react
                 if (success && !string.IsNullOrWhiteSpace(path))
                 {
                     try
                     {
                         FileUploaded?.Invoke(this, path!);
+                        FileUploadCompleted?.Invoke(this, path!);
                     }
                     catch (Exception ex)
                     {
-                        _logger.Warn($"FileUploaded event handler threw: {ex.Message}");
+                        _logger.Warn($"FileUploaded/FileUploadCompleted event handler threw: {ex.Message}");
+                    }
+                }
+                else if (!success && !string.IsNullOrWhiteSpace(path) && uploadStarted)
+                {
+                    try
+                    {
+                        FileUploadFailed?.Invoke(this, (path!, "Upload incomplete"));
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Warn($"FileUploadFailed event handler threw: {ex.Message}");
                     }
                 }
             }

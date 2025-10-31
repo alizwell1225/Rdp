@@ -23,6 +23,71 @@ namespace LIB_RPC.API
         public event Action<string>? OnFileAdded;
 
         /// <summary>
+        /// Event raised when server starts successfully.
+        /// </summary>
+        public event Action? OnServerStarted;
+
+        /// <summary>
+        /// Event raised when server stops.
+        /// </summary>
+        public event Action? OnServerStopped;
+
+        /// <summary>
+        /// Event raised when server startup fails.
+        /// </summary>
+        public event Action<string>? OnServerStartFailed;
+
+        /// <summary>
+        /// Event raised when a client connects to the server.
+        /// </summary>
+        public event Action<string>? OnClientConnected;
+
+        /// <summary>
+        /// Event raised when a client disconnects from the server.
+        /// </summary>
+        public event Action<string>? OnClientDisconnected;
+
+        /// <summary>
+        /// Event raised when file upload from client starts.
+        /// </summary>
+        public event Action<string>? OnFileUploadStarted;
+
+        /// <summary>
+        /// Event raised when file upload from client completes successfully.
+        /// </summary>
+        public event Action<string>? OnFileUploadCompleted;
+
+        /// <summary>
+        /// Event raised when file upload from client fails.
+        /// </summary>
+        public event Action<string, string>? OnFileUploadFailed;
+
+        /// <summary>
+        /// Event raised when server starts pushing a file to clients.
+        /// </summary>
+        public event Action<string>? OnFilePushStarted;
+
+        /// <summary>
+        /// Event raised when server completes pushing a file to all clients.
+        /// </summary>
+        public event Action<string>? OnFilePushCompleted;
+
+        /// <summary>
+        /// Event raised when server fails to push file to one or more clients.
+        /// </summary>
+        public event Action<string, string>? OnFilePushFailed;
+
+        /// <summary>
+        /// Event raised when broadcast message is sent successfully.
+        /// </summary>
+        public event Action<string, int>? OnBroadcastSent;
+
+        /// <summary>
+        /// Event raised when broadcast message fails.
+        /// </summary>
+        public event Action<string, string>? OnBroadcastFailed;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="GrpcServerApi"/> class with default configuration.
         /// </summary>
         public GrpcServerApi()
@@ -77,10 +142,32 @@ namespace LIB_RPC.API
         public async Task StartAsync()
         {
             if (_host != null) return;
-            _host = new ServerHost(_config, _logger!);
-            _host.FileAdded += (s, path) => OnFileAdded?.Invoke(path);
-            await _host.StartAsync();
-            OnLog?.Invoke("Server started");
+            
+            try
+            {
+                _host = new ServerHost(_config, _logger!);
+                _host.FileAdded += (s, path) => OnFileAdded?.Invoke(path);
+                _host.FileUploadStarted += (s, path) => OnFileUploadStarted?.Invoke(path);
+                _host.FileUploadCompleted += (s, path) => OnFileUploadCompleted?.Invoke(path);
+                _host.FileUploadFailed += (s, args) => OnFileUploadFailed?.Invoke(args.Item1, args.Item2);
+                _host.FilePushStarted += (s, path) => OnFilePushStarted?.Invoke(path);
+                _host.FilePushCompleted += (s, path) => OnFilePushCompleted?.Invoke(path);
+                _host.FilePushFailed += (s, args) => OnFilePushFailed?.Invoke(args.Item1, args.Item2);
+                _host.BroadcastSent += (s, args) => OnBroadcastSent?.Invoke(args.Item1, args.Item2);
+                _host.BroadcastFailed += (s, args) => OnBroadcastFailed?.Invoke(args.Item1, args.Item2);
+                _host.ClientConnected += (s, clientId) => OnClientConnected?.Invoke(clientId);
+                _host.ClientDisconnected += (s, clientId) => OnClientDisconnected?.Invoke(clientId);
+                
+                await _host.StartAsync();
+                OnServerStarted?.Invoke();
+                OnLog?.Invoke("Server started successfully");
+            }
+            catch (Exception ex)
+            {
+                OnServerStartFailed?.Invoke(ex.Message);
+                OnLog?.Invoke($"Server start failed: {ex.Message}");
+                throw;
+            }
         }
 
         /// <summary>
@@ -92,6 +179,7 @@ namespace LIB_RPC.API
             if (_host == null) return;
             await _host.StopAsync();
             _host = null;
+            OnServerStopped?.Invoke();
             OnLog?.Invoke("Server stopped");
         }
 
