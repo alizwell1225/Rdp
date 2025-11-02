@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Lib_Rdp\LIB_RDP.csproj" />
+    <ProjectReference Include="..\LIB_RDP\LIB_RDP.csproj" />
   </ItemGroup>
 
   <ItemGroup>

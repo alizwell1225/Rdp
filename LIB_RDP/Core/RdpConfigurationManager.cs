@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Xml.Serialization;
+using LIB_RDP.Interfaces;
 using LIB_RDP.Models;
 
 namespace LIB_RDP.Core
@@ -10,7 +11,7 @@ namespace LIB_RDP.Core
     /// <summary>
     /// RDP配置管理器，負責保存和載入連線配置
     /// </summary>
-    public class RdpConfigurationManager
+    public class RdpConfigurationManager : IRdpConfigurationManager
     {
         private static readonly Lazy<RdpConfigurationManager> _instance = 
             new Lazy<RdpConfigurationManager>(() => new RdpConfigurationManager());
