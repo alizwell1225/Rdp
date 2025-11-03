@@ -30,6 +30,20 @@ namespace GrpcClientApp
         private Button _btnScreenshot;
         private Button _btnConnect;
         private Panel _panelLeft;
+        
+        // Stress test controls
+        private GroupBox _grpStressTest;
+        private Label _lblStressType;
+        private ComboBox _cmbStressType;
+        private Label _lblStressInterval;
+        private TextBox _txtStressInterval;
+        private Label _lblStressSize;
+        private TextBox _txtStressSize;
+        private Label _lblStressIterations;
+        private TextBox _txtStressIterations;
+        private CheckBox _chkStressUnlimited;
+        private Button _btnStartStressTest;
+        private Label _lblStressStats;
 
         /// <summary>
         /// Initialize UI components. Only creates controls and sets their properties line-by-line.
@@ -57,8 +71,21 @@ namespace GrpcClientApp
             txtPort = new TextBox();
             _btnApply = new Button();
             splitContainer1 = new SplitContainer();
+            _grpStressTest = new GroupBox();
+            _lblStressType = new Label();
+            _cmbStressType = new ComboBox();
+            _lblStressInterval = new Label();
+            _txtStressInterval = new TextBox();
+            _lblStressSize = new Label();
+            _txtStressSize = new TextBox();
+            _lblStressIterations = new Label();
+            _txtStressIterations = new TextBox();
+            _chkStressUnlimited = new CheckBox();
+            _btnStartStressTest = new Button();
+            _lblStressStats = new Label();
             ((ISupportInitialize)_pic).BeginInit();
             _panelLeft.SuspendLayout();
+            _grpStressTest.SuspendLayout();
             ((ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -68,11 +95,11 @@ namespace GrpcClientApp
             // _log
             // 
             _log.Dock = DockStyle.Fill;
-            _log.Location = new Point(0, 308);
+            _log.Location = new Point(0, 498);
             _log.Multiline = true;
             _log.Name = "_log";
             _log.ScrollBars = ScrollBars.Vertical;
-            _log.Size = new Size(623, 336);
+            _log.Size = new Size(623, 146);
             _log.TabIndex = 3;
             // 
             // _pbUpload
@@ -198,6 +225,7 @@ namespace GrpcClientApp
             // _panelLeft
             // 
             _panelLeft.Controls.Add(_log);
+            _panelLeft.Controls.Add(_grpStressTest);
             _panelLeft.Controls.Add(_lblScreenshot);
             _panelLeft.Controls.Add(_pbScreenshot);
             _panelLeft.Controls.Add(_lblDownload);
@@ -214,6 +242,126 @@ namespace GrpcClientApp
             _panelLeft.Name = "_panelLeft";
             _panelLeft.Size = new Size(623, 644);
             _panelLeft.TabIndex = 0;
+            // 
+            // _grpStressTest
+            // 
+            _grpStressTest.Controls.Add(_lblStressStats);
+            _grpStressTest.Controls.Add(_btnStartStressTest);
+            _grpStressTest.Controls.Add(_chkStressUnlimited);
+            _grpStressTest.Controls.Add(_txtStressIterations);
+            _grpStressTest.Controls.Add(_lblStressIterations);
+            _grpStressTest.Controls.Add(_txtStressSize);
+            _grpStressTest.Controls.Add(_lblStressSize);
+            _grpStressTest.Controls.Add(_txtStressInterval);
+            _grpStressTest.Controls.Add(_lblStressInterval);
+            _grpStressTest.Controls.Add(_cmbStressType);
+            _grpStressTest.Controls.Add(_lblStressType);
+            _grpStressTest.Dock = DockStyle.Top;
+            _grpStressTest.Location = new Point(0, 308);
+            _grpStressTest.Name = "_grpStressTest";
+            _grpStressTest.Size = new Size(623, 190);
+            _grpStressTest.TabIndex = 12;
+            _grpStressTest.TabStop = false;
+            _grpStressTest.Text = "長時間壓力測試";
+            // 
+            // _lblStressType
+            // 
+            _lblStressType.AutoSize = true;
+            _lblStressType.Location = new Point(10, 25);
+            _lblStressType.Name = "_lblStressType";
+            _lblStressType.Size = new Size(55, 15);
+            _lblStressType.TabIndex = 0;
+            _lblStressType.Text = "測試類型";
+            // 
+            // _cmbStressType
+            // 
+            _cmbStressType.DropDownStyle = ComboBoxStyle.DropDownList;
+            _cmbStressType.Items.AddRange(new object[] { "JSON 傳送", "檔案上傳", "檔案下載", "混合測試" });
+            _cmbStressType.Location = new Point(75, 22);
+            _cmbStressType.Name = "_cmbStressType";
+            _cmbStressType.SelectedIndex = 0;
+            _cmbStressType.Size = new Size(120, 23);
+            _cmbStressType.TabIndex = 1;
+            // 
+            // _lblStressInterval
+            // 
+            _lblStressInterval.AutoSize = true;
+            _lblStressInterval.Location = new Point(210, 25);
+            _lblStressInterval.Name = "_lblStressInterval";
+            _lblStressInterval.Size = new Size(55, 15);
+            _lblStressInterval.TabIndex = 2;
+            _lblStressInterval.Text = "間隔(ms)";
+            // 
+            // _txtStressInterval
+            // 
+            _txtStressInterval.Location = new Point(275, 22);
+            _txtStressInterval.Name = "_txtStressInterval";
+            _txtStressInterval.Size = new Size(80, 23);
+            _txtStressInterval.TabIndex = 3;
+            _txtStressInterval.Text = "1000";
+            // 
+            // _lblStressSize
+            // 
+            _lblStressSize.AutoSize = true;
+            _lblStressSize.Location = new Point(370, 25);
+            _lblStressSize.Name = "_lblStressSize";
+            _lblStressSize.Size = new Size(63, 15);
+            _lblStressSize.TabIndex = 4;
+            _lblStressSize.Text = "大小(KB)";
+            // 
+            // _txtStressSize
+            // 
+            _txtStressSize.Location = new Point(440, 22);
+            _txtStressSize.Name = "_txtStressSize";
+            _txtStressSize.Size = new Size(80, 23);
+            _txtStressSize.TabIndex = 5;
+            _txtStressSize.Text = "10";
+            // 
+            // _lblStressIterations
+            // 
+            _lblStressIterations.AutoSize = true;
+            _lblStressIterations.Location = new Point(10, 60);
+            _lblStressIterations.Name = "_lblStressIterations";
+            _lblStressIterations.Size = new Size(55, 15);
+            _lblStressIterations.TabIndex = 6;
+            _lblStressIterations.Text = "執行次數";
+            // 
+            // _txtStressIterations
+            // 
+            _txtStressIterations.Location = new Point(75, 57);
+            _txtStressIterations.Name = "_txtStressIterations";
+            _txtStressIterations.Size = new Size(120, 23);
+            _txtStressIterations.TabIndex = 7;
+            _txtStressIterations.Text = "1000";
+            // 
+            // _chkStressUnlimited
+            // 
+            _chkStressUnlimited.AutoSize = true;
+            _chkStressUnlimited.Location = new Point(210, 59);
+            _chkStressUnlimited.Name = "_chkStressUnlimited";
+            _chkStressUnlimited.Size = new Size(74, 19);
+            _chkStressUnlimited.TabIndex = 8;
+            _chkStressUnlimited.Text = "無限執行";
+            _chkStressUnlimited.CheckedChanged += _chkStressUnlimited_CheckedChanged;
+            // 
+            // _btnStartStressTest
+            // 
+            _btnStartStressTest.Font = new Font("Microsoft JhengHei UI", 9F, FontStyle.Bold);
+            _btnStartStressTest.Location = new Point(10, 95);
+            _btnStartStressTest.Name = "_btnStartStressTest";
+            _btnStartStressTest.Size = new Size(603, 35);
+            _btnStartStressTest.TabIndex = 9;
+            _btnStartStressTest.Text = "開始壓測";
+            _btnStartStressTest.Click += _btnStartStressTest_Click;
+            // 
+            // _lblStressStats
+            // 
+            _lblStressStats.Location = new Point(10, 140);
+            _lblStressStats.Name = "_lblStressStats";
+            _lblStressStats.Size = new Size(603, 40);
+            _lblStressStats.TabIndex = 10;
+            _lblStressStats.Text = "執行: 0 | 成功: 0 | 失敗: 0 | 成功率: 0% | 平均: 0ms | 總時間: 00:00:00";
+            _lblStressStats.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // lblHost
             // 
@@ -292,6 +440,8 @@ namespace GrpcClientApp
             ((ISupportInitialize)_pic).EndInit();
             _panelLeft.ResumeLayout(false);
             _panelLeft.PerformLayout();
+            _grpStressTest.ResumeLayout(false);
+            _grpStressTest.PerformLayout();
             splitContainer1.Panel1.ResumeLayout(false);
             splitContainer1.Panel1.PerformLayout();
             splitContainer1.Panel2.ResumeLayout(false);

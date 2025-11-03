@@ -13,6 +13,11 @@ public partial class ServerForm
     private TextBox _txtJson;
     private Button _btnBroadcast;
     private Button _btnPushFile;
+    
+    // Server monitoring controls
+    private GroupBox _grpServerStats;
+    private Label _lblServerStats;
+    private Button _btnResetStats;
 
     private void InitializeComponent()
     {
@@ -31,7 +36,11 @@ public partial class ServerForm
         _txtJson = new TextBox();
         _txtType = new TextBox();
         splitContainer1 = new SplitContainer();
+        _grpServerStats = new GroupBox();
+        _lblServerStats = new Label();
+        _btnResetStats = new Button();
         _panelLeft.SuspendLayout();
+        _grpServerStats.SuspendLayout();
         ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
         splitContainer1.Panel1.SuspendLayout();
         splitContainer1.Panel2.SuspendLayout();
@@ -82,11 +91,11 @@ public partial class ServerForm
         // _log
         // 
         _log.Dock = DockStyle.Fill;
-        _log.Location = new Point(0, 263);
+        _log.Location = new Point(0, 373);
         _log.Multiline = true;
         _log.Name = "_log";
         _log.ScrollBars = ScrollBars.Vertical;
-        _log.Size = new Size(656, 317);
+        _log.Size = new Size(656, 207);
         _log.TabIndex = 0;
         // 
         // _btnStart
@@ -122,6 +131,7 @@ public partial class ServerForm
         // _panelLeft
         // 
         _panelLeft.Controls.Add(_log);
+        _panelLeft.Controls.Add(_grpServerStats);
         _panelLeft.Controls.Add(_btnPushFile);
         _panelLeft.Controls.Add(_btnBroadcast);
         _panelLeft.Controls.Add(_txtJson);
@@ -133,6 +143,36 @@ public partial class ServerForm
         _panelLeft.Name = "_panelLeft";
         _panelLeft.Size = new Size(656, 580);
         _panelLeft.TabIndex = 0;
+        // 
+        // _grpServerStats
+        // 
+        _grpServerStats.Controls.Add(_btnResetStats);
+        _grpServerStats.Controls.Add(_lblServerStats);
+        _grpServerStats.Dock = DockStyle.Top;
+        _grpServerStats.Location = new Point(0, 263);
+        _grpServerStats.Name = "_grpServerStats";
+        _grpServerStats.Size = new Size(656, 110);
+        _grpServerStats.TabIndex = 5;
+        _grpServerStats.TabStop = false;
+        _grpServerStats.Text = "伺服器統計資訊";
+        // 
+        // _lblServerStats
+        // 
+        _lblServerStats.Location = new Point(10, 25);
+        _lblServerStats.Name = "_lblServerStats";
+        _lblServerStats.Size = new Size(636, 40);
+        _lblServerStats.TabIndex = 0;
+        _lblServerStats.Text = "運行時間: 00:00:00 | 總請求: 0 (0/秒) | 總流量: 0 MB (0 MB/秒) | 連線數: 0";
+        _lblServerStats.TextAlign = ContentAlignment.MiddleLeft;
+        // 
+        // _btnResetStats
+        // 
+        _btnResetStats.Location = new Point(10, 70);
+        _btnResetStats.Name = "_btnResetStats";
+        _btnResetStats.Size = new Size(120, 30);
+        _btnResetStats.TabIndex = 1;
+        _btnResetStats.Text = "重置統計";
+        _btnResetStats.Click += _btnResetStats_Click;
         // 
         // _btnPushFile
         // 
@@ -207,6 +247,7 @@ public partial class ServerForm
         Text = "gRPC Server";
         _panelLeft.ResumeLayout(false);
         _panelLeft.PerformLayout();
+        _grpServerStats.ResumeLayout(false);
         splitContainer1.Panel1.ResumeLayout(false);
         splitContainer1.Panel1.PerformLayout();
         splitContainer1.Panel2.ResumeLayout(false);

@@ -1,6 +1,8 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using LIB_RPC;
@@ -13,6 +15,12 @@ namespace GrpcServerApp
     {
         private readonly IServerApi _controller;
 
+        // Stress test monitoring fields
+        private int _totalRequestsReceived = 0;
+        private int _totalBytesReceived = 0;
+        private Stopwatch _serverRuntime = new Stopwatch();
+        private System.Windows.Forms.Timer? _statsUpdateTimer;
+
         public ServerForm()
         {
             InitializeComponent();
@@ -23,7 +31,34 @@ namespace GrpcServerApp
             {
                 RefreshFiles();
                 _log.AppendText($"File added: {Path.GetFileName(path)}\r\n");
+                _totalRequestsReceived++;
+                UpdateServerStats();
             }));
+
+            // Wire additional events for monitoring
+            _controller.OnFileUploadCompleted += (clientId, fileName) => BeginInvoke(new Action(() =>
+            {
+                _totalRequestsReceived++;
+                var fileInfo = new FileInfo(Path.Combine(_controller.Config?.StorageRoot ?? "", fileName));
+                if (fileInfo.Exists)
+                    _totalBytesReceived += (int)fileInfo.Length;
+                UpdateServerStats();
+            }));
+
+            _controller.OnClientConnected += clientId => BeginInvoke(new Action(() =>
+            {
+                UpdateServerStats();
+            }));
+
+            _controller.OnClientDisconnected += clientId => BeginInvoke(new Action(() =>
+            {
+                UpdateServerStats();
+            }));
+
+            // Setup stats update timer
+            _statsUpdateTimer = new System.Windows.Forms.Timer();
+            _statsUpdateTimer.Interval = 1000; // Update every second
+            _statsUpdateTimer.Tick += (s, e) => UpdateServerStats();
         }
 
         private async Task StartAsync()
@@ -34,6 +69,13 @@ namespace GrpcServerApp
             _btnBroadcast.Enabled = true;
             _btnPushFile.Enabled = true;
             RefreshFiles();
+
+            // Start monitoring
+            _serverRuntime.Restart();
+            _statsUpdateTimer?.Start();
+            _totalRequestsReceived = 0;
+            _totalBytesReceived = 0;
+            UpdateServerStats();
         }
 
         private async Task StopAsync()
@@ -43,6 +85,40 @@ namespace GrpcServerApp
             _btnStop.Enabled = false;
             _btnBroadcast.Enabled = false;
             _btnPushFile.Enabled = false;
+
+            // Stop monitoring
+            _serverRuntime.Stop();
+            _statsUpdateTimer?.Stop();
+            UpdateServerStats();
+        }
+
+        private void UpdateServerStats()
+        {
+            var runtime = _serverRuntime.Elapsed;
+            var avgRequestsPerSec = runtime.TotalSeconds > 0 ? _totalRequestsReceived / runtime.TotalSeconds : 0;
+            var totalMB = _totalBytesReceived / (1024.0 * 1024.0);
+            var avgMBPerSec = runtime.TotalSeconds > 0 ? totalMB / runtime.TotalSeconds : 0;
+
+            _lblServerStats.Text = $"運行時間: {runtime:hh\\:mm\\:ss} | " +
+                                   $"總請求: {_totalRequestsReceived} ({avgRequestsPerSec:F2}/秒) | " +
+                                   $"總流量: {totalMB:F2} MB ({avgMBPerSec:F3} MB/秒) | " +
+                                   $"連線數: {GetConnectedClientCount()}";
+        }
+
+        private int GetConnectedClientCount()
+        {
+            // This would require tracking connected clients in the API
+            // For now, we'll just return 0 as a placeholder
+            return 0;
+        }
+
+        private void _btnResetStats_Click(object sender, EventArgs e)
+        {
+            _totalRequestsReceived = 0;
+            _totalBytesReceived = 0;
+            _serverRuntime.Restart();
+            UpdateServerStats();
+            _log.AppendText("統計資料已重置\r\n");
         }
 
         private void RefreshFiles()
