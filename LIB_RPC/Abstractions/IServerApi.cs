@@ -11,6 +11,11 @@ namespace LIB_RPC.Abstractions
         GrpcConfig Config { get; }
 
         /// <summary>
+        /// Gets whether the server is currently running and accepting connections.
+        /// </summary>
+        bool IsConnected { get; }
+
+        /// <summary>
         /// Event raised when a log line is produced.
         /// </summary>
         event Action<string>? OnLog;
