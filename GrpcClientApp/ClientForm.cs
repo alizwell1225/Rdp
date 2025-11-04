@@ -54,31 +54,60 @@ namespace GrpcClientApp
             _config ??= new GrpcConfig();
             _api ??= new GrpcClientApi(_config);
             // forward api logs to UI
-            _api.OnLog += line => BeginInvoke(new Action(() => _log.AppendText(line + Environment.NewLine)));
-            _api.OnUploadProgress += (path, percent) => BeginInvoke(new Action(() =>
+            _api.OnLog += apiOnLog;
+            _api.OnUploadProgress += apiOnUploadProgress;
+            _api.OnDownloadProgress += apiOnDownloadProgress;
+            _api.OnScreenshotProgress += apiOnScreenshotProgress;
+            _api.OnServerJson += apiOnServerJson;
+            await _api.ConnectAsync();
+            _isConnected = true;
+            UpdateUiConnectedState(true);
+        }
+
+        private void apiOnServerJson(JsonMessage env)
+        {
+            BeginInvoke(new Action(() =>
             {
-                _pbUpload.Value = (int)Math.Min(100, Math.Round(percent));
-                _lblUpload.Text = $"Upload: {percent:F2}% ({path})";
+                _log.AppendText($"[ServerPush] type={env.Type} id={env.Id} bytes={env.Json?.Length}\r\n");
             }));
-            _api.OnDownloadProgress += (path, percent) => BeginInvoke(new Action(() =>
-            {
-                _pbDownload.Value = (int)Math.Min(100, Math.Round(percent));
-                _lblDownload.Text = $"Download: {percent:F2}% ({path})";
-            }));
-            _api.OnScreenshotProgress += percent => BeginInvoke(new Action(() =>
+        }
+
+        private void apiOnScreenshotProgress(double percent)
+        {
+            BeginInvoke(new Action(() =>
             {
                 _pbScreenshot.Value = (int)Math.Min(100, Math.Round(percent));
                 _lblScreenshot.Text = $"Screenshot: {percent:F2}%";
                 if (percent >= 100) _pbScreenshot.Value = 0; // 完成後歸零方便下次
             }));
-            _api.OnServerJson += env => BeginInvoke(new Action(() =>
-            {
-                _log.AppendText($"[ServerPush] type={env.Type} id={env.Id} bytes={env.Json?.Length}\r\n");
-            }));
-            await _api.ConnectAsync();
-            _isConnected = true;
-            UpdateUiConnectedState(true);
         }
+
+        private void apiOnDownloadProgress(string path, double percent)
+        {
+            BeginInvoke(new Action(() =>
+            {
+                _pbDownload.Value = (int)Math.Min(100, Math.Round(percent));
+                _lblDownload.Text = $"Download: {percent:F2}% ({path})";
+            }));
+        }
+
+
+        private void apiOnUploadProgress(string path, double percent)
+        {
+            BeginInvoke(new Action(() =>
+            {
+                _pbUpload.Value = (int)Math.Min(100, Math.Round(percent));
+                _lblUpload.Text = $"Upload: {percent:F2}% ({path})";
+            }));
+        }
+
+
+        private void apiOnLog(string line)
+        {
+            BeginInvoke(new Action(() => _log.AppendText(line + Environment.NewLine)));
+        }
+
+
 
         private void UpdateUiConnectedState(bool connected)
         {
@@ -240,9 +269,9 @@ namespace GrpcClientApp
             }
 
             // Parse parameters
-            if (!int.TryParse(_txtStressInterval.Text, out var intervalMs) || intervalMs < 100)
+            if (!int.TryParse(_txtStressInterval.Text, out var intervalMs) || intervalMs < 10)
             {
-                MessageBox.Show("間隔時間必須 >= 100ms", "錯誤", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("間隔時間必須 >= 10ms", "錯誤", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -343,6 +372,12 @@ namespace GrpcClientApp
                     _stressTestFailures++;
                     _log.AppendText($"[第 {iteration} 次失敗] {ex.Message}\r\n");
                     UpdateStressTestStats();
+                    try
+                    {
+                        await DisconnectAsyncUI();
+                        await ConnectAsync();
+                    }
+                    finally { }
                 }
 
                 // Wait before next iteration

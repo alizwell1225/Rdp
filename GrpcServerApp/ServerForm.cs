@@ -26,17 +26,41 @@ namespace GrpcServerApp
             InitializeComponent();
             _controller = new GrpcServerApi();
             // wire controller events
-            _controller.OnLog += line => BeginInvoke(new Action(() => _log.AppendText(line + Environment.NewLine)));
-            _controller.OnFileAdded += path => BeginInvoke(new Action(() =>
+            _controller.OnLog += ControllerOnLog;
+            _controller.OnFileAdded += controllerOnOnFileAdded;
+
+            // Wire additional events for monitoring
+            _controller.OnFileUploadCompleted += ControllerOnFileUploadCompleted;
+
+            _controller.OnClientConnected += ControllerOnClientConnected;
+            _controller.OnClientDisconnected += ControllerOnClientDisconnected;
+
+            // Setup stats update timer
+            _statsUpdateTimer = new System.Windows.Forms.Timer();
+            _statsUpdateTimer.Interval = 1000; // Update every second
+            _statsUpdateTimer.Tick += StatsUpdateTimerOnTick;
+        }
+
+        private void ControllerOnLog(string line)
+        {
+            BeginInvoke(new Action(() => _log.AppendText(line + Environment.NewLine)));
+        }
+
+
+        private void controllerOnOnFileAdded(string path)
+        {
+            BeginInvoke(new Action(() =>
             {
                 RefreshFiles();
                 _log.AppendText($"File added: {Path.GetFileName(path)}\r\n");
                 _totalRequestsReceived++;
                 UpdateServerStats();
             }));
+        }
 
-            // Wire additional events for monitoring
-            _controller.OnFileUploadCompleted += (clientId, fileName) => BeginInvoke(new Action(() =>
+        private void ControllerOnFileUploadCompleted(string fileName)
+        {
+            BeginInvoke(new Action(() =>
             {
                 _totalRequestsReceived++;
                 var fileInfo = new FileInfo(Path.Combine(_controller.Config?.StorageRoot ?? "", fileName));
@@ -44,22 +68,30 @@ namespace GrpcServerApp
                     _totalBytesReceived += (int)fileInfo.Length;
                 UpdateServerStats();
             }));
-
-            _controller.OnClientConnected += clientId => BeginInvoke(new Action(() =>
-            {
-                UpdateServerStats();
-            }));
-
-            _controller.OnClientDisconnected += clientId => BeginInvoke(new Action(() =>
-            {
-                UpdateServerStats();
-            }));
-
-            // Setup stats update timer
-            _statsUpdateTimer = new System.Windows.Forms.Timer();
-            _statsUpdateTimer.Interval = 1000; // Update every second
-            _statsUpdateTimer.Tick += (s, e) => UpdateServerStats();
         }
+
+        private void StatsUpdateTimerOnTick(object? sender, EventArgs e)
+        {
+            UpdateServerStats();
+        }
+
+        private void ControllerOnClientConnected(string obj)
+        {
+            BeginInvoke(new Action(() =>
+            {
+                UpdateServerStats();
+            }));
+        }
+
+
+        private void ControllerOnClientDisconnected(string obj)
+        {
+            BeginInvoke(new Action(() =>
+            {
+                UpdateServerStats();
+            }));
+        }
+
 
         private async Task StartAsync()
         {
