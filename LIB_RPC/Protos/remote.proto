@@ -58,6 +58,27 @@ message ListFilesResponse {
   repeated string files = 1;
 }
 
+message BroadcastRequest {
+  string type = 1;
+  string json = 2;
+}
+
+message BroadcastResponse {
+  bool success = 1;
+  int32 clientsReached = 2;  // Number of clients that acknowledged receipt
+  string error = 3;
+}
+
+message PushFileRequest {
+  string filePath = 1;  // Path to file on server
+}
+
+message PushFileResponse {
+  bool success = 1;
+  int32 clientsReached = 2;  // Number of clients that received the file
+  string error = 3;
+}
+
 service RemoteChannel {
   // Bidirectional JSON messaging
   rpc JsonStream(stream JsonEnvelope) returns (stream JsonAck);
@@ -79,4 +100,10 @@ service RemoteChannel {
 
   // List files available on server storage root (unary)
   rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
+  
+  // NEW: Unary broadcast with acknowledgment (for guaranteed delivery)
+  rpc BroadcastWithAck(BroadcastRequest) returns (BroadcastResponse);
+  
+  // NEW: Unary file push with acknowledgment (for guaranteed delivery)
+  rpc PushFileWithAck(PushFileRequest) returns (PushFileResponse);
 }
