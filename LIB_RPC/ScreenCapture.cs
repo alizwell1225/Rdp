@@ -8,9 +8,12 @@ namespace LIB_RPC
     /// <summary>
     /// Windows-specific screen capture implementation.
     /// Uses System.Drawing and System.Windows.Forms for screen capture.
+    /// Thread-safe with lock to prevent concurrent capture issues.
     /// </summary>
     public class ScreenCapture : IScreenCapture
     {
+        private readonly object _captureLock = new object();
+
         public byte[] CapturePrimaryPng()
         {
             // Check if we're on Windows
@@ -19,28 +22,32 @@ namespace LIB_RPC
                 throw new PlatformNotSupportedException("Screen capture is only supported on Windows platforms.");
             }
 
-            try
+            // Use lock to prevent concurrent screen captures which can cause GDI+ errors
+            lock (_captureLock)
             {
-                // Get primary screen bounds
-                var bounds = Screen.PrimaryScreen!.Bounds;
-                
-                // Create bitmap of screen size
-                using var bmp = new Bitmap(bounds.Width, bounds.Height);
-                
-                // Copy screen content to bitmap
-                using (var g = Graphics.FromImage(bmp))
+                try
                 {
-                    g.CopyFromScreen(bounds.Location, Point.Empty, bounds.Size);
+                    // Get primary screen bounds
+                    var bounds = Screen.PrimaryScreen!.Bounds;
+                    
+                    // Create bitmap of screen size
+                    using var bmp = new Bitmap(bounds.Width, bounds.Height);
+                    
+                    // Copy screen content to bitmap
+                    using (var g = Graphics.FromImage(bmp))
+                    {
+                        g.CopyFromScreen(bounds.Location, Point.Empty, bounds.Size);
+                    }
+                    
+                    // Save to PNG format in memory
+                    using var ms = new MemoryStream();
+                    bmp.Save(ms, ImageFormat.Png);
+                    return ms.ToArray();
                 }
-                
-                // Save to PNG format in memory
-                using var ms = new MemoryStream();
-                bmp.Save(ms, ImageFormat.Png);
-                return ms.ToArray();
-            }
-            catch (Exception ex) when (ex is not PlatformNotSupportedException)
-            {
-                throw new InvalidOperationException($"Screen capture failed: {ex.Message}", ex);
+                catch (Exception ex) when (ex is not PlatformNotSupportedException)
+                {
+                    throw new InvalidOperationException($"Screen capture failed: {ex.Message}", ex);
+                }
             }
         }
     }

@@ -190,11 +190,22 @@ namespace LIB_RPC
             var svc = _host.Services.GetService(typeof(RemoteChannelService)) as RemoteChannelService
                       ?? throw new InvalidOperationException("RemoteChannelService not resolved");
             
+            // Check if there are any connected clients before attempting to broadcast
+            var totalClients = svc.GetDuplexClientCount();
+            if (totalClients == 0)
+            {
+                var errorMsg = "No clients connected to receive broadcast";
+                _logger.Warn($"Broadcast JSON failed: {errorMsg}");
+                BroadcastFailed?.Invoke(this, (type, errorMsg));
+                return;
+            }
+            
             try
             {
+                _logger.Info($"Broadcasting JSON: type={type} to {totalClients} clients");
                 var clientCount = await svc.BroadcastJsonAsync(type, json, ct);
                 BroadcastSent?.Invoke(this, (type, clientCount));
-                _logger.Info($"Broadcast sent: type={type}, clients={clientCount}");
+                _logger.Info($"Broadcast sent: type={type}, succeeded={clientCount}/{totalClients}");
             }
             catch (Exception ex)
             {
@@ -210,10 +221,20 @@ namespace LIB_RPC
             var svc = _host.Services.GetService(typeof(RemoteChannelService)) as RemoteChannelService
                       ?? throw new InvalidOperationException("RemoteChannelService not resolved");
             
+            // Check if there are any connected file push clients before attempting to push
+            var totalClients = svc.GetFilePushClientCount();
+            if (totalClients == 0)
+            {
+                var errorMsg = "No clients connected to receive file push";
+                _logger.Warn($"File push failed: {errorMsg}");
+                FilePushFailed?.Invoke(this, (filePath, errorMsg));
+                return;
+            }
+            
             try
             {
                 FilePushStarted?.Invoke(this, filePath);
-                _logger.Info($"File push started: {filePath}");
+                _logger.Info($"Pushing file: {filePath} to {totalClients} clients");
                 
                 await svc.BroadcastFileAsync(filePath, ct);
                 
