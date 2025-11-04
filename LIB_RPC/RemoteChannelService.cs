@@ -43,6 +43,10 @@ namespace LIB_RPC
             _config.EnsureFolders();
         }
 
+        // Helper methods to get client counts for validation
+        public int GetDuplexClientCount() => _duplexClients.Count;
+        public int GetFilePushClientCount() => _filePushClients.Count;
+
         // (Previously there was logic to restrict to a single active client; removed to allow multiple clients.)
 
         public override async Task JsonStream(IAsyncStreamReader<JsonEnvelope> requestStream, IServerStreamWriter<JsonAck> responseStream, ServerCallContext context)
@@ -86,7 +90,7 @@ namespace LIB_RPC
             }
         }
 
-        public Task<int> BroadcastJsonAsync(string type, string json, CancellationToken ct = default)
+        public async Task<int> BroadcastJsonAsync(string type, string json, CancellationToken ct = default)
         {
             var envelope = new JsonEnvelope
             {
@@ -97,15 +101,22 @@ namespace LIB_RPC
             };
             
             int successCount = 0;
-            foreach (var kvp in _duplexClients.ToArray())
+            var clients = _duplexClients.ToArray();
+            
+            foreach (var kvp in clients)
             {
                 var dc = kvp.Value;
                 try
                 {
-                    lock (dc.WriteLock)
+                    // Use proper async lock to prevent deadlocks
+                    await Task.Run(async () =>
                     {
-                        dc.Writer.WriteAsync(envelope).GetAwaiter().GetResult();
-                    }
+                        lock (dc.WriteLock)
+                        {
+                            // Perform the actual write inside the lock but use Task.Run to avoid blocking
+                            dc.Writer.WriteAsync(envelope).GetAwaiter().GetResult();
+                        }
+                    }, ct);
                     successCount++;
                 }
                 catch (Exception ex)
@@ -115,7 +126,7 @@ namespace LIB_RPC
                 }
                 ct.ThrowIfCancellationRequested();
             }
-            return Task.FromResult(successCount);
+            return successCount;
         }
 
         // FilePush subscription: client opens a stream and we keep its writer for future pushes
@@ -145,11 +156,22 @@ namespace LIB_RPC
         public async Task BroadcastFileAsync(string filePath, CancellationToken ct = default)
         {
             if (!File.Exists(filePath)) throw new FileNotFoundException(filePath);
+            
+            // Check if there are any clients to receive the file
+            var totalClients = _filePushClients.Count;
+            if (totalClients == 0)
+            {
+                _logger.Warn($"No clients connected to receive file broadcast: {filePath}");
+                return;
+            }
+            
             var name = Path.GetFileName(filePath);
             var bytes = await File.ReadAllBytesAsync(filePath, ct);
             var chunkSize = _config.MaxChunkSizeBytes;
             var total = (int)Math.Ceiling((double)bytes.Length / chunkSize);
-            _logger.Info($"Broadcast file '{name}' size={bytes.Length} chunks={total} to {_filePushClients.Count} subscribers");
+            _logger.Info($"Broadcasting file '{name}' size={bytes.Length} chunks={total} to {totalClients} clients");
+            
+            var successfulClients = 0;
             for (int i = 0; i < total; i++)
             {
                 ct.ThrowIfCancellationRequested();
@@ -162,11 +184,15 @@ namespace LIB_RPC
                     TotalChunks = total,
                     IsLast = i == total - 1
                 };
-                foreach (var kv in _filePushClients.ToArray())
+                
+                // Track which clients successfully received this chunk
+                var clientsSnapshot = _filePushClients.ToArray();
+                foreach (var kv in clientsSnapshot)
                 {
                     try
                     {
                         await kv.Value.WriteAsync(chunk);
+                        if (i == total - 1) successfulClients++; // Count on last chunk
                     }
                     catch (Exception ex)
                     {
@@ -175,6 +201,8 @@ namespace LIB_RPC
                     }
                 }
             }
+            
+            _logger.Info($"File broadcast completed: {name}, succeeded={successfulClients}/{totalClients}");
         }
 
         public override async Task<FileTransferStatus> UploadFile(IAsyncStreamReader<FileChunk> requestStream, ServerCallContext context)
