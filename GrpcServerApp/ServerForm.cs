@@ -261,9 +261,9 @@ namespace GrpcServerApp
             }
 
             // Parse parameters
-            if (!int.TryParse(_txtStressInterval.Text, out var intervalMs) || intervalMs < 100)
+            if (!int.TryParse(_txtStressInterval.Text, out var intervalMs) || intervalMs < 10)
             {
-                MessageBox.Show("間隔時間必須 >= 100ms", "錯誤", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("間隔時間必須 >= 10ms", "錯誤", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
