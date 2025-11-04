@@ -374,7 +374,29 @@ namespace GrpcServerApp
             var data = new string('X', sizeKB * 1024);
             var json = $"{{\"data\":\"{data}\",\"timestamp\":\"{DateTime.Now:O}\"}}";
 
-            await _controller.BroadcastJsonAsync("stress_test", json);
+            // Check if ACK mode is enabled
+            bool useAckMode = false;
+            int retryCount = 0;
+            this.Invoke(() => 
+            {
+                useAckMode = _chkUseAckMode.Checked;
+                retryCount = (int)_numRetryCount.Value;
+            });
+
+            if (useAckMode)
+            {
+                // Use ACK mode with retry
+                var result = await _controller.BroadcastWithAckAsync("stress_test", json, retryCount, ct);
+                if (!result.Success)
+                {
+                    throw new Exception($"ACK mode failed: {result.Error}");
+                }
+            }
+            else
+            {
+                // Use streaming mode (existing)
+                await _controller.BroadcastJsonAsync("stress_test", json);
+            }
         }
 
         private async Task StressTestPushFileAsync(int sizeKB, CancellationToken ct)
@@ -388,8 +410,37 @@ namespace GrpcServerApp
                 new Random().NextBytes(data);
                 await File.WriteAllBytesAsync(tempPath, data, ct);
 
-                // Push file to clients
-                await _controller.PushFileAsync(tempPath);
+                // Copy to server storage
+                var storageRoot = Path.Combine(Environment.CurrentDirectory, "ServerFiles");
+                if (!Directory.Exists(storageRoot))
+                    Directory.CreateDirectory(storageRoot);
+                var fileName = Path.GetFileName(tempPath);
+                var storagePath = Path.Combine(storageRoot, fileName);
+                File.Copy(tempPath, storagePath, true);
+
+                // Check if ACK mode is enabled
+                bool useAckMode = false;
+                int retryCount = 0;
+                this.Invoke(() => 
+                {
+                    useAckMode = _chkUseAckMode.Checked;
+                    retryCount = (int)_numRetryCount.Value;
+                });
+
+                if (useAckMode)
+                {
+                    // Use ACK mode with retry
+                    var result = await _controller.PushFileWithAckAsync(fileName, retryCount, ct);
+                    if (!result.Success)
+                    {
+                        throw new Exception($"ACK mode failed: {result.Error}");
+                    }
+                }
+                else
+                {
+                    // Use streaming mode (existing)
+                    await _controller.PushFileAsync(fileName);
+                }
             }
             finally
             {

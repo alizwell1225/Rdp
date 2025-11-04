@@ -106,9 +106,28 @@ namespace LIB_RPC.Abstractions
         Task BroadcastJsonAsync(string type, string body);
 
         /// <summary>
+        /// Broadcasts a JSON message to all connected clients with acknowledgment and retry support.
+        /// </summary>
+        /// <param name="type">Message type</param>
+        /// <param name="body">JSON body content</param>
+        /// <param name="retryCount">Number of retries (0 = no retry)</param>
+        /// <param name="ct">Cancellation token</param>
+        /// <returns>Tuple with success status, number of clients reached, and error message</returns>
+        Task<(bool Success, int ClientsReached, string Error)> BroadcastWithAckAsync(string type, string body, int retryCount = 0, CancellationToken ct = default);
+
+        /// <summary>
         /// Pushes a file to all connected clients.
         /// </summary>
         Task PushFileAsync(string path);
+
+        /// <summary>
+        /// Pushes a file to all connected clients with acknowledgment and retry support.
+        /// </summary>
+        /// <param name="path">File path</param>
+        /// <param name="retryCount">Number of retries (0 = no retry)</param>
+        /// <param name="ct">Cancellation token</param>
+        /// <returns>Tuple with success status, number of clients reached, and error message</returns>
+        Task<(bool Success, int ClientsReached, string Error)> PushFileWithAckAsync(string path, int retryCount = 0, CancellationToken ct = default);
 
         /// <summary>
         /// Gets the list of files in the server storage.

@@ -349,5 +349,182 @@ namespace LIB_RPC
         }
 
         // screen capture moved to ScreenCapture utility
+
+        /// <summary>
+        /// Broadcast JSON with acknowledgment (Unary RPC)
+        /// </summary>
+        public override async Task<BroadcastResponse> BroadcastWithAck(
+            BroadcastRequest request, 
+            ServerCallContext context)
+        {
+            try
+            {
+                var clients = GetDuplexClientsSnapshot();
+                if (clients.Count == 0)
+                {
+                    return new BroadcastResponse
+                    {
+                        Success = false,
+                        ClientsReached = 0,
+                        Error = "No clients connected"
+                    };
+                }
+
+                var envelope = new JsonEnvelope
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    Type = request.Type,
+                    Json = request.Json,
+                    Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                };
+
+                int successCount = 0;
+                var tasks = new List<Task>();
+
+                foreach (var kvp in clients)
+                {
+                    var dc = kvp.Value;
+                    tasks.Add(Task.Run(async () =>
+                    {
+                        try
+                        {
+                            lock (dc.WriteLock)
+                            {
+                                dc.Writer.WriteAsync(envelope).GetAwaiter().GetResult();
+                            }
+                            Interlocked.Increment(ref successCount);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Warn($"[BroadcastWithAck] Failed to send to client {kvp.Key}: {ex.Message}");
+                        }
+                    }));
+                }
+
+                await Task.WhenAll(tasks);
+
+                _logger.Info($"[BroadcastWithAck] Sent to {successCount}/{clients.Count} clients");
+
+                return new BroadcastResponse
+                {
+                    Success = successCount > 0,
+                    ClientsReached = successCount,
+                    Error = successCount == 0 ? "All clients failed to receive" : string.Empty
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"[BroadcastWithAck] Error: {ex.Message}");
+                return new BroadcastResponse
+                {
+                    Success = false,
+                    ClientsReached = 0,
+                    Error = ex.Message
+                };
+            }
+        }
+
+        /// <summary>
+        /// Push file with acknowledgment (Unary RPC)
+        /// </summary>
+        public override async Task<PushFileResponse> PushFileWithAck(
+            PushFileRequest request, 
+            ServerCallContext context)
+        {
+            try
+            {
+                var clients = GetFilePushClientsSnapshot();
+                if (clients.Count == 0)
+                {
+                    return new PushFileResponse
+                    {
+                        Success = false,
+                        ClientsReached = 0,
+                        Error = "No clients connected for file push"
+                    };
+                }
+
+                var target = Path.Combine(_config.StorageRoot, Path.GetFileName(request.FilePath));
+                if (!File.Exists(target))
+                {
+                    return new PushFileResponse
+                    {
+                        Success = false,
+                        ClientsReached = 0,
+                        Error = $"File not found: {request.FilePath}"
+                    };
+                }
+
+                var fileBytes = await File.ReadAllBytesAsync(target);
+                var fileName = Path.GetFileName(request.FilePath);
+                var chunkSize = _config.MaxChunkSizeBytes;
+                var totalChunks = (int)Math.Ceiling((double)fileBytes.Length / chunkSize);
+
+                int successCount = 0;
+                var tasks = new List<Task>();
+
+                foreach (var kvp in clients)
+                {
+                    var writer = kvp.Value;
+                    tasks.Add(Task.Run(async () =>
+                    {
+                        try
+                        {
+                            // Send file in chunks
+                            for (int i = 0; i < totalChunks; i++)
+                            {
+                                var slice = fileBytes.AsMemory(i * chunkSize, Math.Min(chunkSize, fileBytes.Length - i * chunkSize));
+                                await writer.WriteAsync(new FileChunk
+                                {
+                                    Path = fileName,
+                                    Data = Google.Protobuf.ByteString.CopyFrom(slice.Span),
+                                    Index = i,
+                                    TotalChunks = totalChunks,
+                                    IsLast = i == totalChunks - 1
+                                });
+                            }
+                            Interlocked.Increment(ref successCount);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Warn($"[PushFileWithAck] Failed to send to client {kvp.Key}: {ex.Message}");
+                        }
+                    }));
+                }
+
+                await Task.WhenAll(tasks);
+
+                _logger.Info($"[PushFileWithAck] Sent file '{fileName}' to {successCount}/{clients.Count} clients");
+
+                return new PushFileResponse
+                {
+                    Success = successCount > 0,
+                    ClientsReached = successCount,
+                    Error = successCount == 0 ? "All clients failed to receive file" : string.Empty
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"[PushFileWithAck] Error: {ex.Message}");
+                return new PushFileResponse
+                {
+                    Success = false,
+                    ClientsReached = 0,
+                    Error = ex.Message
+                };
+            }
+        }
+
+        // Helper method to get duplex clients snapshot
+        private Dictionary<string, DuplexClient> GetDuplexClientsSnapshot()
+        {
+            return _duplexClients.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+        }
+
+        // Helper method to get file push clients snapshot
+        private Dictionary<string, IServerStreamWriter<FileChunk>> GetFilePushClientsSnapshot()
+        {
+            return _filePushClients.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+        }
     }
 }

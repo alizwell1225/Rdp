@@ -249,6 +249,148 @@ namespace LIB_RPC
             }
         }
 
+        /// <summary>
+        /// Broadcast JSON with ACK and retry support
+        /// </summary>
+        public async Task<(bool Success, int ClientsReached, string Error)> BroadcastWithAckAsync(
+            string type, 
+            string json, 
+            int retryCount = 0,
+            CancellationToken ct = default)
+        {
+            if (_host == null) throw new InvalidOperationException("Server not started");
+            var svc = _host.Services.GetService(typeof(RemoteChannelService)) as RemoteChannelService
+                      ?? throw new InvalidOperationException("RemoteChannelService not resolved");
+
+            int attempt = 0;
+            int maxAttempts = retryCount + 1; // Initial attempt + retries
+
+            while (attempt < maxAttempts)
+            {
+                try
+                {
+                    var request = new RdpGrpc.Proto.BroadcastRequest
+                    {
+                        Type = type,
+                        Json = json
+                    };
+
+                    var response = await svc.BroadcastWithAck(request, null!);
+
+                    if (response.Success && response.ClientsReached > 0)
+                    {
+                        BroadcastSent?.Invoke(this, (type, response.ClientsReached));
+                        _logger.Info($"[BroadcastWithAck] Success: {response.ClientsReached} clients reached (Attempt {attempt + 1}/{maxAttempts})");
+                        return (true, response.ClientsReached, string.Empty);
+                    }
+                    else if (attempt < maxAttempts - 1)
+                    {
+                        // Not last attempt, retry
+                        int delayMs = (int)Math.Pow(2, attempt) * 100; // Exponential backoff: 100ms, 200ms, 400ms...
+                        _logger.Info($"[BroadcastWithAck] Attempt {attempt + 1}/{maxAttempts} failed: {response.Error}. Retrying in {delayMs}ms...");
+                        await Task.Delay(delayMs, ct);
+                    }
+                    else
+                    {
+                        // Last attempt failed
+                        BroadcastFailed?.Invoke(this, (type, response.Error));
+                        _logger.Warn($"[BroadcastWithAck] Failed after {maxAttempts} attempts: {response.Error}");
+                        return (false, 0, response.Error);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (attempt < maxAttempts - 1)
+                    {
+                        int delayMs = (int)Math.Pow(2, attempt) * 100;
+                        _logger.Info($"[BroadcastWithAck] Attempt {attempt + 1}/{maxAttempts} exception: {ex.Message}. Retrying in {delayMs}ms...");
+                        await Task.Delay(delayMs, ct);
+                    }
+                    else
+                    {
+                        BroadcastFailed?.Invoke(this, (type, ex.Message));
+                        _logger.Error($"[BroadcastWithAck] Exception after {maxAttempts} attempts: {ex.Message}");
+                        return (false, 0, ex.Message);
+                    }
+                }
+
+                attempt++;
+                ct.ThrowIfCancellationRequested();
+            }
+
+            return (false, 0, "Maximum retry attempts exceeded");
+        }
+
+        /// <summary>
+        /// Push file with ACK and retry support
+        /// </summary>
+        public async Task<(bool Success, int ClientsReached, string Error)> PushFileWithAckAsync(
+            string filePath, 
+            int retryCount = 0,
+            CancellationToken ct = default)
+        {
+            if (_host == null) throw new InvalidOperationException("Server not started");
+            var svc = _host.Services.GetService(typeof(RemoteChannelService)) as RemoteChannelService
+                      ?? throw new InvalidOperationException("RemoteChannelService not resolved");
+
+            int attempt = 0;
+            int maxAttempts = retryCount + 1; // Initial attempt + retries
+
+            while (attempt < maxAttempts)
+            {
+                try
+                {
+                    var request = new RdpGrpc.Proto.PushFileRequest
+                    {
+                        FilePath = Path.GetFileName(filePath)
+                    };
+
+                    var response = await svc.PushFileWithAck(request, null!);
+
+                    if (response.Success && response.ClientsReached > 0)
+                    {
+                        FilePushCompleted?.Invoke(this, filePath);
+                        _logger.Info($"[PushFileWithAck] Success: {response.ClientsReached} clients reached (Attempt {attempt + 1}/{maxAttempts})");
+                        return (true, response.ClientsReached, string.Empty);
+                    }
+                    else if (attempt < maxAttempts - 1)
+                    {
+                        // Not last attempt, retry
+                        int delayMs = (int)Math.Pow(2, attempt) * 100; // Exponential backoff
+                        _logger.Info($"[PushFileWithAck] Attempt {attempt + 1}/{maxAttempts} failed: {response.Error}. Retrying in {delayMs}ms...");
+                        await Task.Delay(delayMs, ct);
+                    }
+                    else
+                    {
+                        // Last attempt failed
+                        FilePushFailed?.Invoke(this, (filePath, response.Error));
+                        _logger.Warn($"[PushFileWithAck] Failed after {maxAttempts} attempts: {response.Error}");
+                        return (false, 0, response.Error);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (attempt < maxAttempts - 1)
+                    {
+                        int delayMs = (int)Math.Pow(2, attempt) * 100;
+                        _logger.Info($"[PushFileWithAck] Attempt {attempt + 1}/{maxAttempts} exception: {ex.Message}. Retrying in {delayMs}ms...");
+                        await Task.Delay(delayMs, ct);
+                    }
+                    else
+                    {
+                        FilePushFailed?.Invoke(this, (filePath, ex.Message));
+                        _logger.Error($"[PushFileWithAck] Exception after {maxAttempts} attempts: {ex.Message}");
+                        return (false, 0, ex.Message);
+                    }
+                }
+
+                attempt++;
+                ct.ThrowIfCancellationRequested();
+            }
+
+            return (false, 0, "Maximum retry attempts exceeded");
+        }
+
         public async ValueTask DisposeAsync()
         {
             await StopAsync();

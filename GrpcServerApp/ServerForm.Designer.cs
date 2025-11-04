@@ -26,6 +26,8 @@ public partial class ServerForm
     private TextBox _txtStressSize;
     private TextBox _txtStressIterations;
     private CheckBox _chkStressUnlimited;
+    private NumericUpDown _numRetryCount;
+    private CheckBox _chkUseAckMode;
     private Button _btnStartStressTest;
     private Label _lblStressStats;
 
@@ -55,6 +57,8 @@ public partial class ServerForm
         _txtStressSize = new TextBox();
         _txtStressIterations = new TextBox();
         _chkStressUnlimited = new CheckBox();
+        _numRetryCount = new NumericUpDown();
+        _chkUseAckMode = new CheckBox();
         _btnStartStressTest = new Button();
         _lblStressStats = new Label();
         _panelLeft.SuspendLayout();
@@ -198,6 +202,8 @@ public partial class ServerForm
         // 
         _grpStressTest.Controls.Add(_lblStressStats);
         _grpStressTest.Controls.Add(_btnStartStressTest);
+        _grpStressTest.Controls.Add(_chkUseAckMode);
+        _grpStressTest.Controls.Add(_numRetryCount);
         _grpStressTest.Controls.Add(_chkStressUnlimited);
         _grpStressTest.Controls.Add(_txtStressIterations);
         _grpStressTest.Controls.Add(_txtStressSize);
@@ -255,6 +261,36 @@ public partial class ServerForm
         _chkStressUnlimited.Size = new Size(90, 23);
         _chkStressUnlimited.TabIndex = 4;
         _chkStressUnlimited.Text = "無限制";
+        // 
+        // _numRetryCount
+        // 
+        _numRetryCount.Location = new Point(170, 60);
+        _numRetryCount.Maximum = 10;
+        _numRetryCount.Minimum = 0;
+        _numRetryCount.Name = "_numRetryCount";
+        _numRetryCount.Size = new Size(100, 23);
+        _numRetryCount.TabIndex = 7;
+        _numRetryCount.Value = 0;
+        _numRetryCount.BorderStyle = BorderStyle.FixedSingle;
+        _numRetryCount.TextAlign = HorizontalAlignment.Center;
+        // Create label for retry count
+        var lblRetry = new Label();
+        lblRetry.Location = new Point(170, 43);
+        lblRetry.Name = "lblRetryCount";
+        lblRetry.Size = new Size(100, 15);
+        lblRetry.TabIndex = 8;
+        lblRetry.Text = "重試次數";
+        lblRetry.TextAlign = ContentAlignment.MiddleCenter;
+        _grpStressTest.Controls.Add(lblRetry);
+        // 
+        // _chkUseAckMode
+        // 
+        _chkUseAckMode.Location = new Point(280, 60);
+        _chkUseAckMode.Name = "_chkUseAckMode";
+        _chkUseAckMode.Size = new Size(150, 23);
+        _chkUseAckMode.TabIndex = 9;
+        _chkUseAckMode.Text = "使用確認模式";
+        _chkUseAckMode.Checked = false;
         // 
         // _btnStartStressTest
         // 

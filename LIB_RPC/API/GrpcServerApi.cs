@@ -196,6 +196,20 @@ namespace LIB_RPC.API
         }
 
         /// <summary>
+        /// Broadcasts a JSON message to all connected clients with acknowledgment and retry support.
+        /// </summary>
+        /// <param name="type">The message type/category.</param>
+        /// <param name="body">The JSON message body.</param>
+        /// <param name="retryCount">Number of retries (0 = no retry).</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>Tuple with success status, number of clients reached, and error message.</returns>
+        public async Task<(bool Success, int ClientsReached, string Error)> BroadcastWithAckAsync(string type, string body, int retryCount = 0, CancellationToken ct = default)
+        {
+            if (_host == null) throw new InvalidOperationException("Host not started");
+            return await _host.BroadcastWithAckAsync(type, body, retryCount, ct);
+        }
+
+        /// <summary>
         /// Pushes a file to all connected clients.
         /// </summary>
         /// <param name="path">The path to the file to push.</param>
@@ -204,6 +218,19 @@ namespace LIB_RPC.API
         {
             if (_host == null) throw new InvalidOperationException("Host not started");
             await _host.PushFileAsync(path);
+        }
+
+        /// <summary>
+        /// Pushes a file to all connected clients with acknowledgment and retry support.
+        /// </summary>
+        /// <param name="path">The path to the file to push.</param>
+        /// <param name="retryCount">Number of retries (0 = no retry).</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>Tuple with success status, number of clients reached, and error message.</returns>
+        public async Task<(bool Success, int ClientsReached, string Error)> PushFileWithAckAsync(string path, int retryCount = 0, CancellationToken ct = default)
+        {
+            if (_host == null) throw new InvalidOperationException("Host not started");
+            return await _host.PushFileWithAckAsync(path, retryCount, ct);
         }
 
         /// <summary>
