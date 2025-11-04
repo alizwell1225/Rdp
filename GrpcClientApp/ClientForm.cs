@@ -59,9 +59,18 @@ namespace GrpcClientApp
             _api.OnDownloadProgress += apiOnDownloadProgress;
             _api.OnScreenshotProgress += apiOnScreenshotProgress;
             _api.OnServerJson += apiOnServerJson;
+            _api.OnServerFileCompleted += apiOnServerFileCompleted;
             await _api.ConnectAsync();
             _isConnected = true;
             UpdateUiConnectedState(true);
+        }
+
+        private void apiOnServerFileCompleted(string path)
+        {
+            BeginInvoke(new Action(() =>
+            {
+                _log.AppendText($"[Recive] FIle Path={path}\r\n");
+            }));
         }
 
         private void apiOnServerJson(JsonMessage env)

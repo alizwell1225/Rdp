@@ -138,15 +138,7 @@ namespace GrpcServerApp
 
             _lblServerStats.Text = $"運行時間: {runtime:hh\\:mm\\:ss} | " +
                                    $"總請求: {_totalRequestsReceived} ({avgRequestsPerSec:F2}/秒) | " +
-                                   $"總流量: {totalMB:F2} MB ({avgMBPerSec:F3} MB/秒) | " +
-                                   $"連線數: {GetConnectedClientCount()}";
-        }
-
-        private int GetConnectedClientCount()
-        {
-            // This would require tracking connected clients in the API
-            // For now, we'll just return 0 as a placeholder
-            return 0;
+                                   $"總流量: {totalMB:F2} MB ({avgMBPerSec:F3} MB/秒) | ";
         }
 
         private void _btnResetStats_Click(object sender, EventArgs e)
@@ -171,14 +163,22 @@ namespace GrpcServerApp
             }
         }
 
-        private async Task BroadcastAsync()
+        private async Task BroadcastAsync(string type,string body,bool ackFlag=true)
         {
             try
             {
-                var type = string.IsNullOrWhiteSpace(_txtType.Text) ? "broadcast" : _txtType.Text.Trim();
-                var body = string.IsNullOrWhiteSpace(_txtJson.Text) ? "{}" : _txtJson.Text;
-                await _controller.BroadcastJsonAsync(type, body);
-                _log.AppendText($"Broadcast sent type={type}\r\n");
+                if (ackFlag)
+                {
+                    var result = await _controller.BroadcastWithAckAsync("stress_test", body);//接收ack
+                    if (!result.Success)
+                    {
+                        throw new Exception($"ACK mode failed: {result.Error}");
+                    }
+                }
+                else
+                {
+                    _log.AppendText($"Broadcast sent type={type}\r\n");
+                }
             }
             catch (Exception ex)
             {
@@ -186,14 +186,25 @@ namespace GrpcServerApp
             }
         }
 
-        private async Task PushFileAsync()
+        private async Task PushFileAsync(string storagePath, bool useAckMode = true)
         {
-            using var ofd = new OpenFileDialog();
-            if (ofd.ShowDialog() != DialogResult.OK) return;
             try
             {
-                await _controller.PushFileAsync(ofd.FileName);
-                _log.AppendText($"Pushed file: {Path.GetFileName(ofd.FileName)}\r\n");
+                if (useAckMode)
+                {
+                    // Use ACK mode with retry - pass full path
+                    var result = await _controller.PushFileWithAckAsync(storagePath);
+                    if (!result.Success)
+                    {
+                        throw new Exception($"ACK mode failed: {result.Error}");
+                    }
+                }
+                else
+                {
+                    // Use streaming mode (existing) - pass full path
+                    await _controller.PushFileAsync(storagePath);
+                }
+                _log.AppendText($"Pushed file: {Path.GetFileName(storagePath)}\r\n");
             }
             catch (Exception ex)
             {
@@ -203,12 +214,16 @@ namespace GrpcServerApp
 
         private async void _btnPushFile_Click(object sender, EventArgs e)
         {
-            await PushFileAsync();
+            using var ofd = new OpenFileDialog();
+            if (ofd.ShowDialog() != DialogResult.OK) return;
+            await PushFileAsync(ofd.FileName);
         }
 
         private async void _btnBroadcast_Click(object sender, EventArgs e)
         {
-            await BroadcastAsync();
+            var type = string.IsNullOrWhiteSpace(_txtType.Text) ? "broadcast" : _txtType.Text.Trim();
+            var body = string.IsNullOrWhiteSpace(_txtJson.Text) ? "{}" : _txtJson.Text;
+            await BroadcastAsync(type, body);
         }
 
         private async void _btnStart_Click(object sender, EventArgs e)
@@ -402,7 +417,7 @@ namespace GrpcServerApp
         private async Task StressTestPushFileAsync(int sizeKB, CancellationToken ct)
         {
             // Create temp file in server storage
-            var storageRoot = Path.Combine(Environment.CurrentDirectory, "ServerFiles");
+            var storageRoot = Path.Combine(Environment.CurrentDirectory, "storage");
             if (!Directory.Exists(storageRoot))
                 Directory.CreateDirectory(storageRoot);
             

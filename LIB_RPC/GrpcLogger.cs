@@ -24,7 +24,7 @@ namespace LIB_RPC
 
         private void Write(string level, string message)
         {
-            var line = $"{DateTimeOffset.Now:O} [{level}] {message}";
+            var line = $"{DateTime.Now.ToShortDateString()} {DateTime.Now.ToLongTimeString()} [{level}] {message}";
             _queue.Add(line);
             if (_config.EnableConsoleLog) Console.WriteLine(line);
             OnLine?.Invoke(line);
