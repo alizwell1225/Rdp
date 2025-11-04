@@ -19,6 +19,16 @@ public partial class ServerForm
     private Label _lblServerStats;
     private Button _btnResetStats;
 
+    // Server stress test controls
+    private GroupBox _grpStressTest;
+    private ComboBox _cmbStressType;
+    private TextBox _txtStressInterval;
+    private TextBox _txtStressSize;
+    private TextBox _txtStressIterations;
+    private CheckBox _chkStressUnlimited;
+    private Button _btnStartStressTest;
+    private Label _lblStressStats;
+
     private void InitializeComponent()
     {
         lblHost = new Label();
@@ -39,8 +49,17 @@ public partial class ServerForm
         _grpServerStats = new GroupBox();
         _lblServerStats = new Label();
         _btnResetStats = new Button();
+        _grpStressTest = new GroupBox();
+        _cmbStressType = new ComboBox();
+        _txtStressInterval = new TextBox();
+        _txtStressSize = new TextBox();
+        _txtStressIterations = new TextBox();
+        _chkStressUnlimited = new CheckBox();
+        _btnStartStressTest = new Button();
+        _lblStressStats = new Label();
         _panelLeft.SuspendLayout();
         _grpServerStats.SuspendLayout();
+        _grpStressTest.SuspendLayout();
         ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
         splitContainer1.Panel1.SuspendLayout();
         splitContainer1.Panel2.SuspendLayout();
@@ -91,11 +110,11 @@ public partial class ServerForm
         // _log
         // 
         _log.Dock = DockStyle.Fill;
-        _log.Location = new Point(0, 373);
+        _log.Location = new Point(0, 563);
         _log.Multiline = true;
         _log.Name = "_log";
         _log.ScrollBars = ScrollBars.Vertical;
-        _log.Size = new Size(656, 207);
+        _log.Size = new Size(656, 17);
         _log.TabIndex = 0;
         // 
         // _btnStart
@@ -131,6 +150,7 @@ public partial class ServerForm
         // _panelLeft
         // 
         _panelLeft.Controls.Add(_log);
+        _panelLeft.Controls.Add(_grpStressTest);
         _panelLeft.Controls.Add(_grpServerStats);
         _panelLeft.Controls.Add(_btnPushFile);
         _panelLeft.Controls.Add(_btnBroadcast);
@@ -173,6 +193,86 @@ public partial class ServerForm
         _btnResetStats.TabIndex = 1;
         _btnResetStats.Text = "重置統計";
         _btnResetStats.Click += _btnResetStats_Click;
+        // 
+        // _grpStressTest
+        // 
+        _grpStressTest.Controls.Add(_lblStressStats);
+        _grpStressTest.Controls.Add(_btnStartStressTest);
+        _grpStressTest.Controls.Add(_chkStressUnlimited);
+        _grpStressTest.Controls.Add(_txtStressIterations);
+        _grpStressTest.Controls.Add(_txtStressSize);
+        _grpStressTest.Controls.Add(_txtStressInterval);
+        _grpStressTest.Controls.Add(_cmbStressType);
+        _grpStressTest.Dock = DockStyle.Top;
+        _grpStressTest.Location = new Point(0, 373);
+        _grpStressTest.Name = "_grpStressTest";
+        _grpStressTest.Size = new Size(656, 190);
+        _grpStressTest.TabIndex = 6;
+        _grpStressTest.TabStop = false;
+        _grpStressTest.Text = "壓力測試 (Server端測試)";
+        // 
+        // _cmbStressType
+        // 
+        _cmbStressType.DropDownStyle = ComboBoxStyle.DropDownList;
+        _cmbStressType.Items.AddRange(new object[] { "廣播 JSON", "推送檔案", "混合測試" });
+        _cmbStressType.Location = new Point(10, 25);
+        _cmbStressType.Name = "_cmbStressType";
+        _cmbStressType.SelectedIndex = 0;
+        _cmbStressType.Size = new Size(150, 23);
+        _cmbStressType.TabIndex = 0;
+        // 
+        // _txtStressInterval
+        // 
+        _txtStressInterval.Location = new Point(170, 25);
+        _txtStressInterval.Name = "_txtStressInterval";
+        _txtStressInterval.PlaceholderText = "間隔(ms)";
+        _txtStressInterval.Size = new Size(100, 23);
+        _txtStressInterval.TabIndex = 1;
+        _txtStressInterval.Text = "1000";
+        // 
+        // _txtStressSize
+        // 
+        _txtStressSize.Location = new Point(280, 25);
+        _txtStressSize.Name = "_txtStressSize";
+        _txtStressSize.PlaceholderText = "大小(KB)";
+        _txtStressSize.Size = new Size(100, 23);
+        _txtStressSize.TabIndex = 2;
+        _txtStressSize.Text = "10";
+        // 
+        // _txtStressIterations
+        // 
+        _txtStressIterations.Location = new Point(390, 25);
+        _txtStressIterations.Name = "_txtStressIterations";
+        _txtStressIterations.PlaceholderText = "次數";
+        _txtStressIterations.Size = new Size(100, 23);
+        _txtStressIterations.TabIndex = 3;
+        _txtStressIterations.Text = "100";
+        // 
+        // _chkStressUnlimited
+        // 
+        _chkStressUnlimited.Location = new Point(500, 25);
+        _chkStressUnlimited.Name = "_chkStressUnlimited";
+        _chkStressUnlimited.Size = new Size(90, 23);
+        _chkStressUnlimited.TabIndex = 4;
+        _chkStressUnlimited.Text = "無限制";
+        // 
+        // _btnStartStressTest
+        // 
+        _btnStartStressTest.Location = new Point(10, 60);
+        _btnStartStressTest.Name = "_btnStartStressTest";
+        _btnStartStressTest.Size = new Size(150, 35);
+        _btnStartStressTest.TabIndex = 5;
+        _btnStartStressTest.Text = "開始壓測";
+        _btnStartStressTest.Click += _btnStartStressTest_Click;
+        // 
+        // _lblStressStats
+        // 
+        _lblStressStats.Location = new Point(10, 105);
+        _lblStressStats.Name = "_lblStressStats";
+        _lblStressStats.Size = new Size(636, 75);
+        _lblStressStats.TabIndex = 6;
+        _lblStressStats.Text = "執行: 0 | 成功: 0 | 失敗: 0 | 成功率: 0% | 平均: 0ms | 總時間: 00:00:00";
+        _lblStressStats.TextAlign = ContentAlignment.MiddleLeft;
         // 
         // _btnPushFile
         // 
@@ -248,6 +348,8 @@ public partial class ServerForm
         _panelLeft.ResumeLayout(false);
         _panelLeft.PerformLayout();
         _grpServerStats.ResumeLayout(false);
+        _grpStressTest.ResumeLayout(false);
+        _grpStressTest.PerformLayout();
         splitContainer1.Panel1.ResumeLayout(false);
         splitContainer1.Panel1.PerformLayout();
         splitContainer1.Panel2.ResumeLayout(false);

@@ -187,7 +187,7 @@ namespace GrpcClientApp
                 dlg.Width = 400; dlg.Height = 300;
                 var lb = new ListBox { Dock = DockStyle.Fill }; lb.Items.AddRange(files);
                 var btnOk = new Button { Text = "OK", Dock = DockStyle.Bottom, Height = 30 };
-                btnOk.Click += (_, _) => { if (lb.SelectedItem != null) dlg.DialogResult = DialogResult.OK; else MessageBox.Show("請選擇一個檔案"); };
+                btnOk.Click += (sender, args) => OnFileSelectionOkClick(sender, args, lb, dlg);
                 dlg.Controls.Add(lb); dlg.Controls.Add(btnOk);
                 if (dlg.ShowDialog(this) != DialogResult.OK) return;
                 input = lb.SelectedItem?.ToString();
@@ -249,6 +249,14 @@ namespace GrpcClientApp
         private async void _btnScreenshot_Click(object sender, EventArgs e)
         {
              await ScreenshotAsync();
+        }
+
+        private void OnFileSelectionOkClick(object? sender, EventArgs e, ListBox listBox, Form dialog)
+        {
+            if (listBox.SelectedItem != null)
+                dialog.DialogResult = DialogResult.OK;
+            else
+                MessageBox.Show("請選擇一個檔案");
         }
 
         #region Stress Test Methods

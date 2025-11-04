@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -21,17 +22,23 @@ namespace GrpcServerApp
         private Stopwatch _serverRuntime = new Stopwatch();
         private System.Windows.Forms.Timer? _statsUpdateTimer;
 
+        // Server-side stress test fields
+        private CancellationTokenSource? _stressTestCts;
+        private bool _isStressTesting = false;
+        private int _stressTestIterations = 0;
+        private int _stressTestSuccesses = 0;
+        private int _stressTestFailures = 0;
+        private Stopwatch _stressTestStopwatch = new Stopwatch();
+
         public ServerForm()
         {
             InitializeComponent();
             _controller = new GrpcServerApi();
-            // wire controller events
+            
+            // Wire controller events
             _controller.OnLog += ControllerOnLog;
-            _controller.OnFileAdded += controllerOnOnFileAdded;
-
-            // Wire additional events for monitoring
+            _controller.OnFileAdded += ControllerOnFileAdded;
             _controller.OnFileUploadCompleted += ControllerOnFileUploadCompleted;
-
             _controller.OnClientConnected += ControllerOnClientConnected;
             _controller.OnClientDisconnected += ControllerOnClientDisconnected;
 
@@ -46,8 +53,7 @@ namespace GrpcServerApp
             BeginInvoke(new Action(() => _log.AppendText(line + Environment.NewLine)));
         }
 
-
-        private void controllerOnOnFileAdded(string path)
+        private void ControllerOnFileAdded(string path)
         {
             BeginInvoke(new Action(() =>
             {
@@ -82,7 +88,6 @@ namespace GrpcServerApp
                 UpdateServerStats();
             }));
         }
-
 
         private void ControllerOnClientDisconnected(string obj)
         {
@@ -237,5 +242,217 @@ namespace GrpcServerApp
                 _log.AppendText($"Apply error: {ex.Message}\r\n");
             }
         }
+
+        #region Server Stress Test Methods
+
+        private async void _btnStartStressTest_Click(object sender, EventArgs e)
+        {
+            if (_isStressTesting)
+            {
+                // Stop test
+                _stressTestCts?.Cancel();
+                return;
+            }
+
+            if (_controller.Config == null || !_btnStop.Enabled)
+            {
+                MessageBox.Show("請先啟動 Server!", "錯誤", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // Parse parameters
+            if (!int.TryParse(_txtStressInterval.Text, out var intervalMs) || intervalMs < 100)
+            {
+                MessageBox.Show("間隔時間必須 >= 100ms", "錯誤", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (!int.TryParse(_txtStressSize.Text, out var sizeKB) || sizeKB < 1)
+            {
+                MessageBox.Show("資料大小必須 >= 1KB", "錯誤", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            int maxIterations = 0;
+            if (_chkStressUnlimited.Checked)
+            {
+                maxIterations = 0; // 0 means unlimited
+            }
+            else
+            {
+                if (!int.TryParse(_txtStressIterations.Text, out maxIterations) || maxIterations < 1)
+                {
+                    MessageBox.Show("執行次數必須 >= 1", "錯誤", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+            }
+
+            // Start stress test
+            _isStressTesting = true;
+            _stressTestIterations = 0;
+            _stressTestSuccesses = 0;
+            _stressTestFailures = 0;
+            _stressTestStopwatch.Restart();
+            _stressTestCts = new CancellationTokenSource();
+
+            _btnStartStressTest.Text = "停止壓測";
+            _btnStartStressTest.BackColor = Color.Red;
+            _txtStressInterval.Enabled = false;
+            _txtStressSize.Enabled = false;
+            _txtStressIterations.Enabled = false;
+            _chkStressUnlimited.Enabled = false;
+            _cmbStressType.Enabled = false;
+
+            _log.AppendText($"=== Server端壓力測試開始 ===\r\n");
+            _log.AppendText($"測試類型: {_cmbStressType.Text}\r\n");
+            _log.AppendText($"間隔: {intervalMs}ms, 大小: {sizeKB}KB, 次數: {(maxIterations == 0 ? "無限制" : maxIterations.ToString())}\r\n");
+
+            try
+            {
+                await RunStressTestAsync(intervalMs, sizeKB, maxIterations, _stressTestCts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                _log.AppendText("壓力測試已取消\r\n");
+            }
+            catch (Exception ex)
+            {
+                _log.AppendText($"壓力測試錯誤: {ex.Message}\r\n");
+            }
+            finally
+            {
+                StopStressTest();
+            }
+        }
+
+        private async Task RunStressTestAsync(int intervalMs, int sizeKB, int maxIterations, CancellationToken ct)
+        {
+            var testType = _cmbStressType.SelectedIndex;
+            var iteration = 0;
+
+            while (!ct.IsCancellationRequested)
+            {
+                if (maxIterations > 0 && iteration >= maxIterations)
+                    break;
+
+                iteration++;
+                _stressTestIterations = iteration;
+
+                try
+                {
+                    switch (testType)
+                    {
+                        case 0: // 廣播 JSON
+                            await StressTestBroadcastAsync(sizeKB, ct);
+                            break;
+                        case 1: // 推送檔案
+                            await StressTestPushFileAsync(sizeKB, ct);
+                            break;
+                        case 2: // 混合測試
+                            await StressTestMixedAsync(sizeKB, ct);
+                            break;
+                    }
+
+                    _stressTestSuccesses++;
+                    UpdateStressTestStats();
+                }
+                catch (Exception ex)
+                {
+                    _stressTestFailures++;
+                    _log.AppendText($"[第 {iteration} 次失敗] {ex.Message}\r\n");
+                    UpdateStressTestStats();
+                }
+
+                // Wait before next iteration
+                await Task.Delay(intervalMs, ct);
+            }
+        }
+
+        private async Task StressTestBroadcastAsync(int sizeKB, CancellationToken ct)
+        {
+            // Generate test JSON data
+            var data = new string('X', sizeKB * 1024);
+            var json = $"{{\"data\":\"{data}\",\"timestamp\":\"{DateTime.Now:O}\"}}";
+
+            await _controller.BroadcastJsonAsync("stress_test", json);
+        }
+
+        private async Task StressTestPushFileAsync(int sizeKB, CancellationToken ct)
+        {
+            // Create temp file
+            var tempPath = Path.Combine(Path.GetTempPath(), $"server_stress_{Guid.NewGuid()}.dat");
+            try
+            {
+                // Generate test data
+                var data = new byte[sizeKB * 1024];
+                new Random().NextBytes(data);
+                await File.WriteAllBytesAsync(tempPath, data, ct);
+
+                // Push file to clients
+                await _controller.PushFileAsync(tempPath);
+            }
+            finally
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+            }
+        }
+
+        private async Task StressTestMixedAsync(int sizeKB, CancellationToken ct)
+        {
+            // Randomly choose one of the operations
+            var rnd = new Random();
+            var operation = rnd.Next(2);
+
+            switch (operation)
+            {
+                case 0:
+                    await StressTestBroadcastAsync(sizeKB, ct);
+                    break;
+                case 1:
+                    await StressTestPushFileAsync(sizeKB, ct);
+                    break;
+            }
+        }
+
+        private void UpdateStressTestStats()
+        {
+            var elapsed = _stressTestStopwatch.Elapsed;
+            var successRate = _stressTestIterations > 0
+                ? (_stressTestSuccesses * 100.0 / _stressTestIterations)
+                : 0;
+
+            var avgTime = _stressTestIterations > 0
+                ? elapsed.TotalMilliseconds / _stressTestIterations
+                : 0;
+
+            BeginInvoke(new Action(() =>
+            {
+                _lblStressStats.Text = $"執行: {_stressTestIterations} | 成功: {_stressTestSuccesses} | 失敗: {_stressTestFailures} | " +
+                                       $"成功率: {successRate:F2}% | 平均: {avgTime:F0}ms | 總時間: {elapsed:hh\\:mm\\:ss}";
+            }));
+        }
+
+        private void StopStressTest()
+        {
+            _isStressTesting = false;
+            _stressTestStopwatch.Stop();
+            _stressTestCts?.Dispose();
+            _stressTestCts = null;
+
+            BeginInvoke(new Action(() =>
+            {
+                _btnStartStressTest.Text = "開始壓測";
+                _btnStartStressTest.BackColor = SystemColors.Control;
+                _txtStressInterval.Enabled = true;
+                _txtStressSize.Enabled = true;
+                _txtStressIterations.Enabled = true;
+                _chkStressUnlimited.Enabled = true;
+                _cmbStressType.Enabled = true;
+                _log.AppendText("=== Server端壓力測試結束 ===\r\n");
+            }));
+        }
+
+        #endregion
     }
 }
