@@ -339,6 +339,30 @@ namespace LIB_RPC.API
             }
         }
 
+        /// <inheritdoc/>
+        public Task<List<string>> ListFilesAsync(CancellationToken ct = default)
+        {
+            if (_conn == null) throw new InvalidOperationException("Not connected");
+            return _conn.ListFilesAsync(ct);
+        }
+
+        /// <inheritdoc/>
+        public Task<bool> SendJsonWithAckAsync(string type, string json, int retryCount = 0, CancellationToken ct = default)
+        {
+            if (_conn == null) throw new InvalidOperationException("Not connected");
+            return _conn.SendJsonWithAckAsync(type, json, retryCount, ct);
+        }
+
+        /// <inheritdoc/>
+        public Task<bool> UploadFileWithAckAsync(string filePath, int retryCount = 0, CancellationToken ct = default)
+        {
+            if (_conn == null) throw new InvalidOperationException("Not connected");
+            return _conn.UploadFileWithAckAsync(filePath, retryCount, ct);
+        }
+
+        /// <inheritdoc/>
+        public bool IsConnected => _conn?.IsConnected ?? false;
+
         /// <summary>
         /// Disposes the client resources asynchronously.
         /// </summary>

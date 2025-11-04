@@ -301,5 +301,103 @@ namespace LIB_RPC
                 _logger.Error($"File push stream error: {ex.Message}");
             }
         }
+
+        /// <summary>
+        /// Send JSON to server with acknowledgment and retry support
+        /// </summary>
+        public async Task<bool> SendJsonWithAckAsync(string type, string json, int retryCount = 0, CancellationToken ct = default)
+        {
+            var client = new RemoteChannel.RemoteChannelClient(_channel);
+            
+            for (int attempt = 0; attempt <= retryCount; attempt++)
+            {
+                try
+                {
+                    var request = new SendJsonRequest
+                    {
+                        Type = type,
+                        Json = json
+                    };
+                    
+                    var response = await client.SendJsonWithAckAsync(request, cancellationToken: ct);
+                    
+                    if (response.Success)
+                    {
+                        _logger.Info($"[SendJsonWithAck] Success on attempt {attempt + 1}");
+                        return true;
+                    }
+                    
+                    _logger.Warning($"[SendJsonWithAck] Server returned failure: {response.Message}");
+                }
+                catch (RpcException ex) when (attempt < retryCount)
+                {
+                    int delayMs = 100 * (1 << attempt); // Exponential backoff: 100ms, 200ms, 400ms, 800ms
+                    _logger.Warning($"[SendJsonWithAck] Attempt {attempt + 1} failed: {ex.Status.Detail}. Retrying in {delayMs}ms...");
+                    await Task.Delay(delayMs, ct);
+                }
+                catch (RpcException ex)
+                {
+                    _logger.Error($"[SendJsonWithAck] Failed after {attempt + 1} attempts: {ex.Status.Detail}");
+                    return false;
+                }
+            }
+            
+            return false;
+        }
+
+        /// <summary>
+        /// Upload file to server with acknowledgment and retry support
+        /// </summary>
+        public async Task<bool> UploadFileWithAckAsync(string filePath, int retryCount = 0, CancellationToken ct = default)
+        {
+            var client = new RemoteChannel.RemoteChannelClient(_channel);
+            
+            if (!File.Exists(filePath))
+            {
+                _logger.Error($"[UploadFileWithAck] File not found: {filePath}");
+                return false;
+            }
+            
+            for (int attempt = 0; attempt <= retryCount; attempt++)
+            {
+                try
+                {
+                    var fileData = await File.ReadAllBytesAsync(filePath, ct);
+                    var request = new UploadFileWithAckRequest
+                    {
+                        FileName = Path.GetFileName(filePath),
+                        FileData = Google.Protobuf.ByteString.CopyFrom(fileData)
+                    };
+                    
+                    var response = await client.UploadFileWithAckAsync(request, cancellationToken: ct);
+                    
+                    if (response.Success)
+                    {
+                        _logger.Info($"[UploadFileWithAck] Success on attempt {attempt + 1}: {response.Message}");
+                        return true;
+                    }
+                    
+                    _logger.Warning($"[UploadFileWithAck] Server returned failure: {response.Message}");
+                }
+                catch (RpcException ex) when (attempt < retryCount)
+                {
+                    int delayMs = 100 * (1 << attempt); // Exponential backoff
+                    _logger.Warning($"[UploadFileWithAck] Attempt {attempt + 1} failed: {ex.Status.Detail}. Retrying in {delayMs}ms...");
+                    await Task.Delay(delayMs, ct);
+                }
+                catch (RpcException ex)
+                {
+                    _logger.Error($"[UploadFileWithAck] Failed after {attempt + 1} attempts: {ex.Status.Detail}");
+                    return false;
+                }
+            }
+            
+            return false;
+        }
+
+        /// <summary>
+        /// Check if the client is connected to the server
+        /// </summary>
+        public bool IsConnected => _channel?.State == Grpc.Core.ChannelState.Ready;
     }
 }
