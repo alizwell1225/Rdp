@@ -401,22 +401,20 @@ namespace GrpcServerApp
 
         private async Task StressTestPushFileAsync(int sizeKB, CancellationToken ct)
         {
-            // Create temp file
-            var tempPath = Path.Combine(Path.GetTempPath(), $"server_stress_{Guid.NewGuid()}.dat");
+            // Create temp file in server storage
+            var storageRoot = Path.Combine(Environment.CurrentDirectory, "ServerFiles");
+            if (!Directory.Exists(storageRoot))
+                Directory.CreateDirectory(storageRoot);
+            
+            var fileName = $"server_stress_{Guid.NewGuid()}.dat";
+            var storagePath = Path.Combine(storageRoot, fileName);
+            
             try
             {
                 // Generate test data
                 var data = new byte[sizeKB * 1024];
                 new Random().NextBytes(data);
-                await File.WriteAllBytesAsync(tempPath, data, ct);
-
-                // Copy to server storage
-                var storageRoot = Path.Combine(Environment.CurrentDirectory, "ServerFiles");
-                if (!Directory.Exists(storageRoot))
-                    Directory.CreateDirectory(storageRoot);
-                var fileName = Path.GetFileName(tempPath);
-                var storagePath = Path.Combine(storageRoot, fileName);
-                File.Copy(tempPath, storagePath, true);
+                await File.WriteAllBytesAsync(storagePath, data, ct);
 
                 // Check if ACK mode is enabled
                 bool useAckMode = false;
@@ -429,8 +427,8 @@ namespace GrpcServerApp
 
                 if (useAckMode)
                 {
-                    // Use ACK mode with retry
-                    var result = await _controller.PushFileWithAckAsync(fileName, retryCount, ct);
+                    // Use ACK mode with retry - pass full path
+                    var result = await _controller.PushFileWithAckAsync(storagePath, retryCount, ct);
                     if (!result.Success)
                     {
                         throw new Exception($"ACK mode failed: {result.Error}");
@@ -438,14 +436,24 @@ namespace GrpcServerApp
                 }
                 else
                 {
-                    // Use streaming mode (existing)
-                    await _controller.PushFileAsync(fileName);
+                    // Use streaming mode (existing) - pass full path
+                    await _controller.PushFileAsync(storagePath);
                 }
             }
             finally
             {
-                if (File.Exists(tempPath))
-                    File.Delete(tempPath);
+                // Auto-delete temporary stress test file after sending
+                if (File.Exists(storagePath))
+                {
+                    try
+                    {
+                        File.Delete(storagePath);
+                    }
+                    catch
+                    {
+                        // Ignore cleanup errors
+                    }
+                }
             }
         }
 
