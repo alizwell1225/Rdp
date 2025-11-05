@@ -1,4 +1,4 @@
-namespace LogViewer
+namespace LIB_Log
 {
     partial class LogViewerForm
     {

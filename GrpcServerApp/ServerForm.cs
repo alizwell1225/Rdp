@@ -1,7 +1,6 @@
 using LIB_RPC;
 using LIB_RPC.Abstractions;
 using LIB_RPC.API;
-using LogViewer;
 using System;
 using System.Diagnostics;
 using System.Drawing;
@@ -10,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using LIB_Log;
 
 namespace GrpcServerApp
 {

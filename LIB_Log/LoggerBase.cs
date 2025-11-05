@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text;
 
-namespace LogViewer
+namespace LIB_Log
 {
     /// <summary>
     /// Base class for high-performance asynchronous logging with file rotation support
