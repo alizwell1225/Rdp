@@ -18,6 +18,7 @@ namespace GrpcClientApp
         private IClientApi? _api;
         private GrpcConfig? _config;
         private bool _isConnected = false;
+        private bool _isReconnecting = false;
 
         // Stress test fields
         private CancellationTokenSource? _stressTestCts;
@@ -85,8 +86,9 @@ namespace GrpcClientApp
 
         private void AutoReStartWork()
         {
-            if (autoReStart && !_isConnected)
+            if (autoReStart && !_isConnected && !_isReconnecting)
             {
+                _isReconnecting = true;
                 Task.Run(async () =>
                 {
                     try
@@ -105,6 +107,10 @@ namespace GrpcClientApp
                             _log.AppendText($"Auto-reconnect failed: {ex.Message}\r\n");
                         }));
                     }
+                    finally
+                    {
+                        _isReconnecting = false;
+                    }
                 });
             }
         }
@@ -112,6 +118,7 @@ namespace GrpcClientApp
         private void _api_OnConnected()
         {
             _isConnected = true;
+            _isReconnecting = false;
             UpdateUiConnectedState(true);
         }
 
