@@ -22,4 +22,8 @@
   <ItemGroup>
     <Protobuf Include="Protos\remote.proto" GrpcServices="Both" ProtoRoot="Protos" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LogViewer\LogViewer.csproj" />
+  </ItemGroup>
 </Project>

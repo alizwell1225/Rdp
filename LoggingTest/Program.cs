@@ -1,5 +1,4 @@
 using LIB_RPC;
-using LIB_RPC.Logging;
 
 namespace LoggingTest
 {

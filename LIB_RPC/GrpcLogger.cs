@@ -1,4 +1,4 @@
-using LIB_RPC.Logging;
+using LogViewer;
 
 namespace LIB_RPC
 {
