@@ -16,12 +16,18 @@ namespace LIB_RPC
         /// <summary>
         /// Maximum number of log entries per file before rotation (default: 20000)
         /// </summary>
-        public int MaxLogEntriesPerFile { get; init; } = 10;
+        public int MaxLogEntriesPerFile { get; init; } = 20000;
         
         /// <summary>
         /// Force abandon log writing on exception (default: false for safety)
         /// </summary>
         public bool ForceAbandonLogOnException { get; init; } = false;
+        
+        /// <summary>
+        /// Maximum number of days to retain log files (default: 60 days)
+        /// Logs older than this will be automatically deleted
+        /// </summary>
+        public int MaxLogRetentionDays { get; init; } = 60;
         
         /// <summary>
         /// Auto-delete received files after successful processing (default: false for safety)

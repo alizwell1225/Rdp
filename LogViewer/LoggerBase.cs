@@ -17,15 +17,17 @@ namespace LogViewer
         private readonly BlockingCollection<LogEntry> _queue = new();
         private readonly CancellationTokenSource _cts = new();
         private readonly Task _worker;
-        private readonly string _logDirectory;
+        private readonly string _baseLogDirectory;
         private readonly string _fileNameTemplate;
         private readonly int _maxEntriesPerFile;
+        private readonly int _maxRetentionDays;
         private int _currentFileEntries;
         private int _currentFileVersion;
         private StreamWriter? _currentWriter;
         private FileStream? _currentStream;
         private readonly object _fileLock = new();
         private bool _disposed;
+        private string _currentDateFolder = string.Empty;
 
         /// <summary>
         /// Event raised when a log line is written
@@ -42,7 +44,7 @@ namespace LogViewer
         /// </summary>
         public bool ForceAbandonOnException { get; set; } = false;
 
-        protected LoggerBase(string logDirectory, string fileNameTemplate, int maxEntriesPerFile = 20000)
+        protected LoggerBase(string logDirectory, string fileNameTemplate, int maxEntriesPerFile = 20000, int maxRetentionDays = 60)
         {
             if (string.IsNullOrWhiteSpace(logDirectory))
                 throw new ArgumentException("Log directory cannot be null or empty", nameof(logDirectory));
@@ -53,15 +55,25 @@ namespace LogViewer
             if (maxEntriesPerFile <= 0)
                 throw new ArgumentException("Max entries per file must be positive", nameof(maxEntriesPerFile));
 
-            _logDirectory = logDirectory;
+            if (maxRetentionDays <= 0)
+                throw new ArgumentException("Max retention days must be positive", nameof(maxRetentionDays));
+
+            _baseLogDirectory = logDirectory;
             _fileNameTemplate = fileNameTemplate;
             _maxEntriesPerFile = maxEntriesPerFile;
+            _maxRetentionDays = maxRetentionDays;
             _currentFileEntries = 0;
             _currentFileVersion = 0;
 
-            // Ensure log directory exists
-            if (Directory.Exists(_logDirectory)==false)
-                Directory.CreateDirectory(_logDirectory);
+            // Ensure base log directory exists
+            if (Directory.Exists(_baseLogDirectory) == false)
+                Directory.CreateDirectory(_baseLogDirectory);
+
+            // Detect and resume from last version
+            DetectLastVersion();
+
+            // Cleanup old logs
+            CleanupOldLogs();
 
             _worker = Task.Run(ProcessAsync);
         }
@@ -193,12 +205,163 @@ namespace LogViewer
         private void OpenNewFile()
         {
             var fileName = GetNextFileName();
-            var filePath = Path.Combine(_logDirectory, fileName);
+            var currentDateDir = GetCurrentDateDirectory();
+            var filePath = Path.Combine(currentDateDir, fileName);
 
             _currentStream = new FileStream(filePath, FileMode.Append, FileAccess.Write, FileShare.Read);
             _currentWriter = new StreamWriter(_currentStream, Encoding.UTF8);
             Interlocked.Exchange(ref _currentFileEntries, 0);
             _currentFileVersion++;
+        }
+
+        /// <summary>
+        /// Gets the current date-based directory path and ensures it exists
+        /// </summary>
+        private string GetCurrentDateDirectory()
+        {
+            var dateFolder = DateTime.Now.ToString("yyyy-MM-dd");
+            
+            // Check if we need to switch to a new date folder
+            if (_currentDateFolder != dateFolder)
+            {
+                _currentDateFolder = dateFolder;
+                // Reset version when switching to a new day
+                _currentFileVersion = 0;
+                
+                // Detect existing versions in the new date folder
+                DetectLastVersion();
+            }
+
+            var dateDirPath = Path.Combine(_baseLogDirectory, dateFolder);
+            if (!Directory.Exists(dateDirPath))
+            {
+                Directory.CreateDirectory(dateDirPath);
+            }
+
+            return dateDirPath;
+        }
+
+        /// <summary>
+        /// Detects the last version number from existing log files and resumes from there
+        /// </summary>
+        private void DetectLastVersion()
+        {
+            try
+            {
+                var dateFolder = DateTime.Now.ToString("yyyy-MM-dd");
+                _currentDateFolder = dateFolder;
+                var dateDirPath = Path.Combine(_baseLogDirectory, dateFolder);
+
+                if (!Directory.Exists(dateDirPath))
+                {
+                    _currentFileVersion = 0;
+                    return;
+                }
+
+                // Get base file name without {date} placeholder
+                var baseFileName = _fileNameTemplate.Replace("{date}", DateTime.Now.ToString("yyyyMMdd"));
+                var nameWithoutExtension = Path.GetFileNameWithoutExtension(baseFileName);
+                var extension = Path.GetExtension(baseFileName);
+
+                // Find all existing log files matching the pattern
+                var searchPattern = $"{nameWithoutExtension}*{extension}";
+                var existingFiles = Directory.GetFiles(dateDirPath, searchPattern);
+
+                int maxVersion = -1;
+                int maxEntries = 0;
+
+                foreach (var file in existingFiles)
+                {
+                    var fileName = Path.GetFileNameWithoutExtension(file);
+                    
+                    // Check if it's a versioned file (e.g., filename_v0001)
+                    if (fileName.Contains("_v"))
+                    {
+                        var versionPart = fileName.Substring(fileName.LastIndexOf("_v") + 2);
+                        if (int.TryParse(versionPart, out var version))
+                        {
+                            if (version > maxVersion)
+                            {
+                                maxVersion = version;
+                                // Count lines in the latest version file
+                                maxEntries = File.ReadLines(file).Count();
+                            }
+                        }
+                    }
+                    else if (fileName == nameWithoutExtension)
+                    {
+                        // Base file without version
+                        if (maxVersion < 0)
+                        {
+                            maxVersion = -1;
+                            maxEntries = File.ReadLines(file).Count();
+                        }
+                    }
+                }
+
+                if (maxVersion >= 0)
+                {
+                    // Resume from the last version
+                    _currentFileVersion = maxVersion;
+                    _currentFileEntries = maxEntries;
+
+                    // If the last file is full, increment version for next file
+                    if (_currentFileEntries >= _maxEntriesPerFile)
+                    {
+                        _currentFileVersion++;
+                        _currentFileEntries = 0;
+                    }
+                }
+                else
+                {
+                    _currentFileVersion = 0;
+                    _currentFileEntries = 0;
+                }
+            }
+            catch
+            {
+                // On any error, start fresh
+                _currentFileVersion = 0;
+                _currentFileEntries = 0;
+            }
+        }
+
+        /// <summary>
+        /// Cleans up log files older than the retention period
+        /// </summary>
+        private void CleanupOldLogs()
+        {
+            try
+            {
+                if (!Directory.Exists(_baseLogDirectory))
+                    return;
+
+                var cutoffDate = DateTime.Now.Date.AddDays(-_maxRetentionDays);
+
+                // Get all date folders
+                var dateFolders = Directory.GetDirectories(_baseLogDirectory);
+
+                foreach (var folder in dateFolders)
+                {
+                    var folderName = Path.GetFileName(folder);
+                    
+                    // Check if folder name matches date format (yyyy-MM-dd)
+                    if (DateTime.TryParseExact(folderName, "yyyy-MM-dd", 
+                        System.Globalization.CultureInfo.InvariantCulture, 
+                        System.Globalization.DateTimeStyles.None, out var folderDate))
+                    {
+                        if (folderDate.Date < cutoffDate)
+                        {
+                            // Delete the entire folder and its contents
+                            Directory.Delete(folder, true);
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Silently ignore cleanup errors
+            }
         }
 
         /// <summary>

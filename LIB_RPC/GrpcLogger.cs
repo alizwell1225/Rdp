@@ -17,7 +17,8 @@ namespace LIB_RPC
             : base(
                 GetLogDirectory(config),
                 GetLogFileName(config),
-                config.MaxLogEntriesPerFile)
+                config.MaxLogEntriesPerFile,
+                config.MaxLogRetentionDays)
         {
             _config = config;
             EnableConsoleLog = config.EnableConsoleLog;
