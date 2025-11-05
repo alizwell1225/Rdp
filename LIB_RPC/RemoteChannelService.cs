@@ -109,7 +109,7 @@ namespace LIB_RPC
                 try
                 {
                     // Use proper async lock to prevent deadlocks
-                    await Task.Run(async () =>
+                    await Task.Run(() =>
                     {
                         lock (dc.WriteLock)
                         {

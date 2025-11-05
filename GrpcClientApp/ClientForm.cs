@@ -41,6 +41,8 @@ namespace GrpcClientApp
         private void ClientForm_Load(object? sender, EventArgs e)
         {
             autoReStart = chkAutoRestart.Checked;
+            txtHost.Text = _config?.Host ?? "localhost";    
+            txtPort.Text = (_config?.Port ?? 50051).ToString();
         }
 
         private string configPath = Path.Combine(AppContext.BaseDirectory, "Config", "Config.json");
@@ -52,16 +54,19 @@ namespace GrpcClientApp
             {
                 _config = GrpcConfig.Load(configPath);
             }
-            else
+            //else
             {
-                _config = new GrpcConfig { Host = txtHost?.Text ?? "localhost", Port = port };
+                _config.SaveHost(txtHost?.Text ?? "localhost");
+                _config.SavePort(port);
             }
             _config.Save(configPath);
-            // dispose previous api if any
-            if (_api != null) await _api.DisposeAsync();
-            _api = new GrpcClientApi(_config);
+            //// dispose previous api if any
+            //if (_api != null) await _api.DisposeAsync();
+            //_api = new GrpcClientApi(_config);
             // enable/disable controls handled by ConnectAsync
-            await ConnectAsync();
+            autoReStart = chkAutoRestart.Checked;
+            await DisconnectAsyncUI();
+            await ConnectAsync(autoReStart);
 
         }
 

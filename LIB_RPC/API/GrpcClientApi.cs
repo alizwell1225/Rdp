@@ -146,7 +146,7 @@ namespace LIB_RPC.API
         /// </summary>
         /// <param name="ct">Cancellation token.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        public async Task ConnectAsync(bool re=false,CancellationToken ct = default)
+        public async Task ConnectAsync(bool re = false, CancellationToken ct = default)
         {
             if (_conn != null && re == false) { 
                 return; 

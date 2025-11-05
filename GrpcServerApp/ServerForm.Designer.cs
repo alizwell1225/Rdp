@@ -60,8 +60,8 @@ public partial class ServerForm
         _txtJson = new TextBox();
         _txtType = new TextBox();
         splitContainer1 = new SplitContainer();
-        _log = new TextBox();
         btnLog = new Button();
+        _log = new TextBox();
         _panelLeft.SuspendLayout();
         _grpStressTest.SuspendLayout();
         ((System.ComponentModel.ISupportInitialize)_numRetryCount).BeginInit();
@@ -363,6 +363,15 @@ public partial class ServerForm
         splitContainer1.SplitterDistance = 104;
         splitContainer1.TabIndex = 2;
         // 
+        // btnLog
+        // 
+        btnLog.Location = new Point(162, 62);
+        btnLog.Name = "btnLog";
+        btnLog.Size = new Size(64, 26);
+        btnLog.TabIndex = 5;
+        btnLog.Text = "Log";
+        btnLog.Click += btnLog_Click;
+        // 
         // _log
         // 
         _log.Dock = DockStyle.Fill;
@@ -373,15 +382,6 @@ public partial class ServerForm
         _log.Size = new Size(386, 580);
         _log.TabIndex = 3;
         // 
-        // btnLog
-        // 
-        btnLog.Location = new Point(162, 62);
-        btnLog.Name = "btnLog";
-        btnLog.Size = new Size(64, 26);
-        btnLog.TabIndex = 5;
-        btnLog.Text = "Log";
-        btnLog.Click += btnLog_Click;
-        // 
         // ServerForm
         // 
         ClientSize = new Size(1137, 580);
@@ -390,6 +390,7 @@ public partial class ServerForm
         Controls.Add(_panelLeft);
         Name = "ServerForm";
         Text = "gRPC Server";
+        Load += ServerForm_Load;
         _panelLeft.ResumeLayout(false);
         _panelLeft.PerformLayout();
         _grpStressTest.ResumeLayout(false);

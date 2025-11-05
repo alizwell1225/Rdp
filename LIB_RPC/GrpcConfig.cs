@@ -5,14 +5,14 @@ namespace LIB_RPC
 {
     public sealed class GrpcConfig
     {
-        public string Host { get; init; } = "localhost";
-        public int Port { get; init; } = 50051;
+        public string Host { get;  set; } = "localhost";
+        public int Port { get;  set; } = 50051;
         public string BaseAddress => $"{Host}:{Port}";
-        public string Password { get; init; } = "changeme"; // simple shared secret metadata
-        public int MaxChunkSizeBytes { get; init; } = 64 * 1024; // 64KB default
-        public string StorageRoot { get; init; } = Path.Combine(AppContext.BaseDirectory, "storage");
-        public bool EnableConsoleLog { get; init; } = true;
-        public string LogFilePath { get; init; } = Path.Combine(AppContext.BaseDirectory, "Log", "grpc.log");
+        public string Password { get; private set; } = "changeme"; // simple shared secret metadata
+        public int MaxChunkSizeBytes { get;  set; } = 64 * 1024; // 64KB default
+        public string StorageRoot { get;  set; } = Path.Combine(AppContext.BaseDirectory, "storage");
+        public bool EnableConsoleLog { get;  set; } = true;
+        public string LogFilePath { get;  set; } = Path.Combine(AppContext.BaseDirectory, "Log", "grpc.log");
 
         /// <summary>
         /// Maximum number of log entries per file before rotation (default: 10000)
@@ -89,5 +89,15 @@ namespace LIB_RPC
         /// Get the effective server upload directory
         /// </summary>
         public string GetServerUploadPath() => ServerUploadPath ?? StorageRoot;
+
+        public void SaveHost(string? host)
+        {
+            Host = host ?? Host;
+        }
+
+        public void SavePort(int? port)
+        {
+            Port = port ?? Port;
+        }
     }
 }

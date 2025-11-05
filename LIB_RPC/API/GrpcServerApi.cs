@@ -128,20 +128,24 @@ namespace LIB_RPC.API
         /// <param name="port">The port number to listen on.</param>
         public void UpdateConfig(string? host, int? port)
         {
-            // GrpcConfig properties are init-only, so create a new instance
-            var newConfig = new GrpcConfig
-            {
-                Host = !string.IsNullOrWhiteSpace(host) ? host!.Trim() : _config.Host,
-                Port = port ?? _config.Port,
-                Password = _config.Password,
-                MaxChunkSizeBytes = _config.MaxChunkSizeBytes,
-                StorageRoot = _config.StorageRoot,
-                EnableConsoleLog = _config.EnableConsoleLog,
-                LogFilePath = _config.LogFilePath
-            };
+            //// GrpcConfig properties are init-only, so create a new instance
+            //var newConfig = new GrpcConfig
+            //{
+            //    Host = !string.IsNullOrWhiteSpace(host) ? host!.Trim() : _config.Host,
+            //    Port = port ?? _config.Port,
+            //    Password = _config.Password,
+            //    MaxChunkSizeBytes = _config.MaxChunkSizeBytes,
+            //    StorageRoot = _config.StorageRoot,
+            //    EnableConsoleLog = _config.EnableConsoleLog,
+            //    LogFilePath = _config.LogFilePath
+            //};
 
-            // Replace config and recreate logger so it uses the updated paths/settings
-            _config = newConfig;
+            //// Replace config and recreate logger so it uses the updated paths/settings
+            //_config = newConfig;
+
+            Config.SavePort(port);
+            Config.SaveHost(host);
+            SaveConfig();
             try
             {
                 _logger?.Dispose();

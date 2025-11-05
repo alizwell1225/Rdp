@@ -50,7 +50,7 @@ namespace GrpcServerApp
             _statsUpdateTimer.Tick += StatsUpdateTimerOnTick;
 
 
-            _logger=new LoggerServer(Path.Combine(AppContext.BaseDirectory,"Log"), "controller");
+            _logger = new LoggerServer(Path.Combine(AppContext.BaseDirectory, "Log"), "controller");
         }
 
         private void ControllerOnLog(string line)
@@ -197,7 +197,7 @@ namespace GrpcServerApp
             }
         }
 
-        private async Task PushFileAsync(string storagePath, bool useAckMode = true,bool UseStrogePath=false)
+        private async Task PushFileAsync(string storagePath, bool useAckMode = true, bool UseStrogePath = false)
         {
             try
             {
@@ -543,9 +543,15 @@ namespace GrpcServerApp
 
         private void btnLog_Click(object sender, EventArgs e)
         {
-            LogViewerForm dlg=new LogViewerForm();
+            LogViewerForm dlg = new LogViewerForm();
             dlg.SetDefinePath(_controller.Config.LogFilePath);
             dlg.ShowDialog();
+        }
+
+        private void ServerForm_Load(object sender, EventArgs e)
+        {
+            txtHost.Text = _controller.Config?.Host ?? "localhost";
+            txtPort.Text = (_controller.Config?.Port ?? 50051).ToString();
         }
     }
 }
