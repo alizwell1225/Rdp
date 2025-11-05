@@ -97,16 +97,38 @@ namespace LogViewer
                 {
                     foreach (var file in logFiles)
                     {
-                        var fileName = Path.GetFileName(file);
-                        var lines = File.ReadAllLines(file);
-
-                        foreach (var line in lines)
+                        try
                         {
-                            var record = ParseLogLine(line, fileName);
-                            if (record != null)
+                            var fileName = Path.GetFileName(file);
+                            var parentDir = Path.GetDirectoryName(file);
+                            
+                            // Get relative path from base directory
+                            string displayFileName;
+                            if (!string.IsNullOrEmpty(parentDir) && parentDir.StartsWith(directory))
                             {
-                                _allRecords.Add(record);
+                                var relativePath = parentDir.Substring(directory.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                                displayFileName = string.IsNullOrEmpty(relativePath) ? fileName : $"{relativePath}/{fileName}";
                             }
+                            else
+                            {
+                                displayFileName = fileName;
+                            }
+
+                            var lines = File.ReadAllLines(file);
+
+                            foreach (var line in lines)
+                            {
+                                var record = ParseLogLine(line, displayFileName);
+                                if (record != null)
+                                {
+                                    _allRecords.Add(record);
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log file read error but continue with other files
+                            System.Diagnostics.Debug.WriteLine($"Error reading file {file}: {ex.Message}");
                         }
                     }
                 });
@@ -119,7 +141,8 @@ namespace LogViewer
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading logs: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Error loading logs: {ex.Message}\n\nStack Trace:\n{ex.StackTrace}", 
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
             {
