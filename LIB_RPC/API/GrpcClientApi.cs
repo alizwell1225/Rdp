@@ -146,9 +146,11 @@ namespace LIB_RPC.API
         /// </summary>
         /// <param name="ct">Cancellation token.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        public async Task ConnectAsync(CancellationToken ct = default)
+        public async Task ConnectAsync(bool re=false,CancellationToken ct = default)
         {
-            if (_conn != null) return;
+            if (_conn != null && re == false) { 
+                return; 
+            }
             
             try
             {
@@ -167,7 +169,7 @@ namespace LIB_RPC.API
                     Json = env.Json,
                     Timestamp = env.Timestamp
                 });
-                _conn.OnConnected+= ConnOnOnConnected;
+                _conn.OnConnected+= ConnOnConnected;
                 await _conn.ConnectAsync();
                 _logger.Info("Client connected successfully");
             }
@@ -179,9 +181,11 @@ namespace LIB_RPC.API
                 throw;
             }
         }
-
-        private void ConnOnOnConnected(bool flag)
+        bool IsConnected = false;
+        private void ConnOnConnected(bool flag)
         {
+            if (IsConnected == flag) return;
+            IsConnected = flag;
             if (flag)
                 OnConnected?.Invoke();
             else
@@ -336,7 +340,7 @@ namespace LIB_RPC.API
                 var bytes = await _conn.GetScreenshotAsync(ct);
                 
                 OnScreenshotCompleted?.Invoke(bytes.Length);
-                _logger.Info($"Screenshot completed: {bytes.Length} bytes");
+                _logger.Info($"Screenshot completed: {bytes?.Length} bytes");
                 
                 return bytes;
             }

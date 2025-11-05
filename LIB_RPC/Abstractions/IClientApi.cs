@@ -113,7 +113,7 @@ namespace LIB_RPC.Abstractions
         /// <summary>
         /// Connects to the gRPC server.
         /// </summary>
-        Task ConnectAsync(CancellationToken ct = default);
+        Task ConnectAsync(bool re,CancellationToken ct = default);
 
         /// <summary>
         /// Disconnects from the gRPC server.

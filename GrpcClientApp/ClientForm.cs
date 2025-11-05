@@ -54,21 +54,24 @@ namespace GrpcClientApp
 
         }
 
-        private async Task ConnectAsync()
+        private async Task ConnectAsync(bool re=false)
         {
-            _config ??= new GrpcConfig();
-            _api ??= new GrpcClientApi(_config);
-            // forward api logs to UI
-            _api.OnLog += apiOnLog;
-            _api.OnUploadProgress += apiOnUploadProgress;
-            _api.OnDownloadProgress += apiOnDownloadProgress;
-            _api.OnScreenshotProgress += apiOnScreenshotProgress;
-            _api.OnServerJson += apiOnServerJson;
-            _api.OnServerFileCompleted += apiOnServerFileCompleted;
-            _api.OnConnected += _api_OnConnected;
-            _api.OnDisconnected += apiOnDisconnected;
-            _api.OnConnectionError += apiOnConnectionError;
-            await _api.ConnectAsync();
+            if (_api == null || _config== null)
+            {
+                _config ??= new GrpcConfig();
+                _api ??= new GrpcClientApi(_config);
+                // forward api logs to UI
+                _api.OnLog += apiOnLog;
+                _api.OnUploadProgress += apiOnUploadProgress;
+                _api.OnDownloadProgress += apiOnDownloadProgress;
+                _api.OnScreenshotProgress += apiOnScreenshotProgress;
+                _api.OnServerJson += apiOnServerJson;
+                _api.OnServerFileCompleted += apiOnServerFileCompleted;
+                _api.OnConnected += _api_OnConnected;
+                _api.OnDisconnected += apiOnDisconnected;
+                _api.OnConnectionError += apiOnConnectionError;
+            }
+            await _api.ConnectAsync(re);
 
         }
 
@@ -77,9 +80,10 @@ namespace GrpcClientApp
             lock (_connectionLock)
             {
                 _isConnected = false;
+                UpdateUiConnectedState(false);
+                AutoReStartWork();
             }
-            UpdateUiConnectedState(false); 
-            AutoReStartWork();
+            
         }
 
         private void apiOnConnectionError(string obj)
@@ -87,18 +91,19 @@ namespace GrpcClientApp
             lock (_connectionLock)
             {
                 _isConnected = false;
+                UpdateUiConnectedState(false);
+                AutoReStartWork();
             }
-            UpdateUiConnectedState(false);
-            AutoReStartWork();
         }
+        bool shouldReconnect = false;
 
-        private void AutoReStartWork()
+        private async void AutoReStartWork()
         {
             lock (_connectionLock)
             {
-                if (autoReStart && !_isConnected && !_isReconnecting)
+                if (autoReStart && !_isConnected)
                 {
-                    _isReconnecting = true;
+                    shouldReconnect = true;
                 }
                 else
                 {
@@ -106,22 +111,20 @@ namespace GrpcClientApp
                 }
             }
 
-            Task.Run(async () =>
+            //Task.Run( () =>
             {
                 try
                 {
                     await Task.Delay(ReconnectDelayMs);
-                    
-                    bool shouldReconnect = false;
+
                     lock (_connectionLock)
                     {
-                        shouldReconnect = !_isConnected;
-                    }
-
-                    if (shouldReconnect)
-                    {
-                        await DisconnectAsyncUI();
-                        await ConnectAsync();
+                        shouldReconnect = !_isConnected && autoReStart;
+                        if (shouldReconnect)
+                        {
+                            DisconnectAsyncUI();
+                            ConnectAsync(shouldReconnect);
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -133,12 +136,9 @@ namespace GrpcClientApp
                 }
                 finally
                 {
-                    lock (_connectionLock)
-                    {
-                        _isReconnecting = false;
-                    }
                 }
-            });
+            };
+            //);
         }
 
         private void _api_OnConnected()
@@ -146,9 +146,10 @@ namespace GrpcClientApp
             lock (_connectionLock)
             {
                 _isConnected = true;
-                _isReconnecting = false;
+                shouldReconnect = false;
+                UpdateUiConnectedState(true);
+
             }
-            UpdateUiConnectedState(true);
         }
 
         private void apiOnServerFileCompleted(string path)
@@ -206,12 +207,16 @@ namespace GrpcClientApp
 
         private void UpdateUiConnectedState(bool connected)
         {
-            // toggle buttons and text
-            _btnSendJson.Enabled = connected;
-            _btnUpload.Enabled = connected;
-            _btnDownload.Enabled = connected;
-            _btnScreenshot.Enabled = connected;
-            _btnConnect.Text = connected ? "Disconnect" : "Connect to Server";
+            BeginInvoke(new Action(() =>
+            {
+                // toggle buttons and text
+                _btnSendJson.Enabled = connected;
+                _btnUpload.Enabled = connected;
+                _btnDownload.Enabled = connected;
+                _btnScreenshot.Enabled = connected;
+                _btnConnect.Text = connected ? "Disconnect" : "Connect to Server";
+            }
+            ));
         }
 
         private async Task DisconnectAsyncUI()
@@ -303,9 +308,17 @@ namespace GrpcClientApp
         {
             if (_api == null) return;
             var bytes = await _api.GetScreenshotAsync();
-            using var ms = new MemoryStream(bytes);
-            _pic.Image = Image.FromStream(ms);
-            _log.AppendText($"Screenshot 顯示\r\n");
+            if (bytes == null || bytes.Length == 0)
+            {
+                _log.AppendText("Screenshot 失敗\r\n");
+                return;
+            }
+            else
+            {
+                using var ms = new MemoryStream(bytes);
+                _pic.Image = Image.FromStream(ms);
+                _log.AppendText($"Screenshot 顯示\r\n");
+            }
         }
 
         private async void _btnConnect_Click(object sender, EventArgs e)
@@ -335,6 +348,7 @@ namespace GrpcClientApp
             BeginInvoke(() => _btnConnect.Enabled = false);
             try
             {
+                autoReStart = chkAutoRestart.Checked;
                 bool isConnected;
                 lock (_connectionLock)
                 {
@@ -343,7 +357,7 @@ namespace GrpcClientApp
 
                 if (!isConnected)
                 {
-                    await ConnectAsync();
+                    await ConnectAsync(autoReStart);
                 }
                 else
                 {

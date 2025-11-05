@@ -117,20 +117,36 @@ namespace LIB_RPC
         public async Task<JsonAck> SendJsonAsync(string type, string json, CancellationToken ct = default)
         {
             if (_jsonStream == null) throw new InvalidOperationException("Not connected");
-            var id = Guid.NewGuid().ToString("N");
-            var env = new JsonEnvelope { Id = id, Type = type, Json = json, Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() };
             var tcs = new TaskCompletionSource<JsonAck>(TaskCreationOptions.RunContinuationsAsynchronously);
-            _pending[id] = tcs;
-            await _jsonStream.RequestStream.WriteAsync(env);
-            using var reg = ct.Register(() => tcs.TrySetCanceled());
+            try
+            {
+                var id = Guid.NewGuid().ToString("N");
+                var env = new JsonEnvelope { Id = id, Type = type, Json = json, Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() };
+
+                _pending[id] = tcs;
+                await _jsonStream.RequestStream.WriteAsync(env);
+                using var reg = ct.Register(() => tcs.TrySetCanceled());
+            }
+            catch (Exception)
+            {
+                OnConnected?.Invoke(false);
+            }
+
             return await tcs.Task.ConfigureAwait(false);
         }
 
         public async Task SendJsonFireAndForgetAsync(string type, string json, CancellationToken ct = default)
         {
             if (_jsonDuplex == null) throw new InvalidOperationException("Not connected (duplex)");
-            var env = new JsonEnvelope { Id = Guid.NewGuid().ToString("N"), Type = type, Json = json, Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() };
-            await _jsonDuplex.RequestStream.WriteAsync(env, ct);
+            try
+            {
+                var env = new JsonEnvelope { Id = Guid.NewGuid().ToString("N"), Type = type, Json = json, Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() };
+                await _jsonDuplex.RequestStream.WriteAsync(env, ct);
+            }
+            catch (Exception)
+            {
+                OnConnected?.Invoke(false);
+            }
         }
 
         private async Task ReceiveDuplexJsonAsync()
@@ -155,25 +171,33 @@ namespace LIB_RPC
         {
             if (_client == null) throw new InvalidOperationException("Not connected");
             using var call = _client.UploadFile(headers: BuildAuth());
-            var bytes = await File.ReadAllBytesAsync(filePath, ct);
-            var chunkSize = _config.MaxChunkSizeBytes;
-            var total = (int)Math.Ceiling((double)bytes.Length / chunkSize);
-            for (int i = 0; i < total; i++)
+            try
             {
-                ct.ThrowIfCancellationRequested();
-                var slice = bytes.AsMemory(i * chunkSize, Math.Min(chunkSize, bytes.Length - i * chunkSize));
-                await call.RequestStream.WriteAsync(new FileChunk
+                var bytes = await File.ReadAllBytesAsync(filePath, ct);
+                var chunkSize = _config.MaxChunkSizeBytes;
+                var total = (int)Math.Ceiling((double)bytes.Length / chunkSize);
+                for (int i = 0; i < total; i++)
                 {
-                    Path = Path.GetFileName(filePath),
-                    Data = Google.Protobuf.ByteString.CopyFrom(slice.Span),
-                    Index = i,
-                    TotalChunks = total,
-                    IsLast = i == total - 1
-                });
-                OnUploadProgress?.Invoke(filePath, (i + 1) * 100.0 / total);
+                    ct.ThrowIfCancellationRequested();
+                    var slice = bytes.AsMemory(i * chunkSize, Math.Min(chunkSize, bytes.Length - i * chunkSize));
+                    await call.RequestStream.WriteAsync(new FileChunk
+                    {
+                        Path = Path.GetFileName(filePath),
+                        Data = Google.Protobuf.ByteString.CopyFrom(slice.Span),
+                        Index = i,
+                        TotalChunks = total,
+                        IsLast = i == total - 1
+                    });
+                    OnUploadProgress?.Invoke(filePath, (i + 1) * 100.0 / total);
+                }
+                await call.RequestStream.CompleteAsync();
+                return await call.ResponseAsync.ConfigureAwait(false);
             }
-            await call.RequestStream.CompleteAsync();
-            return await call.ResponseAsync.ConfigureAwait(false);
+            catch (Exception)
+            {
+                OnConnected?.Invoke(false);
+            }
+            return null;
         }
 
         public async Task<string[]> ListFilesAsync(string directory = "", CancellationToken ct = default)
@@ -195,39 +219,54 @@ namespace LIB_RPC
         public async Task DownloadFileAsync(string remotePath, string localPath, CancellationToken ct = default)
         {
             if (_client == null) throw new InvalidOperationException("Not connected");
-            var call = _client.DownloadFile(new FileRequest { Path = remotePath }, headers: BuildAuth(), cancellationToken: ct);
-            Directory.CreateDirectory(Path.GetDirectoryName(localPath)!);
-            await using var fs = new FileStream(localPath, FileMode.Create, FileAccess.Write, FileShare.None);
-            int totalChunks = -1; int received = 0;
-            while (await call.ResponseStream.MoveNext(ct))
+            try
             {
-                var chunk = call.ResponseStream.Current;
-                if (!string.IsNullOrEmpty(chunk.Error)) throw new IOException(chunk.Error);
-                if (chunk.Data.Length > 0) await fs.WriteAsync(chunk.Data.Memory, ct);
-                totalChunks = totalChunks < 0 ? chunk.TotalChunks : totalChunks;
-                received++;
-                if (totalChunks > 0)
-                    OnDownloadProgress?.Invoke(remotePath, Math.Min(100.0, received * 100.0 / totalChunks));
+                var call = _client.DownloadFile(new FileRequest { Path = remotePath }, headers: BuildAuth(), cancellationToken: ct);
+                Directory.CreateDirectory(Path.GetDirectoryName(localPath)!);
+                await using var fs = new FileStream(localPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                int totalChunks = -1; int received = 0;
+                while (await call.ResponseStream.MoveNext(ct))
+                {
+                    var chunk = call.ResponseStream.Current;
+                    if (!string.IsNullOrEmpty(chunk.Error)) throw new IOException(chunk.Error);
+                    if (chunk.Data.Length > 0) await fs.WriteAsync(chunk.Data.Memory, ct);
+                    totalChunks = totalChunks < 0 ? chunk.TotalChunks : totalChunks;
+                    received++;
+                    if (totalChunks > 0)
+                        OnDownloadProgress?.Invoke(remotePath, Math.Min(100.0, received * 100.0 / totalChunks));
+                }
+            }
+            catch (Exception)
+            {
+                OnConnected?.Invoke(false);
             }
         }
 
         public async Task<byte[]> GetScreenshotAsync(CancellationToken ct = default)
         {
             if (_client == null) throw new InvalidOperationException("Not connected");
-            var call = _client.Screenshot(new ScreenshotRequest { MonitorIndex = -1 }, headers: BuildAuth(), cancellationToken: ct);
-            using var ms = new MemoryStream();
-            int total = -1; int received = 0;
-            while (await call.ResponseStream.MoveNext(ct))
+            try
             {
-                var chunk = call.ResponseStream.Current;
-                if (!string.IsNullOrEmpty(chunk.Error)) throw new IOException(chunk.Error);
-                if (chunk.Data.Length > 0) await ms.WriteAsync(chunk.Data.Memory, ct);
-                total = total < 0 ? chunk.TotalChunks : total;
-                received++;
-                if (total > 0)
-                    OnScreenshotProgress?.Invoke(Math.Min(100.0, received * 100.0 / total));
+                var call = _client.Screenshot(new ScreenshotRequest { MonitorIndex = -1 }, headers: BuildAuth(), cancellationToken: ct);
+                using var ms = new MemoryStream();
+                int total = -1; int received = 0;
+                while (await call.ResponseStream.MoveNext(ct))
+                {
+                    var chunk = call.ResponseStream.Current;
+                    if (!string.IsNullOrEmpty(chunk.Error)) throw new IOException(chunk.Error);
+                    if (chunk.Data.Length > 0) await ms.WriteAsync(chunk.Data.Memory, ct);
+                    total = total < 0 ? chunk.TotalChunks : total;
+                    received++;
+                    if (total > 0)
+                        OnScreenshotProgress?.Invoke(Math.Min(100.0, received * 100.0 / total));
+                }
+                return ms.ToArray();
             }
-            return ms.ToArray();
+            catch (Exception)
+            {
+                OnConnected?.Invoke(false);
+            }
+            return null;
         }
 
         public async ValueTask DisposeAsync()
