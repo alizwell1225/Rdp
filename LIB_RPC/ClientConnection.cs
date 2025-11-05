@@ -59,6 +59,7 @@ namespace LIB_RPC
         /// Event raised when server file push encounters an error with path and error message.
         /// </summary>
         public event Action<string, string>? OnServerFileError;
+        public event Action<bool>? OnConnected;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ClientConnection"/> class.
@@ -108,6 +109,7 @@ namespace LIB_RPC
             catch (Exception ex)
             {
                 _logger.Error($"JSON receive loop error: {ex.Message}");
+                OnConnected?.Invoke(false);
             }
         }
 
@@ -144,6 +146,7 @@ namespace LIB_RPC
             catch (Exception ex)
             {
                 _logger.Error($"Duplex receive loop error: {ex.Message}");
+                OnConnected?.Invoke(false);
             }
         }
 
@@ -183,6 +186,7 @@ namespace LIB_RPC
             catch (Exception ex)
             {
                 _logger.Error($"ListFilesAsync error: {ex.Message}");
+                OnConnected?.Invoke(false);
                 return Array.Empty<string>();
             }
         }
@@ -299,6 +303,7 @@ namespace LIB_RPC
             catch (Exception ex)
             {
                 _logger.Error($"File push stream error: {ex.Message}");
+                OnConnected?.Invoke(false);
             }
         }
     }

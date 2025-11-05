@@ -1,7 +1,8 @@
+using LIB_RPC.Abstractions;
 using System;
+using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
-using LIB_RPC.Abstractions;
 
 namespace LIB_RPC.API
 {
@@ -166,7 +167,7 @@ namespace LIB_RPC.API
                     Json = env.Json,
                     Timestamp = env.Timestamp
                 });
-                
+                _conn.OnConnected+= ConnOnOnConnected;
                 await _conn.ConnectAsync();
                 OnConnected?.Invoke();
                 _logger.Info("Client connected successfully");
@@ -177,6 +178,14 @@ namespace LIB_RPC.API
                 _logger.Error($"Connection failed: {ex.Message}");
                 throw;
             }
+        }
+
+        private void ConnOnOnConnected(bool flag)
+        {
+            if (flag)
+                OnConnected?.Invoke();
+            else
+                OnDisconnected?.Invoke();
         }
 
         /// <summary>

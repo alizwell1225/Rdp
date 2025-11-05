@@ -1,3 +1,7 @@
+using Google.Protobuf.WellKnownTypes;
+using LIB_RPC;
+using LIB_RPC.Abstractions;
+using LIB_RPC.API;
 using System;
 using System.Diagnostics;
 using System.Drawing;
@@ -6,9 +10,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using LIB_RPC;
-using LIB_RPC.API;
-using LIB_RPC.Abstractions;
 
 namespace GrpcClientApp
 {
@@ -31,9 +32,10 @@ namespace GrpcClientApp
             InitializeComponent();
         }
 
+        private bool autoReStart { get; set; } = true;
         private void ClientForm_Load(object? sender, EventArgs e)
         {
-
+            autoReStart = chkAutoRestart.Checked;
         }
 
 
@@ -60,7 +62,37 @@ namespace GrpcClientApp
             _api.OnScreenshotProgress += apiOnScreenshotProgress;
             _api.OnServerJson += apiOnServerJson;
             _api.OnServerFileCompleted += apiOnServerFileCompleted;
+            _api.OnConnected += _api_OnConnected;
+            _api.OnDisconnected += apiOnDisconnected;
+            _api.OnConnectionError += apiOnConnectionError;
             await _api.ConnectAsync();
+
+        }
+
+        private void apiOnDisconnected()
+        {
+            _isConnected = false;
+            UpdateUiConnectedState(false); 
+            AutoReStartWork();
+        }
+
+        private void apiOnConnectionError(string obj)
+        {
+            _isConnected = false;
+            UpdateUiConnectedState(false);
+            AutoReStartWork();
+        }
+
+        private void AutoReStartWork()
+        {
+            if (autoReStart)
+            {
+                Connect();
+            }
+        }
+
+        private void _api_OnConnected()
+        {
             _isConnected = true;
             UpdateUiConnectedState(true);
         }
@@ -222,7 +254,28 @@ namespace GrpcClientApp
         private async void _btnConnect_Click(object sender, EventArgs e)
         {
             // Toggle connect / disconnect
-            _btnConnect.Enabled = false;
+            //_btnConnect.Enabled = false;
+            //try
+            //{
+            //    if (!_isConnected)
+            //    {
+            //        await ConnectAsync();
+            //    }
+            //    else
+            //    {
+            //        await DisconnectAsyncUI();
+            //    }
+            //}
+            //finally
+            //{
+            //    _btnConnect.Enabled = true;
+            //}
+            Connect();
+        }
+
+        async void Connect()
+        {
+            BeginInvoke(() => _btnConnect.Enabled = false);
             try
             {
                 if (!_isConnected)
@@ -236,7 +289,7 @@ namespace GrpcClientApp
             }
             finally
             {
-                _btnConnect.Enabled = true;
+                BeginInvoke(() => _btnConnect.Enabled = true);
             }
         }
 
