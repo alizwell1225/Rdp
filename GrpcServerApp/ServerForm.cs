@@ -30,6 +30,7 @@ namespace GrpcServerApp
         private int _stressTestSuccesses = 0;
         private int _stressTestFailures = 0;
         private Stopwatch _stressTestStopwatch = new Stopwatch();
+        LoggerServer _logger;
 
         public ServerForm()
         {
@@ -47,11 +48,18 @@ namespace GrpcServerApp
             _statsUpdateTimer = new System.Windows.Forms.Timer();
             _statsUpdateTimer.Interval = 1000; // Update every second
             _statsUpdateTimer.Tick += StatsUpdateTimerOnTick;
+
+
+            _logger=new LoggerServer(Path.Combine(AppContext.BaseDirectory,"Log"), "controller");
         }
 
         private void ControllerOnLog(string line)
         {
-            BeginInvoke(new Action(() => _log.AppendText(line + Environment.NewLine)));
+            BeginInvoke(new Action(() =>
+            {
+                _log.AppendText(line + Environment.NewLine);
+                _logger.Info(line);
+            }));
         }
 
         private void ControllerOnFileAdded(string path)
@@ -60,6 +68,7 @@ namespace GrpcServerApp
             {
                 RefreshFiles();
                 _log.AppendText($"File added: {Path.GetFileName(path)}\r\n");
+                _logger.Info($"File added: {Path.GetFileName(path)}");
                 _totalRequestsReceived++;
                 UpdateServerStats();
             }));
@@ -140,6 +149,7 @@ namespace GrpcServerApp
             _lblServerStats.Text = $"運行時間: {runtime:hh\\:mm\\:ss} | " +
                                    $"總請求: {_totalRequestsReceived} ({avgRequestsPerSec:F2}/秒) | " +
                                    $"總流量: {totalMB:F2} MB ({avgMBPerSec:F3} MB/秒) | ";
+            _logger.Info(_lblServerStats.Text);
         }
 
         private void _btnResetStats_Click(object sender, EventArgs e)

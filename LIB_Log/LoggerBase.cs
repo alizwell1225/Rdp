@@ -38,6 +38,7 @@ namespace LIB_Log
         /// Gets or sets whether to write logs to console
         /// </summary>
         public bool EnableConsoleLog { get; set; } = true;
+        public bool EnableWriteLog { get; set; } = true;
 
         /// <summary>
         /// Gets or sets whether to force abandon writing on exception
@@ -112,7 +113,8 @@ namespace LIB_Log
                     Message = message
                 };
 
-                _queue.Add(entry);
+                if (EnableWriteLog)
+                    _queue.Add(entry);
 
                 var line = FormatLogEntry(entry);
                 if (EnableConsoleLog) 
