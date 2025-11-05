@@ -14,6 +14,16 @@ namespace LIB_RPC
         public string LogFilePath { get; init; } = Path.Combine(AppContext.BaseDirectory, "rdp-grpc.log");
         
         /// <summary>
+        /// Maximum number of log entries per file before rotation (default: 20000)
+        /// </summary>
+        public int MaxLogEntriesPerFile { get; init; } = 20000;
+        
+        /// <summary>
+        /// Force abandon log writing on exception (default: false for safety)
+        /// </summary>
+        public bool ForceAbandonLogOnException { get; init; } = false;
+        
+        /// <summary>
         /// Auto-delete received files after successful processing (default: false for safety)
         /// </summary>
         public bool AutoDeleteReceivedFiles { get; init; } = false;

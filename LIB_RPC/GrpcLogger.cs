@@ -1,55 +1,45 @@
-using System.Collections.Concurrent;
-using System.Text;
+using LIB_RPC.Logging;
 
 namespace LIB_RPC
 {
-    public sealed class GrpcLogger
+    /// <summary>
+    /// GrpcLogger with enhanced logging capabilities including file rotation and configurable settings
+    /// </summary>
+    public sealed class GrpcLogger : LoggerBase
     {
         private readonly GrpcConfig _config;
-        private readonly BlockingCollection<string> _queue = new();
-        private readonly CancellationTokenSource _cts = new();
-        private readonly Task _worker;
 
-        public event Action<string>? OnLine;
-
-        public GrpcLogger(GrpcConfig config)
+        /// <summary>
+        /// Creates a new GrpcLogger instance with the specified configuration
+        /// </summary>
+        /// <param name="config">Configuration containing log settings</param>
+        public GrpcLogger(GrpcConfig config) 
+            : base(
+                GetLogDirectory(config),
+                GetLogFileName(config),
+                config.MaxLogEntriesPerFile)
         {
             _config = config;
-            _worker = Task.Run(ProcessAsync);
+            EnableConsoleLog = config.EnableConsoleLog;
+            ForceAbandonOnException = config.ForceAbandonLogOnException;
         }
 
-        public void Info(string message) => Write("INFO", message);
-        public void Error(string message) => Write("ERROR", message);
-        public void Warn(string message) => Write("WARN", message);
-
-        private void Write(string level, string message)
+        private static string GetLogDirectory(GrpcConfig config)
         {
-            var line = $"{DateTime.Now.ToShortDateString()} {DateTime.Now.ToLongTimeString()} [{level}] {message}";
-            _queue.Add(line);
-            if (_config.EnableConsoleLog) Console.WriteLine(line);
-            OnLine?.Invoke(line);
+            var logPath = config.LogFilePath;
+            var directory = Path.GetDirectoryName(logPath);
+            return string.IsNullOrWhiteSpace(directory) 
+                ? AppContext.BaseDirectory 
+                : directory;
         }
 
-        private async Task ProcessAsync()
+        private static string GetLogFileName(GrpcConfig config)
         {
-            try
-            {
-                using var fs = new FileStream(_config.LogFilePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
-                using var writer = new StreamWriter(fs, Encoding.UTF8);
-                foreach (var line in _queue.GetConsumingEnumerable(_cts.Token))
-                {
-                    await writer.WriteLineAsync(line);
-                    await writer.FlushAsync();
-                }
-            }
-            catch (OperationCanceledException) { }
-        }
-
-        public void Dispose()
-        {
-            _queue.CompleteAdding();
-            _cts.Cancel();
-            try { _worker.Wait(2000); } catch { }
+            var logPath = config.LogFilePath;
+            var fileName = Path.GetFileName(logPath);
+            return string.IsNullOrWhiteSpace(fileName) 
+                ? "rdp-grpc.log" 
+                : fileName;
         }
     }
 }
