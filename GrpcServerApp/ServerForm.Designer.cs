@@ -61,6 +61,7 @@ public partial class ServerForm
         _txtType = new TextBox();
         splitContainer1 = new SplitContainer();
         _log = new TextBox();
+        btnLog = new Button();
         _panelLeft.SuspendLayout();
         _grpStressTest.SuspendLayout();
         ((System.ComponentModel.ISupportInitialize)_numRetryCount).BeginInit();
@@ -349,6 +350,7 @@ public partial class ServerForm
         // splitContainer1.Panel1
         // 
         splitContainer1.Panel1.Controls.Add(txtHost);
+        splitContainer1.Panel1.Controls.Add(btnLog);
         splitContainer1.Panel1.Controls.Add(_btnApply);
         splitContainer1.Panel1.Controls.Add(txtPort);
         splitContainer1.Panel1.Controls.Add(lblPort);
@@ -370,6 +372,15 @@ public partial class ServerForm
         _log.ScrollBars = ScrollBars.Vertical;
         _log.Size = new Size(386, 580);
         _log.TabIndex = 3;
+        // 
+        // btnLog
+        // 
+        btnLog.Location = new Point(162, 62);
+        btnLog.Name = "btnLog";
+        btnLog.Size = new Size(64, 26);
+        btnLog.TabIndex = 5;
+        btnLog.Text = "Log";
+        btnLog.Click += btnLog_Click;
         // 
         // ServerForm
         // 
@@ -401,4 +412,5 @@ public partial class ServerForm
     private SplitContainer splitContainer1;
     private Label lblRetry;
     private TextBox _log;
+    private Button btnLog;
 }

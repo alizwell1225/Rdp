@@ -37,4 +37,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\LIB_Log\LIB_Log.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -11,7 +11,23 @@ namespace LIB_RPC
         public int MaxChunkSizeBytes { get; init; } = 64 * 1024; // 64KB default
         public string StorageRoot { get; init; } = Path.Combine(AppContext.BaseDirectory, "storage");
         public bool EnableConsoleLog { get; init; } = true;
-        public string LogFilePath { get; init; } = Path.Combine(AppContext.BaseDirectory, "rdp-grpc.log");
+        public string LogFilePath { get; init; } = Path.Combine(AppContext.BaseDirectory, "Log", "grpc.log");
+
+        /// <summary>
+        /// Maximum number of log entries per file before rotation (default: 10000)
+        /// </summary>
+        public int MaxLogEntriesPerFile { get; init; } = 10000;
+        
+        /// <summary>
+        /// Force abandon log writing on exception (default: false for safety)
+        /// </summary>
+        public bool ForceAbandonLogOnException { get; init; } = false;
+        
+        /// <summary>
+        /// Maximum number of days to retain log files (default: 60 days)
+        /// Logs older than this will be automatically deleted
+        /// </summary>
+        public int MaxLogRetentionDays { get; init; } = 60;
         
         /// <summary>
         /// Auto-delete received files after successful processing (default: false for safety)
