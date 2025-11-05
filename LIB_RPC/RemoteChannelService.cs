@@ -34,7 +34,7 @@ namespace LIB_RPC
         // Allow multiple clients concurrently for duplex and file-push subscriptions
 
         private sealed record DuplexClient(string Id, IServerStreamWriter<JsonEnvelope> Writer, object WriteLock);
-
+        private bool UseStoragePathFile => _config.CheckStorageRootHaveFile;
         public RemoteChannelService(GrpcConfig config, GrpcLogger logger, IScreenCapture screenCapture)
         {
             _config = config;
@@ -443,19 +443,34 @@ namespace LIB_RPC
                         Error = "No clients connected for file push"
                     };
                 }
-
-                var target = Path.Combine(_config.StorageRoot, Path.GetFileName(request.FilePath));
-                if (!File.Exists(target))
+                byte[] fileBytes = null;
+                if (UseStoragePathFile)
                 {
-                    return new PushFileResponse
+                    var target = Path.Combine(_config.StorageRoot, Path.GetFileName(request.FilePath));
+                    if (!File.Exists(target))
                     {
-                        Success = false,
-                        ClientsReached = 0,
-                        Error = $"File not found: {request.FilePath}"
-                    };
+                        return new PushFileResponse
+                        {
+                            Success = false,
+                            ClientsReached = 0,
+                            Error = $"File not found: {request.FilePath}"
+                        };
+                    }
+                    fileBytes = await File.ReadAllBytesAsync(target);
                 }
-
-                var fileBytes = await File.ReadAllBytesAsync(target);
+                else
+                {
+                    if (!File.Exists(request.FilePath))
+                    {
+                        return new PushFileResponse
+                        {
+                            Success = false,
+                            ClientsReached = 0,
+                            Error = $"File not found: {request.FilePath}"
+                        };
+                    }
+                    fileBytes = await File.ReadAllBytesAsync(request.FilePath);
+                }
                 var fileName = Path.GetFileName(request.FilePath);
                 var chunkSize = _config.MaxChunkSizeBytes;
                 var totalChunks = (int)Math.Ceiling((double)fileBytes.Length / chunkSize);

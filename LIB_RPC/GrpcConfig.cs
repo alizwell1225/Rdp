@@ -1,3 +1,4 @@
+using System.Drawing.Drawing2D;
 using System.Text.Json;
 
 namespace LIB_RPC
@@ -43,6 +44,7 @@ namespace LIB_RPC
         /// Custom upload path for server received files (if null, uses StorageRoot)
         /// </summary>
         public string? ServerUploadPath { get; init; } = null;
+        public bool CheckStorageRootHaveFile { get; set; } = false;
 
         public static GrpcConfig Load(string? path)
         {
@@ -50,6 +52,21 @@ namespace LIB_RPC
                 return new GrpcConfig();
             var json = File.ReadAllText(path);
             return JsonSerializer.Deserialize<GrpcConfig>(json) ?? new GrpcConfig();
+        }
+
+        //save config to file
+        public void Save(string path)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
+                var folder = Directory.CreateDirectory(Path.HasExtension(path) ?Path.GetDirectoryName(path): path);
+                File.WriteAllText(path, json);
+            }
+            catch (Exception)
+            {
+
+            }
         }
 
         public void EnsureFolders()

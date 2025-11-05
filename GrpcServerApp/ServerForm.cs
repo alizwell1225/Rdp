@@ -197,10 +197,11 @@ namespace GrpcServerApp
             }
         }
 
-        private async Task PushFileAsync(string storagePath, bool useAckMode = true)
+        private async Task PushFileAsync(string storagePath, bool useAckMode = true,bool UseStrogePath=false)
         {
             try
             {
+                _controller.Config.CheckStorageRootHaveFile = UseStrogePath;
                 if (useAckMode)
                 {
                     // Use ACK mode with retry - pass full path
@@ -450,7 +451,7 @@ namespace GrpcServerApp
                     useAckMode = _chkUseAckMode.Checked;
                     retryCount = (int)_numRetryCount.Value;
                 });
-
+                _controller.Config.CheckStorageRootHaveFile = true;
                 if (useAckMode)
                 {
                     // Use ACK mode with retry - pass full path

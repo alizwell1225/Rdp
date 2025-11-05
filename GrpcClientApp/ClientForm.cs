@@ -33,6 +33,8 @@ namespace GrpcClientApp
         public ClientForm()
         {
             InitializeComponent();
+            _config = GrpcConfig.Load(configPath);
+            _config.Save(configPath);
         }
 
         private bool autoReStart { get; set; } = true;
@@ -41,11 +43,20 @@ namespace GrpcClientApp
             autoReStart = chkAutoRestart.Checked;
         }
 
-
+        private string configPath = Path.Combine(AppContext.BaseDirectory, "Config", "Config.json");
         private async void _btnApply_Click(object? sender, EventArgs e)
         {
             if (!int.TryParse(txtPort?.Text, out var port)) { MessageBox.Show("Port 必須為數字"); return; }
-            _config = new GrpcConfig { Host = txtHost?.Text ?? "localhost", Port = port };
+
+            if (_config == null)
+            {
+                _config = GrpcConfig.Load(configPath);
+            }
+            else
+            {
+                _config = new GrpcConfig { Host = txtHost?.Text ?? "localhost", Port = port };
+            }
+            _config.Save(configPath);
             // dispose previous api if any
             if (_api != null) await _api.DisposeAsync();
             _api = new GrpcClientApi(_config);

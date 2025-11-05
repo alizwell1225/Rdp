@@ -87,14 +87,33 @@ namespace LIB_RPC.API
         /// </summary>
         public event Action<string, string>? OnBroadcastFailed;
 
+        private string configPath = Path.Combine(AppContext.BaseDirectory, "Config", "Config.json");
         /// <summary>
         /// Initializes a new instance of the <see cref="GrpcServerApi"/> class with default configuration.
         /// </summary>
         public GrpcServerApi()
         {
-            _config = new GrpcConfig();
+            _config =GrpcConfig.Load(configPath);
+            _config.Save(configPath);
+            //_config = new GrpcConfig();
             _logger = new GrpcLogger(_config);
             _logger.OnLine += line => OnLog?.Invoke(line);
+        }
+
+        ~GrpcServerApi()
+        {
+            SaveConfig();
+        }
+
+        public void SaveConfig()
+        {
+            try
+            {
+                _config?.Save(configPath);
+            }
+            catch (Exception)
+            {
+            }
         }
 
         /// <summary>

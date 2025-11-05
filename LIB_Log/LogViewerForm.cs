@@ -27,7 +27,7 @@ namespace LIB_Log
             {
                 Name = "Timestamp",
                 HeaderText = "Timestamp",
-                DataPropertyName = "Timestamp",
+                DataPropertyName = "LogTime",
                 Width = 150,
                 Resizable = DataGridViewTriState.False
             });
@@ -333,6 +333,7 @@ namespace LIB_Log
     public class LogRecord
     {
         public DateTime Timestamp { get; set; }
+        public string LogTime { get { return Timestamp.ToString("yyyyMMdd-HH:mm:ss-fff"); } }
         public string Level { get; set; } = string.Empty;
         public string SubTitle { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
