@@ -44,7 +44,7 @@ namespace LogViewer
         /// </summary>
         public bool ForceAbandonOnException { get; set; } = false;
 
-        protected LoggerBase(string logDirectory, string fileNameTemplate, int maxEntriesPerFile = 20000, int maxRetentionDays = 60)
+        protected LoggerBase(string logDirectory, string fileNameTemplate, int maxEntriesPerFile = 10000, int maxRetentionDays = 60)
         {
             if (string.IsNullOrWhiteSpace(logDirectory))
                 throw new ArgumentException("Log directory cannot be null or empty", nameof(logDirectory));

@@ -11,6 +11,11 @@ namespace LogViewer
             SetupDataGridViewColumns();
         }
 
+        public void SetDefinePath(string path)
+        {
+            this.txtLogDirectory.Text=Path.GetDirectoryName(path);
+        }
+
         private void SetupDataGridViewColumns()
         {
             dataGridView.Columns.Clear();
@@ -86,45 +91,18 @@ namespace LogViewer
             {
                 _allRecords.Clear();
 
-                // Load logs from main directory and all date subdirectories
-                var allLogFiles = new List<string>();
-                
-                // Get log files from main directory
-                allLogFiles.AddRange(Directory.GetFiles(directory, "*.log", SearchOption.TopDirectoryOnly));
-                
-                // Get log files from date subdirectories (yyyy-MM-dd format)
-                var subdirectories = Directory.GetDirectories(directory);
-                foreach (var subdir in subdirectories)
-                {
-                    var dirName = Path.GetFileName(subdir);
-                    // Check if directory name matches date format (yyyy-MM-dd)
-                    if (DateTime.TryParseExact(dirName, "yyyy-MM-dd", 
-                        System.Globalization.CultureInfo.InvariantCulture, 
-                        System.Globalization.DateTimeStyles.None, out _))
-                    {
-                        allLogFiles.AddRange(Directory.GetFiles(subdir, "*.log", SearchOption.TopDirectoryOnly));
-                    }
-                }
+                var logFiles = Directory.GetFiles(directory, "*.log", SearchOption.AllDirectories);
 
                 await Task.Run(() =>
                 {
-                    foreach (var file in allLogFiles)
+                    foreach (var file in logFiles)
                     {
                         var fileName = Path.GetFileName(file);
-                        var parentDir = Path.GetFileName(Path.GetDirectoryName(file));
-                        
-                        // If the parent directory is a date folder, include it in the display name
-                        var displayFileName = DateTime.TryParseExact(parentDir, "yyyy-MM-dd", 
-                            System.Globalization.CultureInfo.InvariantCulture, 
-                            System.Globalization.DateTimeStyles.None, out _)
-                            ? $"{parentDir}/{fileName}"
-                            : fileName;
-
                         var lines = File.ReadAllLines(file);
 
                         foreach (var line in lines)
                         {
-                            var record = ParseLogLine(line, displayFileName);
+                            var record = ParseLogLine(line, fileName);
                             if (record != null)
                             {
                                 _allRecords.Add(record);
@@ -136,7 +114,7 @@ namespace LogViewer
                 _filteredRecords = new List<LogRecord>(_allRecords);
                 UpdateGrid();
 
-                MessageBox.Show($"Loaded {_allRecords.Count} log records from {allLogFiles.Count} files.",
+                MessageBox.Show($"Loaded {_allRecords.Count} log records from {logFiles.Length} files.",
                     "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)

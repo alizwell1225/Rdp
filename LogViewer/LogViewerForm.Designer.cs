@@ -127,7 +127,6 @@ namespace LogViewer
             txtLogDirectory.Name = "txtLogDirectory";
             txtLogDirectory.Size = new Size(922, 23);
             txtLogDirectory.TabIndex = 1;
-            txtLogDirectory.Text = "C:\\Users\\Gavin\\AppData\\Local\\Microsoft\\VisualStudio\\17.0_3c87b0e4\\WinFormsDesigner\\bijdg1dg.1cr\\logs";
             // 
             // btnBrowse
             // 

@@ -14,9 +14,9 @@ namespace LIB_RPC
         public string LogFilePath { get; init; } = Path.Combine(AppContext.BaseDirectory, "Log", "grpc.log");
 
         /// <summary>
-        /// Maximum number of log entries per file before rotation (default: 20000)
+        /// Maximum number of log entries per file before rotation (default: 10000)
         /// </summary>
-        public int MaxLogEntriesPerFile { get; init; } = 20000;
+        public int MaxLogEntriesPerFile { get; init; } = 10000;
         
         /// <summary>
         /// Force abandon log writing on exception (default: false for safety)

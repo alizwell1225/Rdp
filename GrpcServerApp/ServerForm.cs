@@ -1,3 +1,7 @@
+using LIB_RPC;
+using LIB_RPC.Abstractions;
+using LIB_RPC.API;
+using LogViewer;
 using System;
 using System.Diagnostics;
 using System.Drawing;
@@ -6,9 +10,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using LIB_RPC;
-using LIB_RPC.API;
-using LIB_RPC.Abstractions;
 
 namespace GrpcServerApp
 {
@@ -34,7 +35,7 @@ namespace GrpcServerApp
         {
             InitializeComponent();
             _controller = new GrpcServerApi();
-            
+
             // Wire controller events
             _controller.OnLog += ControllerOnLog;
             _controller.OnFileAdded += ControllerOnFileAdded;
@@ -163,7 +164,7 @@ namespace GrpcServerApp
             }
         }
 
-        private async Task BroadcastAsync(string type,string body,bool ackFlag=true)
+        private async Task BroadcastAsync(string type, string body, bool ackFlag = true)
         {
             try
             {
@@ -392,7 +393,7 @@ namespace GrpcServerApp
             // Check if ACK mode is enabled
             bool useAckMode = false;
             int retryCount = 0;
-            this.Invoke(() => 
+            this.Invoke(() =>
             {
                 useAckMode = _chkUseAckMode.Checked;
                 retryCount = (int)_numRetryCount.Value;
@@ -420,10 +421,10 @@ namespace GrpcServerApp
             var storageRoot = Path.Combine(Environment.CurrentDirectory, "storage");
             if (!Directory.Exists(storageRoot))
                 Directory.CreateDirectory(storageRoot);
-            
+
             var fileName = $"server_stress_{Guid.NewGuid()}.dat";
             var storagePath = Path.Combine(storageRoot, fileName);
-            
+
             try
             {
                 // Generate test data
@@ -434,7 +435,7 @@ namespace GrpcServerApp
                 // Check if ACK mode is enabled
                 bool useAckMode = false;
                 int retryCount = 0;
-                this.Invoke(() => 
+                this.Invoke(() =>
                 {
                     useAckMode = _chkUseAckMode.Checked;
                     retryCount = (int)_numRetryCount.Value;
@@ -528,5 +529,12 @@ namespace GrpcServerApp
         }
 
         #endregion
+
+        private void btnLog_Click(object sender, EventArgs e)
+        {
+            LogViewerForm dlg=new LogViewerForm();
+            dlg.SetDefinePath(_controller.Config.LogFilePath);
+            dlg.ShowDialog();
+        }
     }
 }
