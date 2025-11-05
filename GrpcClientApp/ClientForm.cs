@@ -19,6 +19,8 @@ namespace GrpcClientApp
         private GrpcConfig? _config;
         private bool _isConnected = false;
         private bool _isReconnecting = false;
+        private readonly object _connectionLock = new object();
+        private const int ReconnectDelayMs = 2000;
 
         // Stress test fields
         private CancellationTokenSource? _stressTestCts;
@@ -72,53 +74,80 @@ namespace GrpcClientApp
 
         private void apiOnDisconnected()
         {
-            _isConnected = false;
+            lock (_connectionLock)
+            {
+                _isConnected = false;
+            }
             UpdateUiConnectedState(false); 
             AutoReStartWork();
         }
 
         private void apiOnConnectionError(string obj)
         {
-            _isConnected = false;
+            lock (_connectionLock)
+            {
+                _isConnected = false;
+            }
             UpdateUiConnectedState(false);
             AutoReStartWork();
         }
 
         private void AutoReStartWork()
         {
-            if (autoReStart && !_isConnected && !_isReconnecting)
+            lock (_connectionLock)
             {
-                _isReconnecting = true;
-                Task.Run(async () =>
+                if (autoReStart && !_isConnected && !_isReconnecting)
                 {
-                    try
+                    _isReconnecting = true;
+                }
+                else
+                {
+                    return;
+                }
+            }
+
+            Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(ReconnectDelayMs);
+                    
+                    bool shouldReconnect = false;
+                    lock (_connectionLock)
                     {
-                        await Task.Delay(2000);
-                        if (!_isConnected)
-                        {
-                            await DisconnectAsyncUI();
-                            await ConnectAsync();
-                        }
+                        shouldReconnect = !_isConnected;
                     }
-                    catch (Exception ex)
+
+                    if (shouldReconnect)
                     {
-                        BeginInvoke(new Action(() =>
-                        {
-                            _log.AppendText($"Auto-reconnect failed: {ex.Message}\r\n");
-                        }));
+                        await DisconnectAsyncUI();
+                        await ConnectAsync();
                     }
-                    finally
+                }
+                catch (Exception ex)
+                {
+                    BeginInvoke(new Action(() =>
+                    {
+                        _log.AppendText($"Auto-reconnect failed: {ex.Message}\r\n");
+                    }));
+                }
+                finally
+                {
+                    lock (_connectionLock)
                     {
                         _isReconnecting = false;
                     }
-                });
-            }
+                }
+            });
         }
 
         private void _api_OnConnected()
         {
-            _isConnected = true;
-            _isReconnecting = false;
+            lock (_connectionLock)
+            {
+                _isConnected = true;
+                _isReconnecting = false;
+            }
             UpdateUiConnectedState(true);
         }
 
@@ -203,7 +232,10 @@ namespace GrpcClientApp
             }
             finally
             {
-                _isConnected = false;
+                lock (_connectionLock)
+                {
+                    _isConnected = false;
+                }
                 UpdateUiConnectedState(false);
             }
         }
@@ -303,7 +335,13 @@ namespace GrpcClientApp
             BeginInvoke(() => _btnConnect.Enabled = false);
             try
             {
-                if (!_isConnected)
+                bool isConnected;
+                lock (_connectionLock)
+                {
+                    isConnected = _isConnected;
+                }
+
+                if (!isConnected)
                 {
                     await ConnectAsync();
                 }
@@ -357,7 +395,13 @@ namespace GrpcClientApp
                 return;
             }
 
-            if (!_isConnected || _api == null)
+            bool isConnected;
+            lock (_connectionLock)
+            {
+                isConnected = _isConnected;
+            }
+
+            if (!isConnected || _api == null)
             {
                 MessageBox.Show("請先連線到 Server!", "錯誤", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
