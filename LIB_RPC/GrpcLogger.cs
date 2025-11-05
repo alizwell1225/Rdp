@@ -28,18 +28,18 @@ namespace LIB_RPC
         {
             var logPath = config.LogFilePath;
             var directory = Path.GetDirectoryName(logPath);
-            return string.IsNullOrWhiteSpace(directory) 
-                ? AppContext.BaseDirectory 
-                : directory;
+            return !string.IsNullOrWhiteSpace(directory) 
+                ? directory 
+                : AppContext.BaseDirectory;
         }
 
         private static string GetLogFileName(GrpcConfig config)
         {
             var logPath = config.LogFilePath;
             var fileName = Path.GetFileName(logPath);
-            return string.IsNullOrWhiteSpace(fileName) 
-                ? "rdp-grpc.log" 
-                : fileName;
+            return !string.IsNullOrWhiteSpace(fileName) 
+                ? fileName 
+                : "rdp-grpc.log";
         }
     }
 }

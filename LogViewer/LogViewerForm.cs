@@ -65,6 +65,8 @@ namespace LogViewer
             topLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100));
             topLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100));
 
+            var lblDirectory = new Label { Text = "Directory:", Dock = DockStyle.Fill };
+
             txtLogDirectory = new TextBox
             {
                 Dock = DockStyle.Fill,
@@ -85,11 +87,11 @@ namespace LogViewer
             };
             btnLoadLogs.Click += BtnLoadLogs_Click;
 
-            topLayout.Controls.Add(new Label { Text = "Directory:", Dock = DockStyle.Fill }, 0, 0);
+            topLayout.Controls.Add(lblDirectory, 0, 0);
+            topLayout.SetColumnSpan(lblDirectory, 3);
             topLayout.Controls.Add(txtLogDirectory, 0, 1);
             topLayout.Controls.Add(btnBrowse, 1, 1);
             topLayout.Controls.Add(btnLoadLogs, 2, 1);
-            topLayout.SetColumnSpan(new Label { Text = "Directory:", Dock = DockStyle.Fill }, 3);
 
             topPanel.Controls.Add(topLayout);
 
@@ -326,7 +328,7 @@ namespace LogViewer
         {
             try
             {
-                // Expected format: 2025-11-05 03:13:45.123 [INFO] Message
+                // Expected format from LoggerBase.LogFormatPattern: yyyy-MM-dd HH:mm:ss.fff [LEVEL] Message
                 var parts = line.Split(new[] { '[', ']' }, StringSplitOptions.RemoveEmptyEntries);
                 if (parts.Length < 3) return null;
 
@@ -334,7 +336,9 @@ namespace LogViewer
                 var level = parts[1].Trim();
                 var message = parts[2].Trim();
 
-                if (DateTime.TryParse(timestampStr, out var timestamp))
+                if (DateTime.TryParseExact(timestampStr, LoggerBase.LogFormatPattern, 
+                    System.Globalization.CultureInfo.InvariantCulture, 
+                    System.Globalization.DateTimeStyles.None, out var timestamp))
                 {
                     return new LogRecord
                     {

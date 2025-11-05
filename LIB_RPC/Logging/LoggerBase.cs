@@ -8,6 +8,12 @@ namespace LIB_RPC.Logging
     /// </summary>
     public abstract class LoggerBase : IDisposable
     {
+        /// <summary>
+        /// Log format pattern for parsing compatibility
+        /// Format: yyyy-MM-dd HH:mm:ss.fff [LEVEL] Message
+        /// </summary>
+        public const string LogFormatPattern = "yyyy-MM-dd HH:mm:ss.fff";
+
         private readonly BlockingCollection<LogEntry> _queue = new();
         private readonly CancellationTokenSource _cts = new();
         private readonly Task _worker;
@@ -116,7 +122,7 @@ namespace LIB_RPC.Logging
         /// </summary>
         protected virtual string FormatLogEntry(LogEntry entry)
         {
-            return $"{entry.Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{entry.Level}] {entry.Message}";
+            return $"{entry.Timestamp.ToString(LogFormatPattern)} [{entry.Level}] {entry.Message}";
         }
 
         /// <summary>
@@ -156,6 +162,7 @@ namespace LIB_RPC.Logging
         /// </summary>
         private async Task WriteToFileAsync(LogEntry entry)
         {
+            StreamWriter? writer;
             lock (_fileLock)
             {
                 // Check if we need to rotate the file
@@ -164,11 +171,17 @@ namespace LIB_RPC.Logging
                     CloseCurrentFile();
                     OpenNewFile();
                 }
+                writer = _currentWriter;
+            }
+
+            if (writer == null)
+            {
+                throw new InvalidOperationException("Failed to open log file");
             }
 
             var line = FormatLogEntry(entry);
-            await _currentWriter!.WriteLineAsync(line);
-            await _currentWriter.FlushAsync();
+            await writer.WriteLineAsync(line);
+            await writer.FlushAsync();
             
             Interlocked.Increment(ref _currentFileEntries);
         }
@@ -181,9 +194,9 @@ namespace LIB_RPC.Logging
             var fileName = GetNextFileName();
             var filePath = Path.Combine(_logDirectory, fileName);
 
-            _currentStream = new FileStream(filePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+            _currentStream = new FileStream(filePath, FileMode.Append, FileAccess.Write, FileShare.Read);
             _currentWriter = new StreamWriter(_currentStream, Encoding.UTF8);
-            _currentFileEntries = 0;
+            Interlocked.Exchange(ref _currentFileEntries, 0);
             _currentFileVersion++;
         }
 
