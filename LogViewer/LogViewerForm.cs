@@ -114,7 +114,19 @@ namespace LogViewer
                                 displayFileName = fileName;
                             }
 
-                            var lines = File.ReadAllLines(file);
+                            // Open with FileShare.ReadWrite to allow reading while logger is writing
+                            string[] lines;
+                            using (var fileStream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                            using (var reader = new StreamReader(fileStream))
+                            {
+                                var linesList = new List<string>();
+                                string? line;
+                                while ((line = reader.ReadLine()) != null)
+                                {
+                                    linesList.Add(line);
+                                }
+                                lines = linesList.ToArray();
+                            }
 
                             foreach (var line in lines)
                             {
