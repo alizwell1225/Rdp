@@ -169,11 +169,11 @@ namespace LIB_RPC.API
                 });
                 _conn.OnConnected+= ConnOnOnConnected;
                 await _conn.ConnectAsync();
-                OnConnected?.Invoke();
                 _logger.Info("Client connected successfully");
             }
             catch (Exception ex)
             {
+                _conn = null;
                 OnConnectionError?.Invoke(ex.Message);
                 _logger.Error($"Connection failed: {ex.Message}");
                 throw;

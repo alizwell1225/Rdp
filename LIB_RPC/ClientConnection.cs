@@ -92,6 +92,7 @@ namespace LIB_RPC
             _ = Task.Run(async () => await ReceiveFilePushAsync());
             await startedTcs.Task.ConfigureAwait(false);
             _logger.Info("Client connected and JSON stream opened");
+            OnConnected?.Invoke(true);
         }
 
         private async Task ReceiveJsonAsync()
@@ -252,6 +253,14 @@ namespace LIB_RPC
                 }
             }
             catch { }
+            finally
+            {
+                _filePushStream = null;
+                _jsonStream = null;
+                _jsonDuplex = null;
+                _client = null;
+                _channel = null;
+            }
         }
 
         private async Task ReceiveFilePushAsync()

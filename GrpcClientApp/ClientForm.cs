@@ -85,9 +85,27 @@ namespace GrpcClientApp
 
         private void AutoReStartWork()
         {
-            if (autoReStart)
+            if (autoReStart && !_isConnected)
             {
-                Connect();
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        await Task.Delay(2000);
+                        if (!_isConnected)
+                        {
+                            await DisconnectAsyncUI();
+                            await ConnectAsync();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        BeginInvoke(new Action(() =>
+                        {
+                            _log.AppendText($"Auto-reconnect failed: {ex.Message}\r\n");
+                        }));
+                    }
+                });
             }
         }
 
