@@ -38,7 +38,7 @@ namespace LIB_Log
             gridPanel = new Panel();
             dataGridView = new DataGridView();
             filterPanel = new GroupBox();
-            filterLayout = new FlowLayoutPanel();
+            filterLayout = new Panel();
             chkEnableDateFilter = new CheckBox();
             lblFrom = new Label();
             dtpStartDate = new DateTimePicker();
@@ -51,6 +51,8 @@ namespace LIB_Log
             txtKeyword = new TextBox();
             lblLevel = new Label();
             cmbLogLevel = new ComboBox();
+            label1 = new Label();
+            cmbLogSubTitle = new ComboBox();
             btnFilter = new Button();
             btnClearFilter = new Button();
             lblTotalRecords = new Label();
@@ -78,7 +80,7 @@ namespace LIB_Log
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 120F));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             mainPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 30F));
-            mainPanel.Size = new Size(1184, 761);
+            mainPanel.Size = new Size(1076, 761);
             mainPanel.TabIndex = 0;
             // 
             // topPanel
@@ -88,7 +90,7 @@ namespace LIB_Log
             topPanel.Location = new Point(13, 13);
             topPanel.Name = "topPanel";
             topPanel.Padding = new Padding(10);
-            topPanel.Size = new Size(1158, 114);
+            topPanel.Size = new Size(1050, 114);
             topPanel.TabIndex = 0;
             topPanel.TabStop = false;
             topPanel.Text = "Log Directory";
@@ -110,7 +112,7 @@ namespace LIB_Log
             topLayout.RowCount = 2;
             topLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
             topLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
-            topLayout.Size = new Size(1138, 78);
+            topLayout.Size = new Size(1030, 78);
             topLayout.TabIndex = 0;
             // 
             // lblDirectory
@@ -119,7 +121,7 @@ namespace LIB_Log
             lblDirectory.Dock = DockStyle.Fill;
             lblDirectory.Location = new Point(8, 5);
             lblDirectory.Name = "lblDirectory";
-            lblDirectory.Size = new Size(1122, 20);
+            lblDirectory.Size = new Size(1014, 20);
             lblDirectory.TabIndex = 0;
             lblDirectory.Text = "Directory:";
             // 
@@ -128,13 +130,13 @@ namespace LIB_Log
             txtLogDirectory.Dock = DockStyle.Fill;
             txtLogDirectory.Location = new Point(8, 28);
             txtLogDirectory.Name = "txtLogDirectory";
-            txtLogDirectory.Size = new Size(922, 23);
+            txtLogDirectory.Size = new Size(814, 23);
             txtLogDirectory.TabIndex = 1;
             // 
             // btnBrowse
             // 
             btnBrowse.Dock = DockStyle.Fill;
-            btnBrowse.Location = new Point(936, 28);
+            btnBrowse.Location = new Point(828, 28);
             btnBrowse.Name = "btnBrowse";
             btnBrowse.Size = new Size(94, 42);
             btnBrowse.TabIndex = 2;
@@ -144,7 +146,7 @@ namespace LIB_Log
             // btnLoadLogs
             // 
             btnLoadLogs.Dock = DockStyle.Fill;
-            btnLoadLogs.Location = new Point(1036, 28);
+            btnLoadLogs.Location = new Point(928, 28);
             btnLoadLogs.Name = "btnLoadLogs";
             btnLoadLogs.Size = new Size(94, 42);
             btnLoadLogs.TabIndex = 3;
@@ -158,7 +160,7 @@ namespace LIB_Log
             gridPanel.Dock = DockStyle.Fill;
             gridPanel.Location = new Point(13, 133);
             gridPanel.Name = "gridPanel";
-            gridPanel.Size = new Size(1158, 585);
+            gridPanel.Size = new Size(1050, 585);
             gridPanel.TabIndex = 1;
             // 
             // dataGridView
@@ -166,12 +168,12 @@ namespace LIB_Log
             dataGridView.AllowUserToAddRows = false;
             dataGridView.AllowUserToDeleteRows = false;
             dataGridView.Dock = DockStyle.Fill;
-            dataGridView.Location = new Point(0, 80);
+            dataGridView.Location = new Point(0, 104);
             dataGridView.MultiSelect = false;
             dataGridView.Name = "dataGridView";
             dataGridView.ReadOnly = true;
             dataGridView.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dataGridView.Size = new Size(1158, 505);
+            dataGridView.Size = new Size(1050, 481);
             dataGridView.TabIndex = 0;
             // 
             // filterPanel
@@ -181,7 +183,7 @@ namespace LIB_Log
             filterPanel.Location = new Point(0, 0);
             filterPanel.Name = "filterPanel";
             filterPanel.Padding = new Padding(10);
-            filterPanel.Size = new Size(1158, 80);
+            filterPanel.Size = new Size(1050, 104);
             filterPanel.TabIndex = 1;
             filterPanel.TabStop = false;
             filterPanel.Text = "Filters";
@@ -200,12 +202,14 @@ namespace LIB_Log
             filterLayout.Controls.Add(txtKeyword);
             filterLayout.Controls.Add(lblLevel);
             filterLayout.Controls.Add(cmbLogLevel);
+            filterLayout.Controls.Add(label1);
+            filterLayout.Controls.Add(cmbLogSubTitle);
             filterLayout.Controls.Add(btnFilter);
             filterLayout.Controls.Add(btnClearFilter);
             filterLayout.Dock = DockStyle.Fill;
             filterLayout.Location = new Point(10, 26);
             filterLayout.Name = "filterLayout";
-            filterLayout.Size = new Size(1138, 44);
+            filterLayout.Size = new Size(1030, 68);
             filterLayout.TabIndex = 0;
             // 
             // chkEnableDateFilter
@@ -241,17 +245,17 @@ namespace LIB_Log
             // 
             dtpStartTime.Enabled = false;
             dtpStartTime.Format = DateTimePickerFormat.Time;
-            dtpStartTime.ShowUpDown = true;
             dtpStartTime.Location = new Point(290, 3);
             dtpStartTime.Name = "dtpStartTime";
+            dtpStartTime.ShowUpDown = true;
             dtpStartTime.Size = new Size(90, 23);
             dtpStartTime.TabIndex = 3;
-            dtpStartTime.Value = new DateTime(2025, 1, 1, 0, 0, 0);
+            dtpStartTime.Value = new DateTime(2025, 1, 1, 0, 0, 0, 0);
             // 
             // lblTo
             // 
             lblTo.AutoSize = true;
-            lblTo.Location = new Point(386, 0);
+            lblTo.Location = new Point(148, 32);
             lblTo.Name = "lblTo";
             lblTo.Padding = new Padding(5, 5, 0, 0);
             lblTo.Size = new Size(30, 20);
@@ -262,7 +266,7 @@ namespace LIB_Log
             // 
             dtpEndDate.Enabled = false;
             dtpEndDate.Format = DateTimePickerFormat.Short;
-            dtpEndDate.Location = new Point(422, 3);
+            dtpEndDate.Location = new Point(184, 35);
             dtpEndDate.Name = "dtpEndDate";
             dtpEndDate.Size = new Size(100, 23);
             dtpEndDate.TabIndex = 5;
@@ -272,17 +276,17 @@ namespace LIB_Log
             // 
             dtpEndTime.Enabled = false;
             dtpEndTime.Format = DateTimePickerFormat.Time;
-            dtpEndTime.ShowUpDown = true;
-            dtpEndTime.Location = new Point(528, 3);
+            dtpEndTime.Location = new Point(290, 35);
             dtpEndTime.Name = "dtpEndTime";
+            dtpEndTime.ShowUpDown = true;
             dtpEndTime.Size = new Size(90, 23);
             dtpEndTime.TabIndex = 6;
-            dtpEndTime.Value = new DateTime(2025, 1, 1, 23, 59, 59);
+            dtpEndTime.Value = new DateTime(2025, 1, 1, 23, 59, 59, 0);
             // 
             // btnSetToday
             // 
             btnSetToday.Enabled = false;
-            btnSetToday.Location = new Point(624, 3);
+            btnSetToday.Location = new Point(31, 28);
             btnSetToday.Name = "btnSetToday";
             btnSetToday.Size = new Size(70, 23);
             btnSetToday.TabIndex = 7;
@@ -292,7 +296,7 @@ namespace LIB_Log
             // lblKeyword
             // 
             lblKeyword.AutoSize = true;
-            lblKeyword.Location = new Point(700, 0);
+            lblKeyword.Location = new Point(394, 3);
             lblKeyword.Name = "lblKeyword";
             lblKeyword.Padding = new Padding(5, 5, 0, 0);
             lblKeyword.Size = new Size(64, 20);
@@ -301,7 +305,7 @@ namespace LIB_Log
             // 
             // txtKeyword
             // 
-            txtKeyword.Location = new Point(770, 3);
+            txtKeyword.Location = new Point(464, 6);
             txtKeyword.Name = "txtKeyword";
             txtKeyword.PlaceholderText = "Keyword...";
             txtKeyword.Size = new Size(150, 23);
@@ -310,7 +314,7 @@ namespace LIB_Log
             // lblLevel
             // 
             lblLevel.AutoSize = true;
-            lblLevel.Location = new Point(926, 0);
+            lblLevel.Location = new Point(631, 4);
             lblLevel.Name = "lblLevel";
             lblLevel.Padding = new Padding(5, 5, 0, 0);
             lblLevel.Size = new Size(44, 20);
@@ -321,25 +325,43 @@ namespace LIB_Log
             // 
             cmbLogLevel.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbLogLevel.Items.AddRange(new object[] { "All", "Debug", "Info", "Warn", "Error" });
-            cmbLogLevel.Location = new Point(976, 3);
+            cmbLogLevel.Location = new Point(681, 7);
             cmbLogLevel.Name = "cmbLogLevel";
             cmbLogLevel.Size = new Size(100, 23);
             cmbLogLevel.TabIndex = 11;
             // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new Point(611, 38);
+            label1.Name = "label1";
+            label1.Padding = new Padding(5, 5, 0, 0);
+            label1.Size = new Size(64, 20);
+            label1.TabIndex = 10;
+            label1.Text = "Sub Title:";
+            // 
+            // cmbLogSubTitle
+            // 
+            cmbLogSubTitle.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbLogSubTitle.Location = new Point(681, 38);
+            cmbLogSubTitle.Name = "cmbLogSubTitle";
+            cmbLogSubTitle.Size = new Size(100, 23);
+            cmbLogSubTitle.TabIndex = 11;
+            // 
             // btnFilter
             // 
-            btnFilter.Location = new Point(1082, 3);
+            btnFilter.Location = new Point(828, 15);
             btnFilter.Name = "btnFilter";
-            btnFilter.Size = new Size(100, 23);
+            btnFilter.Size = new Size(94, 37);
             btnFilter.TabIndex = 12;
             btnFilter.Text = "Apply Filter";
             btnFilter.Click += BtnFilter_Click;
             // 
             // btnClearFilter
             // 
-            btnClearFilter.Location = new Point(3, 32);
+            btnClearFilter.Location = new Point(928, 15);
             btnClearFilter.Name = "btnClearFilter";
-            btnClearFilter.Size = new Size(100, 23);
+            btnClearFilter.Size = new Size(94, 37);
             btnClearFilter.TabIndex = 13;
             btnClearFilter.Text = "Clear Filter";
             btnClearFilter.Click += BtnClearFilter_Click;
@@ -349,14 +371,14 @@ namespace LIB_Log
             lblTotalRecords.Dock = DockStyle.Fill;
             lblTotalRecords.Location = new Point(13, 721);
             lblTotalRecords.Name = "lblTotalRecords";
-            lblTotalRecords.Size = new Size(1158, 30);
+            lblTotalRecords.Size = new Size(1050, 30);
             lblTotalRecords.TabIndex = 2;
             lblTotalRecords.Text = "Total Records: 0";
             lblTotalRecords.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // LogViewerForm
             // 
-            ClientSize = new Size(1184, 761);
+            ClientSize = new Size(1076, 761);
             Controls.Add(mainPanel);
             Name = "LogViewerForm";
             StartPosition = FormStartPosition.CenterScreen;
@@ -383,7 +405,7 @@ namespace LIB_Log
         private Button btnBrowse;
         private Button btnLoadLogs;
         private GroupBox filterPanel;
-        private FlowLayoutPanel filterLayout;
+        private Panel filterLayout;
         private CheckBox chkEnableDateFilter;
         private Label lblFrom;
         private DateTimePicker dtpStartDate;
@@ -401,5 +423,7 @@ namespace LIB_Log
         private DataGridView dataGridView;
         private Panel gridPanel;
         private Label lblTotalRecords;
+        private Label label1;
+        private ComboBox cmbLogSubTitle;
     }
 }

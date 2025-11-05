@@ -28,7 +28,7 @@ namespace LIB_Log
                 Name = "Timestamp",
                 HeaderText = "Timestamp",
                 DataPropertyName = "Timestamp",
-                Width = 180,
+                Width = 150,
                 Resizable = DataGridViewTriState.False
             });
 
@@ -37,10 +37,17 @@ namespace LIB_Log
                 Name = "Level",
                 HeaderText = "Level",
                 DataPropertyName = "Level",
-                Width = 80,
+                Width = 60,
                 Resizable = DataGridViewTriState.False
             });
-
+            dataGridView.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "SubTitle",
+                HeaderText = "SubTitle",
+                DataPropertyName = "SubTitle",
+                Width = 120,
+                Resizable = DataGridViewTriState.False
+            });
             dataGridView.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "Message",
@@ -55,7 +62,7 @@ namespace LIB_Log
                 Name = "FileName",
                 HeaderText = "File Name",
                 DataPropertyName = "FileName",
-                Width = 250,
+                Width = 100,
                 Resizable = DataGridViewTriState.False
             });
         }
@@ -157,6 +164,7 @@ namespace LIB_Log
                 });
 
                 _filteredRecords = new List<LogRecord>(_allRecords);
+                DoWorkSubTitleCollect();
                 UpdateGrid();
 
                 MessageBox.Show($"Loaded {_allRecords.Count} log records from {logFiles.Length} files.",
@@ -184,15 +192,31 @@ namespace LIB_Log
                 var timestampStr = parts[0].Trim();
                 var level = parts[1].Trim();
                 var message = parts[2].Trim();
-
-                if (DateTime.TryParseExact(timestampStr, LoggerBase.LogFormatPattern, 
-                    System.Globalization.CultureInfo.InvariantCulture, 
+                var subTitle = string.Empty;
+                if (string.IsNullOrEmpty(message))
+                {
+                    try
+                    {
+                        subTitle = parts[3].Trim();
+                        message = parts[4].Trim();
+                    }
+                    catch (Exception e)
+                    {
+                    }
+                }
+                else
+                {
+                    subTitle = "Null";
+                }
+                if (DateTime.TryParseExact(timestampStr, LoggerBase.LogFormatPattern,
+                    System.Globalization.CultureInfo.InvariantCulture,
                     System.Globalization.DateTimeStyles.None, out var timestamp))
                 {
                     return new LogRecord
                     {
                         Timestamp = timestamp,
                         Level = level,
+                        SubTitle = subTitle,
                         Message = message,
                         FileName = fileName
                     };
@@ -237,6 +261,15 @@ namespace LIB_Log
                     {
                         return false;
                     }
+                }                
+                
+                if (cmbLogSubTitle.SelectedIndex >= 0)
+                {
+                    var selectedLogSubTitle = cmbLogSubTitle.SelectedItem?.ToString();
+                    if (!string.Equals(r.SubTitle, selectedLogSubTitle, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return false;
+                    }
                 }
 
                 return true;
@@ -245,6 +278,26 @@ namespace LIB_Log
             UpdateGrid();
         }
 
+        private List<string> SubTitleCollect;
+
+        List<string> DoWorkSubTitleCollect()
+        {
+            SubTitleCollect = new List<string>();
+            cmbLogSubTitle.Items.Clear();
+            if (_filteredRecords!=null && _filteredRecords.Count>0)
+            {
+                SubTitleCollect = _filteredRecords
+                    .Select(r => r.SubTitle)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                if (SubTitleCollect.Count>0 )
+                {
+                    cmbLogSubTitle.Items.AddRange(SubTitleCollect.ToArray());
+                }
+                return SubTitleCollect;
+            }
+            return null;
+        }
         private void BtnClearFilter_Click(object? sender, EventArgs e)
         {
             chkEnableDateFilter.Checked = false;
@@ -253,6 +306,8 @@ namespace LIB_Log
             dtpEndDate.Value = DateTime.Now;
             dtpEndTime.Value = DateTime.Today.AddHours(23).AddMinutes(59).AddSeconds(59); // 23:59:59
             txtKeyword.Clear();
+            DoWorkSubTitleCollect();
+            cmbLogSubTitle.SelectedIndex = -1;
             cmbLogLevel.SelectedIndex = 0;
 
             _filteredRecords = new List<LogRecord>(_allRecords);
@@ -279,6 +334,7 @@ namespace LIB_Log
     {
         public DateTime Timestamp { get; set; }
         public string Level { get; set; } = string.Empty;
+        public string SubTitle { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
         public string FileName { get; set; } = string.Empty;
     }
