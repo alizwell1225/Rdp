@@ -42,8 +42,11 @@ namespace LIB_Log
             chkEnableDateFilter = new CheckBox();
             lblFrom = new Label();
             dtpStartDate = new DateTimePicker();
+            dtpStartTime = new DateTimePicker();
             lblTo = new Label();
             dtpEndDate = new DateTimePicker();
+            dtpEndTime = new DateTimePicker();
+            btnSetToday = new Button();
             lblKeyword = new Label();
             txtKeyword = new TextBox();
             lblLevel = new Label();
@@ -188,8 +191,11 @@ namespace LIB_Log
             filterLayout.Controls.Add(chkEnableDateFilter);
             filterLayout.Controls.Add(lblFrom);
             filterLayout.Controls.Add(dtpStartDate);
+            filterLayout.Controls.Add(dtpStartTime);
             filterLayout.Controls.Add(lblTo);
             filterLayout.Controls.Add(dtpEndDate);
+            filterLayout.Controls.Add(dtpEndTime);
+            filterLayout.Controls.Add(btnSetToday);
             filterLayout.Controls.Add(lblKeyword);
             filterLayout.Controls.Add(txtKeyword);
             filterLayout.Controls.Add(lblLevel);
@@ -228,81 +234,113 @@ namespace LIB_Log
             dtpStartDate.Format = DateTimePickerFormat.Short;
             dtpStartDate.Location = new Point(184, 3);
             dtpStartDate.Name = "dtpStartDate";
-            dtpStartDate.Size = new Size(120, 23);
+            dtpStartDate.Size = new Size(100, 23);
             dtpStartDate.TabIndex = 2;
+            // 
+            // dtpStartTime
+            // 
+            dtpStartTime.Enabled = false;
+            dtpStartTime.Format = DateTimePickerFormat.Time;
+            dtpStartTime.ShowUpDown = true;
+            dtpStartTime.Location = new Point(290, 3);
+            dtpStartTime.Name = "dtpStartTime";
+            dtpStartTime.Size = new Size(90, 23);
+            dtpStartTime.TabIndex = 3;
+            dtpStartTime.Value = new DateTime(2025, 1, 1, 0, 0, 0);
             // 
             // lblTo
             // 
             lblTo.AutoSize = true;
-            lblTo.Location = new Point(310, 0);
+            lblTo.Location = new Point(386, 0);
             lblTo.Name = "lblTo";
             lblTo.Padding = new Padding(5, 5, 0, 0);
             lblTo.Size = new Size(30, 20);
-            lblTo.TabIndex = 3;
+            lblTo.TabIndex = 4;
             lblTo.Text = "To:";
             // 
             // dtpEndDate
             // 
             dtpEndDate.Enabled = false;
             dtpEndDate.Format = DateTimePickerFormat.Short;
-            dtpEndDate.Location = new Point(346, 3);
+            dtpEndDate.Location = new Point(422, 3);
             dtpEndDate.Name = "dtpEndDate";
-            dtpEndDate.Size = new Size(120, 23);
-            dtpEndDate.TabIndex = 4;
+            dtpEndDate.Size = new Size(100, 23);
+            dtpEndDate.TabIndex = 5;
             dtpEndDate.Value = new DateTime(2025, 11, 5, 13, 25, 25, 725);
+            // 
+            // dtpEndTime
+            // 
+            dtpEndTime.Enabled = false;
+            dtpEndTime.Format = DateTimePickerFormat.Time;
+            dtpEndTime.ShowUpDown = true;
+            dtpEndTime.Location = new Point(528, 3);
+            dtpEndTime.Name = "dtpEndTime";
+            dtpEndTime.Size = new Size(90, 23);
+            dtpEndTime.TabIndex = 6;
+            dtpEndTime.Value = new DateTime(2025, 1, 1, 23, 59, 59);
+            // 
+            // btnSetToday
+            // 
+            btnSetToday.Enabled = false;
+            btnSetToday.Location = new Point(624, 3);
+            btnSetToday.Name = "btnSetToday";
+            btnSetToday.Size = new Size(70, 23);
+            btnSetToday.TabIndex = 7;
+            btnSetToday.Text = "Today";
+            btnSetToday.Click += BtnSetToday_Click;
             // 
             // lblKeyword
             // 
             lblKeyword.AutoSize = true;
-            lblKeyword.Location = new Point(472, 0);
+            lblKeyword.Location = new Point(700, 0);
             lblKeyword.Name = "lblKeyword";
             lblKeyword.Padding = new Padding(5, 5, 0, 0);
             lblKeyword.Size = new Size(64, 20);
-            lblKeyword.TabIndex = 5;
+            lblKeyword.TabIndex = 8;
             lblKeyword.Text = "Keyword:";
             // 
             // txtKeyword
             // 
-            txtKeyword.Location = new Point(542, 3);
+            txtKeyword.Location = new Point(770, 3);
             txtKeyword.Name = "txtKeyword";
             txtKeyword.PlaceholderText = "Keyword...";
-            txtKeyword.Size = new Size(200, 23);
-            txtKeyword.TabIndex = 6;
+            txtKeyword.Size = new Size(150, 23);
+            txtKeyword.TabIndex = 9;
             // 
             // lblLevel
             // 
             lblLevel.AutoSize = true;
-            lblLevel.Location = new Point(748, 0);
+            lblLevel.Location = new Point(926, 0);
             lblLevel.Name = "lblLevel";
             lblLevel.Padding = new Padding(5, 5, 0, 0);
             lblLevel.Size = new Size(44, 20);
-            lblLevel.TabIndex = 7;
+            lblLevel.TabIndex = 10;
             lblLevel.Text = "Level:";
             // 
             // cmbLogLevel
             // 
             cmbLogLevel.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbLogLevel.Items.AddRange(new object[] { "All", "Debug", "Info", "Warn", "Error" });
-            cmbLogLevel.Location = new Point(798, 3);
+            cmbLogLevel.Location = new Point(976, 3);
             cmbLogLevel.Name = "cmbLogLevel";
             cmbLogLevel.Size = new Size(100, 23);
-            cmbLogLevel.TabIndex = 8;
+            cmbLogLevel.TabIndex = 11;
             // 
             // btnFilter
             // 
-            btnFilter.Location = new Point(904, 3);
+            btnFilter.Location = new Point(1082, 3);
             btnFilter.Name = "btnFilter";
             btnFilter.Size = new Size(100, 23);
-            btnFilter.TabIndex = 9;
+            btnFilter.TabIndex = 12;
             btnFilter.Text = "Apply Filter";
             btnFilter.Click += BtnFilter_Click;
             // 
             // btnClearFilter
             // 
-            btnClearFilter.Location = new Point(1010, 3);
+            btnClearFilter.Location = new Point(3, 32);
             btnClearFilter.Name = "btnClearFilter";
             btnClearFilter.Size = new Size(100, 23);
-            btnClearFilter.TabIndex = 10;
+            btnClearFilter.TabIndex = 13;
             btnClearFilter.Text = "Clear Filter";
             btnClearFilter.Click += BtnClearFilter_Click;
             // 
@@ -349,8 +387,11 @@ namespace LIB_Log
         private CheckBox chkEnableDateFilter;
         private Label lblFrom;
         private DateTimePicker dtpStartDate;
+        private DateTimePicker dtpStartTime;
         private Label lblTo;
         private DateTimePicker dtpEndDate;
+        private DateTimePicker dtpEndTime;
+        private Button btnSetToday;
         private Label lblKeyword;
         private TextBox txtKeyword;
         private Label lblLevel;

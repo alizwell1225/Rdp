@@ -18,14 +18,18 @@ namespace LIB_Log
 
         private void SetupDataGridViewColumns()
         {
+            // Prevent auto-generation of columns
+            dataGridView.AutoGenerateColumns = false;
             dataGridView.Columns.Clear();
 
+            // Add columns with fixed widths (no resizing for non-fill columns)
             dataGridView.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "Timestamp",
                 HeaderText = "Timestamp",
                 DataPropertyName = "Timestamp",
-                Width = 180
+                Width = 180,
+                Resizable = DataGridViewTriState.False
             });
 
             dataGridView.Columns.Add(new DataGridViewTextBoxColumn
@@ -33,7 +37,8 @@ namespace LIB_Log
                 Name = "Level",
                 HeaderText = "Level",
                 DataPropertyName = "Level",
-                Width = 80
+                Width = 80,
+                Resizable = DataGridViewTriState.False
             });
 
             dataGridView.Columns.Add(new DataGridViewTextBoxColumn
@@ -41,7 +46,8 @@ namespace LIB_Log
                 Name = "Message",
                 HeaderText = "Message",
                 DataPropertyName = "Message",
-                AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill
+                AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill,
+                MinimumWidth = 200
             });
 
             dataGridView.Columns.Add(new DataGridViewTextBoxColumn
@@ -49,14 +55,19 @@ namespace LIB_Log
                 Name = "FileName",
                 HeaderText = "File Name",
                 DataPropertyName = "FileName",
-                Width = 200
+                Width = 250,
+                Resizable = DataGridViewTriState.False
             });
         }
 
         private void ChkEnableDateFilter_CheckedChanged(object? sender, EventArgs e)
         {
-            dtpStartDate.Enabled = chkEnableDateFilter.Checked;
-            dtpEndDate.Enabled = chkEnableDateFilter.Checked;
+            bool isEnabled = chkEnableDateFilter.Checked;
+            dtpStartDate.Enabled = isEnabled;
+            dtpEndDate.Enabled = isEnabled;
+            dtpStartTime.Enabled = isEnabled;
+            dtpEndTime.Enabled = isEnabled;
+            btnSetToday.Enabled = isEnabled;
         }
 
         private void BtnBrowse_Click(object? sender, EventArgs e)
@@ -201,8 +212,11 @@ namespace LIB_Log
             {
                 if (chkEnableDateFilter.Checked)
                 {
-                    if (r.Timestamp.Date < dtpStartDate.Value.Date ||
-                        r.Timestamp.Date > dtpEndDate.Value.Date)
+                    // Combine date and time for precise filtering
+                    var startDateTime = dtpStartDate.Value.Date.Add(dtpStartTime.Value.TimeOfDay);
+                    var endDateTime = dtpEndDate.Value.Date.Add(dtpEndTime.Value.TimeOfDay);
+                    
+                    if (r.Timestamp < startDateTime || r.Timestamp > endDateTime)
                     {
                         return false;
                     }
@@ -235,12 +249,22 @@ namespace LIB_Log
         {
             chkEnableDateFilter.Checked = false;
             dtpStartDate.Value = DateTime.Now.AddDays(-7);
+            dtpStartTime.Value = DateTime.Today; // 00:00:00
             dtpEndDate.Value = DateTime.Now;
+            dtpEndTime.Value = DateTime.Today.AddHours(23).AddMinutes(59).AddSeconds(59); // 23:59:59
             txtKeyword.Clear();
             cmbLogLevel.SelectedIndex = 0;
 
             _filteredRecords = new List<LogRecord>(_allRecords);
             UpdateGrid();
+        }
+
+        private void BtnSetToday_Click(object? sender, EventArgs e)
+        {
+            dtpStartDate.Value = DateTime.Today;
+            dtpStartTime.Value = DateTime.Today; // 00:00:00
+            dtpEndDate.Value = DateTime.Today;
+            dtpEndTime.Value = DateTime.Today.AddHours(23).AddMinutes(59).AddSeconds(59); // 23:59:59
         }
 
         private void UpdateGrid()
