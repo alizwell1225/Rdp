@@ -39,7 +39,7 @@ namespace LIB_RPC
             var fileName = Path.GetFileName(logPath);
             return !string.IsNullOrWhiteSpace(fileName) 
                 ? fileName 
-                : "rdp-grpc.log";
+                : "temp.log";
         }
     }
 }

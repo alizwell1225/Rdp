@@ -60,7 +60,8 @@ namespace LogViewer
             _currentFileVersion = 0;
 
             // Ensure log directory exists
-            Directory.CreateDirectory(_logDirectory);
+            if (Directory.Exists(_logDirectory)==false)
+                Directory.CreateDirectory(_logDirectory);
 
             _worker = Task.Run(ProcessAsync);
         }
