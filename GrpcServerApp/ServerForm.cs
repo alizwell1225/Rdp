@@ -188,6 +188,7 @@ namespace GrpcServerApp
                 }
                 else
                 {
+                    await _controller.BroadcastJsonAsync("stress_test", body);
                     _log?.AppendText($"Broadcast sent type={type}\r\n");
                 }
             }

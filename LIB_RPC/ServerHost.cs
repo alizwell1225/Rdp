@@ -197,6 +197,7 @@ namespace LIB_RPC
                 var errorMsg = "No clients connected to receive broadcast";
                 _logger.Warn($"[Server Sent] failed: {errorMsg}");
                 BroadcastFailed?.Invoke(this, (type, errorMsg));
+                throw new Exception($"[Server Sent] failed: type={type}, error={errorMsg}");
                 return;
             }
             
