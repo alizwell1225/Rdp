@@ -333,7 +333,7 @@ namespace LIB_Log
     public class LogRecord
     {
         public DateTime Timestamp { get; set; }
-        public string LogTime { get { return Timestamp.ToString("yyyyMMdd-HH:mm:ss-fff"); } }
+        public string LogTime { get { return Timestamp.ToString("yyyy-MM-dd HH:mm:ss.fff"); } }
         public string Level { get; set; } = string.Empty;
         public string SubTitle { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;

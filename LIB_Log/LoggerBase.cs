@@ -1,5 +1,8 @@
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Text;
+using System.Text.RegularExpressions;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace LIB_Log
 {
@@ -17,10 +20,10 @@ namespace LIB_Log
         private readonly BlockingCollection<LogEntry> _queue = new();
         private readonly CancellationTokenSource _cts = new();
         private readonly Task _worker;
-        private readonly string _baseLogDirectory;
-        private readonly string _fileNameTemplate;
-        private readonly int _maxEntriesPerFile;
-        private readonly int _maxRetentionDays;
+        private  string _baseLogDirectory;
+        private  string _fileNameTemplate;
+        private  int _maxEntriesPerFile;
+        private  int _maxRetentionDays;
         private int _currentFileEntries;
         private int _currentFileVersion;
         private StreamWriter? _currentWriter;
@@ -104,23 +107,146 @@ namespace LIB_Log
         /// </summary>
         protected void Write(LogLevel level, string message)
         {
+            bool isDateTime = false; 
+            
+            string[] formats = {
+                "yyyy-MM-dd HH:mm:ss.fff",
+                "yyyy-MM-dd HH:mm:ss"
+            };
+            LogEntry entry = null;
             try
             {
-                var entry = new LogEntry
+                #region Region1                
+                // 先取出前 23 個字元 (yyyy-MM-dd HH:mm:ss.fff 長度剛好 23)
+                //string possibleDate = message.Length >= 23 ? message.Substring(0, 23) : string.Empty;
+
+                //isDateTime = DateTime.TryParseExact(
+                //    possibleDate,
+                //    "yyyy-MM-dd HH:mm:ss.fff",
+                //    System.Globalization.CultureInfo.InvariantCulture,
+                //    System.Globalization.DateTimeStyles.None,
+                //    out DateTime timestamp
+                #endregion
+
+                #region Region2
+                //DateTime.TryParseExact(
+                //    message.Substring(0, Math.Min(23, message.Length)),
+                //    formats,
+                //    System.Globalization.CultureInfo.InvariantCulture,
+                //    System.Globalization.DateTimeStyles.None,
+                //    out DateTime timestamp
+                //);
+                #endregion
+
+                #region Region3
+                //// 嘗試取前面 23 個字元（有毫秒）或 19 個（無毫秒）
+                //int checkLength = Math.Min(23, message.Length);
+                //string possibleDate = message.Substring(0, checkLength);
+
+                //if (DateTime.TryParseExact(
+                //        possibleDate,
+                //        formats,
+                //        CultureInfo.InvariantCulture,
+                //        DateTimeStyles.None,
+                //        out DateTime timestamp))
+                //{
+                //    // 刪除日期時間部分
+                //    // 先找出實際日期字串長度（因為有可能是 19 或 23）
+                //    string matchedFormat = timestamp.Millisecond > 0 ? "yyyy-MM-dd HH:mm:ss.fff" : "yyyy-MM-dd HH:mm:ss";
+                //    int lengthToRemove = matchedFormat.Length;
+
+                //    // 去掉時間部分與可能的空白
+                //    string remainingText = message.Substring(lengthToRemove).TrimStart();
+
+                //    // 建立 LogRecord 物件
+                //    entry = new LogEntry
+                //    {
+                //        Timestamp = timestamp,
+                //        Level = level,
+                //        Message = remainingText
+                //    };
+                //}
+                //else
+                //{
+                //    entry = new LogEntry
+                //    {
+                //        Timestamp = DateTime.Now,
+                //        Level = level,
+                //        Message = message
+                //    };
+                //}
+                #endregion
+
+                // --- 1.嘗試解析前面的日期時間 ---
+                string possibleDate = message.Length >= 19 ? message.Substring(0, Math.Min(23, message.Length)) : string.Empty;
+                string line = message;
+                if (DateTime.TryParseExact(
+                        possibleDate,
+                        formats,
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.None,
+                        out DateTime timestamp))
                 {
-                    Timestamp = DateTime.Now,
-                    Level = level,
-                    Message = message
-                };
+                    entry = new LogEntry();
+                    entry.Timestamp = timestamp;
 
-                if (EnableWriteLog)
-                    _queue.Add(entry);
+                    // 移除日期部分 + 任何空白
+                    line = line.Substring(possibleDate.Contains('.') ? 23 : 19).TrimStart();
 
-                var line = FormatLogEntry(entry);
-                if (EnableConsoleLog) 
-                    Console.WriteLine(line);
-                
-                OnLine?.Invoke(line);
+
+                    // --- 2.擷取第一個 [ ] 中的 Level ---
+                    var matchLevel = Regex.Match(line, @"^\[(.*?)\]\s*");
+                    if (matchLevel.Success)
+                    {
+                        string levelText = matchLevel.Groups[1].Value;
+                        if (Enum.TryParse(levelText, ignoreCase: true, out LogLevel _level))
+                        {
+                            entry.Level = _level; // 取中括號內文字
+                            line = line.Substring(matchLevel.Value.Length); // 移除整個 [Info]
+                        }
+                        else
+                        {
+                            entry.Level = level;
+                        }
+                    }
+
+                    //// --- 3.擷取第二個 [ ] 中的 SubTitle（如果有）---
+                    //var matchSub = Regex.Match(line, @"^\[(.*?)\]\s*");
+                    //if (matchSub.Success)
+                    //{
+                    //    entry.subTitle = matchSub.Groups[1].Value;
+                    //    line = line.Substring(matchSub.Value.Length);
+                    //}
+
+                    // --- 4.剩下的就是訊息 ---
+                    entry.Message = line.Trim();
+                }
+                else
+                {
+                    entry = new LogEntry
+                    {
+                        Timestamp = DateTime.Now,
+                        Level = level,
+                        Message = message
+                    };
+                }
+            }
+            catch (Exception e)
+            {
+            }
+            try
+            {
+                if (entry!=null)
+                {
+                    if (EnableWriteLog)
+                        _queue.Add(entry);
+
+                    var line = FormatLogEntry(entry);
+                    if (EnableConsoleLog)
+                        Console.WriteLine(line);
+
+                    OnLine?.Invoke(line);
+                }
             }
             catch (Exception ex)
             {
@@ -407,6 +533,7 @@ namespace LIB_Log
                 _currentStream?.Dispose();
                 _currentWriter = null;
                 _currentStream = null;
+                CleanupOldLogs();
             }
             catch
             {

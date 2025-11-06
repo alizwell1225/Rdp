@@ -67,7 +67,7 @@ namespace GrpcServerApp
             BeginInvoke(new Action(() =>
             {
                 RefreshFiles();
-                _log?.AppendText($"File added: {Path.GetFileName(path)}\r\n");
+                _log?.AppendText($"File added: {Path.GetFileName(path)}" + Environment.NewLine);
                 _logger.Info($"File added: {Path.GetFileName(path)}");
                 _totalRequestsReceived++;
                 UpdateServerStats();

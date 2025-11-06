@@ -96,6 +96,7 @@ namespace LIB_RPC.API
             _config =GrpcConfig.Load(configPath);
             _config.Save(configPath);
             //_config = new GrpcConfig();
+            _config.MaxLogRetentionDays = 1;
             _logger = new GrpcLogger(_config);
             _logger.OnLine += line => OnLog?.Invoke(line);
         }

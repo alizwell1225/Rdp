@@ -17,33 +17,33 @@ namespace LIB_RPC
         /// <summary>
         /// Maximum number of log entries per file before rotation (default: 10000)
         /// </summary>
-        public int MaxLogEntriesPerFile { get; init; } = 10000;
+        public int MaxLogEntriesPerFile { get; set; } = 10000;
         
         /// <summary>
         /// Force abandon log writing on exception (default: false for safety)
         /// </summary>
-        public bool ForceAbandonLogOnException { get; init; } = false;
+        public bool ForceAbandonLogOnException { get; set; } = false;
         
         /// <summary>
         /// Maximum number of days to retain log files (default: 60 days)
         /// Logs older than this will be automatically deleted
         /// </summary>
-        public int MaxLogRetentionDays { get; init; } = 60;
+        public int MaxLogRetentionDays { get; set; } = 60;
         
         /// <summary>
         /// Auto-delete received files after successful processing (default: false for safety)
         /// </summary>
-        public bool AutoDeleteReceivedFiles { get; init; } = false;
+        public bool AutoDeleteReceivedFiles { get; set; } = false;
         
         /// <summary>
         /// Custom download path for client received files (if null, uses StorageRoot)
         /// </summary>
-        public string? ClientDownloadPath { get; init; } = null;
+        public string? ClientDownloadPath { get; set; } = null;
         
         /// <summary>
         /// Custom upload path for server received files (if null, uses StorageRoot)
         /// </summary>
-        public string? ServerUploadPath { get; init; } = null;
+        public string? ServerUploadPath { get; set; } = null;
         public bool CheckStorageRootHaveFile { get; set; } = false;
 
         public static GrpcConfig Load(string? path)
