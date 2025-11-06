@@ -327,7 +327,7 @@ namespace LIB_Log
             cmbLogLevel.Items.AddRange(new object[] { "All", "Debug", "Info", "Warn", "Error" });
             cmbLogLevel.Location = new Point(681, 7);
             cmbLogLevel.Name = "cmbLogLevel";
-            cmbLogLevel.Size = new Size(100, 23);
+            cmbLogLevel.Size = new Size(141, 23);
             cmbLogLevel.TabIndex = 11;
             // 
             // label1
@@ -345,7 +345,7 @@ namespace LIB_Log
             cmbLogSubTitle.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbLogSubTitle.Location = new Point(681, 38);
             cmbLogSubTitle.Name = "cmbLogSubTitle";
-            cmbLogSubTitle.Size = new Size(100, 23);
+            cmbLogSubTitle.Size = new Size(141, 23);
             cmbLogSubTitle.TabIndex = 11;
             // 
             // btnFilter

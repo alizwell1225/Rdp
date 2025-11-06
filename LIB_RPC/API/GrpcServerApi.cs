@@ -254,7 +254,7 @@ namespace LIB_RPC.API
         public async Task<(bool Success, int ClientsReached, string Error)> PushFileWithAckAsync(string path, int retryCount = 0, CancellationToken ct = default)
         {
             if (_host == null) throw new InvalidOperationException("Host not started");
-            return await _host.PushFileWithAckAsync(path, retryCount, ct);
+            return await _host.SentWithAckAsync(path, retryCount, ct);
         }
 
         /// <summary>

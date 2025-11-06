@@ -235,7 +235,7 @@ namespace LIB_RPC
             try
             {
                 FilePushStarted?.Invoke(this, filePath);
-                _logger.Info($"[Server Sent] Pushing file: {filePath} to {totalClients} clients");
+                _logger.Info($"[Server Sent] File Pushing file: {filePath} to {totalClients} clients");
                 
                 await svc.BroadcastFileAsync(filePath, ct);
                 
@@ -281,21 +281,21 @@ namespace LIB_RPC
                     if (response.Success && response.ClientsReached > 0)
                     {
                         BroadcastSent?.Invoke(this, (type, response.ClientsReached));
-                        _logger.Info($"[Server PushFileWithAck] Success: {response.ClientsReached} clients reached (Attempt {attempt + 1}/{maxAttempts})");
+                        _logger.Info($"[Server SentWithAck] Success: {response.ClientsReached} clients reached (Attempt {attempt + 1}/{maxAttempts})");
                         return (true, response.ClientsReached, string.Empty);
                     }
                     else if (attempt < maxAttempts - 1)
                     {
                         // Not last attempt, retry
                         int delayMs = (int)Math.Pow(2, attempt) * 100; // Exponential backoff: 100ms, 200ms, 400ms...
-                        _logger.Info($"[Server PushFileWithAck] Attempt {attempt + 1}/{maxAttempts} failed: {response.Error}. Retrying in {delayMs}ms...");
+                        _logger.Info($"[Server SentWithAck] Attempt {attempt + 1}/{maxAttempts} failed: {response.Error}. Retrying in {delayMs}ms...");
                         await Task.Delay(delayMs, ct);
                     }
                     else
                     {
                         // Last attempt failed
                         BroadcastFailed?.Invoke(this, (type, response.Error));
-                        _logger.Warn($"[Server PushFileWithAck] Failed after {maxAttempts} attempts: {response.Error}");
+                        _logger.Warn($"[Server SentWithAck] Failed after {maxAttempts} attempts: {response.Error}");
                         return (false, 0, response.Error);
                     }
                 }
@@ -304,13 +304,13 @@ namespace LIB_RPC
                     if (attempt < maxAttempts - 1)
                     {
                         int delayMs = (int)Math.Pow(2, attempt) * 100;
-                        _logger.Info($"[Server PushFileWithAck] Attempt {attempt + 1}/{maxAttempts} exception: {ex.Message}. Retrying in {delayMs}ms...");
+                        _logger.Info($"[Server SentWithAck] Attempt {attempt + 1}/{maxAttempts} exception: {ex.Message}. Retrying in {delayMs}ms...");
                         await Task.Delay(delayMs, ct);
                     }
                     else
                     {
                         BroadcastFailed?.Invoke(this, (type, ex.Message));
-                        _logger.Error($"[Server PushFileWithAck] Exception after {maxAttempts} attempts: {ex.Message}");
+                        _logger.Error($"[Server SentWithAck] Exception after {maxAttempts} attempts: {ex.Message}");
                         return (false, 0, ex.Message);
                     }
                 }
@@ -319,13 +319,13 @@ namespace LIB_RPC
                 ct.ThrowIfCancellationRequested();
             }
 
-            return (false, 0, "[Server PushFileWithAck] Maximum retry attempts exceeded");
+            return (false, 0, "[Server SentWithAck] Maximum retry attempts exceeded");
         }
 
         /// <summary>
         /// Push file with ACK and retry support
         /// </summary>
-        public async Task<(bool Success, int ClientsReached, string Error)> PushFileWithAckAsync(
+        public async Task<(bool Success, int ClientsReached, string Error)> SentWithAckAsync(
             string filePath, 
             int retryCount = 0,
             CancellationToken ct = default)
@@ -351,21 +351,21 @@ namespace LIB_RPC
                     if (response.Success && response.ClientsReached > 0)
                     {
                         FilePushCompleted?.Invoke(this, filePath);
-                        _logger.Info($"[Server PushFileWithAck]Success: {response.ClientsReached} clients reached (Attempt {attempt + 1}/{maxAttempts})");
+                        _logger.Info($"[Server SentWithAck] File Success: {response.ClientsReached} clients reached (Attempt {attempt + 1}/{maxAttempts})");
                         return (true, response.ClientsReached, string.Empty);
                     }
                     else if (attempt < maxAttempts - 1)
                     {
                         // Not last attempt, retry
                         int delayMs = (int)Math.Pow(2, attempt) * 100; // Exponential backoff
-                        _logger.Info($"[Server PushFileWithAck]Attempt {attempt + 1}/{maxAttempts} failed: {response.Error}. Retrying in {delayMs}ms...");
+                        _logger.Info($"[Server SentWithAck] File Attempt {attempt + 1}/{maxAttempts} failed: {response.Error}. Retrying in {delayMs}ms...");
                         await Task.Delay(delayMs, ct);
                     }
                     else
                     {
                         // Last attempt failed
                         FilePushFailed?.Invoke(this, (filePath, response.Error));
-                        _logger.Warn($"[Server PushFileWithAck] Failed after {maxAttempts} attempts: {response.Error}");
+                        _logger.Warn($"[Server SentWithAck] File Failed after {maxAttempts} attempts: {response.Error}");
                         return (false, 0, response.Error);
                     }
                 }
@@ -374,13 +374,13 @@ namespace LIB_RPC
                     if (attempt < maxAttempts - 1)
                     {
                         int delayMs = (int)Math.Pow(2, attempt) * 100;
-                        _logger.Info($"[Server PushFileWithAck] Attempt {attempt + 1}/{maxAttempts} exception: {ex.Message}. Retrying in {delayMs}ms...");
+                        _logger.Info($"[Server SentWithAck] File Attempt {attempt + 1}/{maxAttempts} exception: {ex.Message}. Retrying in {delayMs}ms...");
                         await Task.Delay(delayMs, ct);
                     }
                     else
                     {
                         FilePushFailed?.Invoke(this, (filePath, ex.Message));
-                        _logger.Error($"[Server PushFileWithAck] Exception after {maxAttempts} attempts: {ex.Message}");
+                        _logger.Error($"[Server SentWithAck] File Exception after {maxAttempts} attempts: {ex.Message}");
                         return (false, 0, ex.Message);
                     }
                 }
@@ -389,7 +389,7 @@ namespace LIB_RPC
                 ct.ThrowIfCancellationRequested();
             }
 
-            return (false, 0, "[Server PushFileWithAck] Maximum retry attempts exceeded");
+            return (false, 0, "[Server SentWithAck] File Maximum retry attempts exceeded");
         }
 
         public async ValueTask DisposeAsync()
