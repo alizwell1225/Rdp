@@ -87,14 +87,34 @@ namespace LIB_RPC.API
         /// </summary>
         public event Action<string, string>? OnBroadcastFailed;
 
+        private string configPath = Path.Combine(AppContext.BaseDirectory, "Config", "Config.json");
         /// <summary>
         /// Initializes a new instance of the <see cref="GrpcServerApi"/> class with default configuration.
         /// </summary>
         public GrpcServerApi()
         {
-            _config = new GrpcConfig();
+            _config =GrpcConfig.Load(configPath);
+            _config.Save(configPath);
+            //_config = new GrpcConfig();
+            _config.MaxLogRetentionDays = 1;
             _logger = new GrpcLogger(_config);
             _logger.OnLine += line => OnLog?.Invoke(line);
+        }
+
+        ~GrpcServerApi()
+        {
+            SaveConfig();
+        }
+
+        public void SaveConfig()
+        {
+            try
+            {
+                _config?.Save(configPath);
+            }
+            catch (Exception)
+            {
+            }
         }
 
         /// <summary>
@@ -109,20 +129,24 @@ namespace LIB_RPC.API
         /// <param name="port">The port number to listen on.</param>
         public void UpdateConfig(string? host, int? port)
         {
-            // GrpcConfig properties are init-only, so create a new instance
-            var newConfig = new GrpcConfig
-            {
-                Host = !string.IsNullOrWhiteSpace(host) ? host!.Trim() : _config.Host,
-                Port = port ?? _config.Port,
-                Password = _config.Password,
-                MaxChunkSizeBytes = _config.MaxChunkSizeBytes,
-                StorageRoot = _config.StorageRoot,
-                EnableConsoleLog = _config.EnableConsoleLog,
-                LogFilePath = _config.LogFilePath
-            };
+            //// GrpcConfig properties are init-only, so create a new instance
+            //var newConfig = new GrpcConfig
+            //{
+            //    Host = !string.IsNullOrWhiteSpace(host) ? host!.Trim() : _config.Host,
+            //    Port = port ?? _config.Port,
+            //    Password = _config.Password,
+            //    MaxChunkSizeBytes = _config.MaxChunkSizeBytes,
+            //    StorageRoot = _config.StorageRoot,
+            //    EnableConsoleLog = _config.EnableConsoleLog,
+            //    LogFilePath = _config.LogFilePath
+            //};
 
-            // Replace config and recreate logger so it uses the updated paths/settings
-            _config = newConfig;
+            //// Replace config and recreate logger so it uses the updated paths/settings
+            //_config = newConfig;
+
+            Config.SavePort(port);
+            Config.SaveHost(host);
+            SaveConfig();
             try
             {
                 _logger?.Dispose();

@@ -129,21 +129,21 @@ namespace LIB_RPC
             return this;
         }
 
-        /// <summary>
-        /// Builds the GrpcConfig instance.
-        /// </summary>
-        public GrpcConfig Build()
-        {
-            return new GrpcConfig
-            {
-                Host = _host,
-                Port = _port,
-                Password = _password,
-                MaxChunkSizeBytes = _maxChunkSizeBytes,
-                StorageRoot = _storageRoot,
-                EnableConsoleLog = _enableConsoleLog,
-                LogFilePath = _logFilePath
-            };
-        }
+        ///// <summary>
+        ///// Builds the GrpcConfig instance.
+        ///// </summary>
+        //public GrpcConfig Build()
+        //{
+        //    return new GrpcConfig
+        //    {
+        //        Host = _host,
+        //        Port = _port,
+        //        Password = _password,
+        //        MaxChunkSizeBytes = _maxChunkSizeBytes,
+        //        StorageRoot = _storageRoot,
+        //        EnableConsoleLog = _enableConsoleLog,
+        //        LogFilePath = _logFilePath
+        //    };
+        //}
     }
 }

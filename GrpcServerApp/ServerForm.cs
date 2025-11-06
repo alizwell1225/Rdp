@@ -50,14 +50,14 @@ namespace GrpcServerApp
             _statsUpdateTimer.Tick += StatsUpdateTimerOnTick;
 
 
-            _logger=new LoggerServer(Path.Combine(AppContext.BaseDirectory,"Log"), "controller");
+            _logger = new LoggerServer(Path.Combine(AppContext.BaseDirectory, "Log"), "controller");
         }
 
         private void ControllerOnLog(string line)
         {
             BeginInvoke(new Action(() =>
             {
-                _log.AppendText(line + Environment.NewLine);
+                _log?.AppendText(line + Environment.NewLine);
                 _logger.Info(line);
             }));
         }
@@ -67,7 +67,7 @@ namespace GrpcServerApp
             BeginInvoke(new Action(() =>
             {
                 RefreshFiles();
-                _log.AppendText($"File added: {Path.GetFileName(path)}\r\n");
+                _log?.AppendText($"File added: {Path.GetFileName(path)}" + Environment.NewLine);
                 _logger.Info($"File added: {Path.GetFileName(path)}");
                 _totalRequestsReceived++;
                 UpdateServerStats();
@@ -158,7 +158,7 @@ namespace GrpcServerApp
             _totalBytesReceived = 0;
             _serverRuntime.Restart();
             UpdateServerStats();
-            _log.AppendText("統計資料已重置\r\n");
+            _log?.AppendText("統計資料已重置\r\n");
         }
 
         private void RefreshFiles()
@@ -188,19 +188,21 @@ namespace GrpcServerApp
                 }
                 else
                 {
-                    _log.AppendText($"Broadcast sent type={type}\r\n");
+                    await _controller.BroadcastJsonAsync("stress_test", body);
+                    _log?.AppendText($"Broadcast sent type={type}\r\n");
                 }
             }
             catch (Exception ex)
             {
-                _log.AppendText($"Broadcast error: {ex.Message}\r\n");
+                _log?.AppendText($"Broadcast error: {ex.Message}\r\n");
             }
         }
 
-        private async Task PushFileAsync(string storagePath, bool useAckMode = true)
+        private async Task PushFileAsync(string storagePath, bool useAckMode = true, bool UseStrogePath = false)
         {
             try
             {
+                _controller.Config.CheckStorageRootHaveFile = UseStrogePath;
                 if (useAckMode)
                 {
                     // Use ACK mode with retry - pass full path
@@ -215,40 +217,40 @@ namespace GrpcServerApp
                     // Use streaming mode (existing) - pass full path
                     await _controller.PushFileAsync(storagePath);
                 }
-                _log.AppendText($"Pushed file: {Path.GetFileName(storagePath)}\r\n");
+                _log?.AppendText($"Pushed file: {Path.GetFileName(storagePath)}\r\n");
             }
             catch (Exception ex)
             {
-                _log.AppendText($"Push file error: {ex.Message}\r\n");
+                _log?.AppendText($"Push file error: {ex.Message}\r\n");
             }
         }
 
-        private async void _btnPushFile_Click(object sender, EventArgs e)
+        private async void btnPushFile_Click(object sender, EventArgs e)
         {
             using var ofd = new OpenFileDialog();
             if (ofd.ShowDialog() != DialogResult.OK) return;
             await PushFileAsync(ofd.FileName);
         }
 
-        private async void _btnBroadcast_Click(object sender, EventArgs e)
+        private async void btnBroadcast_Click(object sender, EventArgs e)
         {
             var type = string.IsNullOrWhiteSpace(_txtType.Text) ? "broadcast" : _txtType.Text.Trim();
             var body = string.IsNullOrWhiteSpace(_txtJson.Text) ? "{}" : _txtJson.Text;
             await BroadcastAsync(type, body);
         }
 
-        private async void _btnStart_Click(object sender, EventArgs e)
+        private async void btnStart_Click(object sender, EventArgs e)
         {
             await StartAsync();
         }
 
-        private async void _btnStop_Click(object sender, EventArgs e)
+        private async void btnStop_Click(object sender, EventArgs e)
         {
             await StopAsync();
         }
 
         // Apply host/port from designer and start the server
-        private async void _btnApply_Click(object sender, EventArgs e)
+        private async void btnApply_Click(object sender, EventArgs e)
         {
             try
             {
@@ -259,19 +261,19 @@ namespace GrpcServerApp
                 int port = 50051;
                 if (int.TryParse(tbPort, out var p)) port = p;
                 _controller.UpdateConfig(host, port);
-                _log.AppendText($"Config applied: {host}:{port}\r\n");
+                _log?.AppendText($"Config applied: {host}:{port}\r\n");
                 // Optionally start immediately
                 await StartAsync();
             }
             catch (Exception ex)
             {
-                _log.AppendText($"Apply error: {ex.Message}\r\n");
+                _log?.AppendText($"Apply error: {ex.Message}\r\n");
             }
         }
 
         #region Server Stress Test Methods
 
-        private async void _btnStartStressTest_Click(object sender, EventArgs e)
+        private async void btnStartStressTest_Click(object sender, EventArgs e)
         {
             if (_isStressTesting)
             {
@@ -329,9 +331,9 @@ namespace GrpcServerApp
             _chkStressUnlimited.Enabled = false;
             _cmbStressType.Enabled = false;
 
-            _log.AppendText($"=== Server端壓力測試開始 ===\r\n");
-            _log.AppendText($"測試類型: {_cmbStressType.Text}\r\n");
-            _log.AppendText($"間隔: {intervalMs}ms, 大小: {sizeKB}KB, 次數: {(maxIterations == 0 ? "無限制" : maxIterations.ToString())}\r\n");
+            _log?.AppendText($"=== Server端壓力測試開始 ===\r\n");
+            _log?.AppendText($"測試類型: {_cmbStressType.Text}\r\n");
+            _log?.AppendText($"間隔: {intervalMs}ms, 大小: {sizeKB}KB, 次數: {(maxIterations == 0 ? "無限制" : maxIterations.ToString())}\r\n");
 
             try
             {
@@ -339,11 +341,11 @@ namespace GrpcServerApp
             }
             catch (OperationCanceledException)
             {
-                _log.AppendText("壓力測試已取消\r\n");
+                _log?.AppendText("壓力測試已取消\r\n");
             }
             catch (Exception ex)
             {
-                _log.AppendText($"壓力測試錯誤: {ex.Message}\r\n");
+                _log?.AppendText($"壓力測試錯誤: {ex.Message}\r\n");
             }
             finally
             {
@@ -385,7 +387,7 @@ namespace GrpcServerApp
                 catch (Exception ex)
                 {
                     _stressTestFailures++;
-                    _log.AppendText($"[第 {iteration} 次失敗] {ex.Message}\r\n");
+                    _log?.AppendText($"[第 {iteration} 次失敗] {ex.Message}\r\n");
                     UpdateStressTestStats();
                 }
 
@@ -450,7 +452,7 @@ namespace GrpcServerApp
                     useAckMode = _chkUseAckMode.Checked;
                     retryCount = (int)_numRetryCount.Value;
                 });
-
+                _controller.Config.CheckStorageRootHaveFile = true;
                 if (useAckMode)
                 {
                     // Use ACK mode with retry - pass full path
@@ -534,7 +536,7 @@ namespace GrpcServerApp
                 _txtStressIterations.Enabled = true;
                 _chkStressUnlimited.Enabled = true;
                 _cmbStressType.Enabled = true;
-                _log.AppendText("=== Server端壓力測試結束 ===\r\n");
+                _log?.AppendText("=== Server端壓力測試結束 ===\r\n");
             }));
         }
 
@@ -542,9 +544,15 @@ namespace GrpcServerApp
 
         private void btnLog_Click(object sender, EventArgs e)
         {
-            LogViewerForm dlg=new LogViewerForm();
+            LogViewerForm dlg = new LogViewerForm();
             dlg.SetDefinePath(_controller.Config.LogFilePath);
             dlg.ShowDialog();
+        }
+
+        private void ServerForm_Load(object sender, EventArgs e)
+        {
+            txtHost.Text = _controller.Config?.Host ?? "localhost";
+            txtPort.Text = (_controller.Config?.Port ?? 50051).ToString();
         }
     }
 }

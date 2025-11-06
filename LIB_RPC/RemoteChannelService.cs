@@ -34,7 +34,7 @@ namespace LIB_RPC
         // Allow multiple clients concurrently for duplex and file-push subscriptions
 
         private sealed record DuplexClient(string Id, IServerStreamWriter<JsonEnvelope> Writer, object WriteLock);
-
+        private bool UseStoragePathFile => _config.CheckStorageRootHaveFile;
         public RemoteChannelService(GrpcConfig config, GrpcLogger logger, IScreenCapture screenCapture)
         {
             _config = config;
@@ -109,7 +109,7 @@ namespace LIB_RPC
                 try
                 {
                     // Use proper async lock to prevent deadlocks
-                    await Task.Run(async () =>
+                    await Task.Run(() =>
                     {
                         lock (dc.WriteLock)
                         {
@@ -396,14 +396,14 @@ namespace LIB_RPC
                         }
                         catch (Exception ex)
                         {
-                            _logger.Warn($"[BroadcastWithAck] Failed to send to client {kvp.Key}: {ex.Message}");
+                            _logger.Warn($"[Server PushFileWithAck] Failed to send to client {kvp.Key}: {ex.Message}");
                         }
                     }));
                 }
 
                 await Task.WhenAll(tasks);
 
-                _logger.Info($"[BroadcastWithAck] Sent to {successCount}/{clients.Count} clients");
+                _logger.Info($"[Server PushFileWithAck] Sent to {successCount}/{clients.Count} clients");
 
                 return new BroadcastResponse
                 {
@@ -414,7 +414,7 @@ namespace LIB_RPC
             }
             catch (Exception ex)
             {
-                _logger.Error($"[BroadcastWithAck] Error: {ex.Message}");
+                _logger.Error($"[Server PushFileWithAck] Error: {ex.Message}");
                 return new BroadcastResponse
                 {
                     Success = false,
@@ -443,19 +443,34 @@ namespace LIB_RPC
                         Error = "No clients connected for file push"
                     };
                 }
-
-                var target = Path.Combine(_config.StorageRoot, Path.GetFileName(request.FilePath));
-                if (!File.Exists(target))
+                byte[] fileBytes = null;
+                if (UseStoragePathFile)
                 {
-                    return new PushFileResponse
+                    var target = Path.Combine(_config.StorageRoot, Path.GetFileName(request.FilePath));
+                    if (!File.Exists(target))
                     {
-                        Success = false,
-                        ClientsReached = 0,
-                        Error = $"File not found: {request.FilePath}"
-                    };
+                        return new PushFileResponse
+                        {
+                            Success = false,
+                            ClientsReached = 0,
+                            Error = $"File not found: {request.FilePath}"
+                        };
+                    }
+                    fileBytes = await File.ReadAllBytesAsync(target);
                 }
-
-                var fileBytes = await File.ReadAllBytesAsync(target);
+                else
+                {
+                    if (!File.Exists(request.FilePath))
+                    {
+                        return new PushFileResponse
+                        {
+                            Success = false,
+                            ClientsReached = 0,
+                            Error = $"File not found: {request.FilePath}"
+                        };
+                    }
+                    fileBytes = await File.ReadAllBytesAsync(request.FilePath);
+                }
                 var fileName = Path.GetFileName(request.FilePath);
                 var chunkSize = _config.MaxChunkSizeBytes;
                 var totalChunks = (int)Math.Ceiling((double)fileBytes.Length / chunkSize);
@@ -487,14 +502,14 @@ namespace LIB_RPC
                         }
                         catch (Exception ex)
                         {
-                            _logger.Warn($"[PushFileWithAck] Failed to send to client {kvp.Key}: {ex.Message}");
+                            _logger.Warn($"[Server PushFileWithAck] Failed to send to client {kvp.Key}: {ex.Message}");
                         }
                     }));
                 }
 
                 await Task.WhenAll(tasks);
 
-                _logger.Info($"[PushFileWithAck] Sent file '{fileName}' to {successCount}/{clients.Count} clients");
+                _logger.Info($"[Server PushFileWithAck] Sent file '{fileName}' to {successCount}/{clients.Count} clients");
 
                 return new PushFileResponse
                 {
@@ -505,7 +520,7 @@ namespace LIB_RPC
             }
             catch (Exception ex)
             {
-                _logger.Error($"[PushFileWithAck] Error: {ex.Message}");
+                _logger.Error($"[Server PushFileWithAck] Error: {ex.Message}");
                 return new PushFileResponse
                 {
                     Success = false,

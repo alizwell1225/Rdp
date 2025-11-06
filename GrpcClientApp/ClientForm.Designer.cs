@@ -84,6 +84,7 @@ namespace GrpcClientApp
             _btnApply = new Button();
             splitContainer1 = new SplitContainer();
             chkAutoRestart = new CheckBox();
+            btnLog = new Button();
             ((ISupportInitialize)_pic).BeginInit();
             _panelLeft.SuspendLayout();
             _grpStressTest.SuspendLayout();
@@ -174,7 +175,7 @@ namespace GrpcClientApp
             _btnSendJson.TabIndex = 10;
             _btnSendJson.Text = "送 JSON";
             _btnSendJson.UseVisualStyleBackColor = true;
-            _btnSendJson.Click += _btnSendJson_Click;
+            _btnSendJson.Click += btnSendJson_Click;
             // 
             // _btnUpload
             // 
@@ -186,7 +187,7 @@ namespace GrpcClientApp
             _btnUpload.TabIndex = 9;
             _btnUpload.Text = "上傳檔案";
             _btnUpload.UseVisualStyleBackColor = true;
-            _btnUpload.Click += _btnUpload_Click;
+            _btnUpload.Click += btnUpload_Click;
             // 
             // _btnDownload
             // 
@@ -198,7 +199,7 @@ namespace GrpcClientApp
             _btnDownload.TabIndex = 8;
             _btnDownload.Text = "下載檔案";
             _btnDownload.UseVisualStyleBackColor = true;
-            _btnDownload.Click += _btnDownload_Click;
+            _btnDownload.Click += btnDownload_Click;
             // 
             // _btnScreenshot
             // 
@@ -210,7 +211,7 @@ namespace GrpcClientApp
             _btnScreenshot.TabIndex = 7;
             _btnScreenshot.Text = "取得截圖";
             _btnScreenshot.UseVisualStyleBackColor = true;
-            _btnScreenshot.Click += _btnScreenshot_Click;
+            _btnScreenshot.Click += btnScreenshot_Click;
             // 
             // _btnConnect
             // 
@@ -282,7 +283,7 @@ namespace GrpcClientApp
             _btnStartStressTest.Size = new Size(603, 35);
             _btnStartStressTest.TabIndex = 9;
             _btnStartStressTest.Text = "開始壓測";
-            _btnStartStressTest.Click += _btnStartStressTest_Click;
+            _btnStartStressTest.Click += btnStartStressTest_Click;
             // 
             // _chkStressUnlimited
             // 
@@ -399,9 +400,9 @@ namespace GrpcClientApp
             // 
             // _btnApply
             // 
-            _btnApply.Location = new Point(160, 62);
+            _btnApply.Location = new Point(83, 62);
             _btnApply.Name = "_btnApply";
-            _btnApply.Size = new Size(120, 26);
+            _btnApply.Size = new Size(121, 26);
             _btnApply.TabIndex = 2;
             _btnApply.Text = "Apply && Connect";
             _btnApply.UseVisualStyleBackColor = true;
@@ -417,6 +418,7 @@ namespace GrpcClientApp
             // splitContainer1.Panel1
             // 
             splitContainer1.Panel1.Controls.Add(lblHost);
+            splitContainer1.Panel1.Controls.Add(btnLog);
             splitContainer1.Panel1.Controls.Add(_btnApply);
             splitContainer1.Panel1.Controls.Add(chkAutoRestart);
             splitContainer1.Panel1.Controls.Add(txtPort);
@@ -439,6 +441,16 @@ namespace GrpcClientApp
             chkAutoRestart.TabIndex = 8;
             chkAutoRestart.Text = "自動重試";
             chkAutoRestart.CheckedChanged += _chkStressUnlimited_CheckedChanged;
+            // 
+            // btnLog
+            // 
+            btnLog.Location = new Point(210, 62);
+            btnLog.Name = "btnLog";
+            btnLog.Size = new Size(72, 26);
+            btnLog.TabIndex = 2;
+            btnLog.Text = "Log";
+            btnLog.UseVisualStyleBackColor = true;
+            btnLog.Click += btnLog_Click;
             // 
             // ClientForm
             // 
@@ -477,5 +489,6 @@ namespace GrpcClientApp
         private Label lblPort;
         private SplitContainer splitContainer1;
         private CheckBox chkAutoRestart;
+        private Button btnLog;
     }
 }
