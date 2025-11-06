@@ -396,14 +396,14 @@ namespace LIB_RPC
                         }
                         catch (Exception ex)
                         {
-                            _logger.Warn($"[BroadcastWithAck] Failed to send to client {kvp.Key}: {ex.Message}");
+                            _logger.Warn($"[Server PushFileWithAck] Failed to send to client {kvp.Key}: {ex.Message}");
                         }
                     }));
                 }
 
                 await Task.WhenAll(tasks);
 
-                _logger.Info($"[BroadcastWithAck] Sent to {successCount}/{clients.Count} clients");
+                _logger.Info($"[Server PushFileWithAck] Sent to {successCount}/{clients.Count} clients");
 
                 return new BroadcastResponse
                 {
@@ -414,7 +414,7 @@ namespace LIB_RPC
             }
             catch (Exception ex)
             {
-                _logger.Error($"[BroadcastWithAck] Error: {ex.Message}");
+                _logger.Error($"[Server PushFileWithAck] Error: {ex.Message}");
                 return new BroadcastResponse
                 {
                     Success = false,
@@ -502,14 +502,14 @@ namespace LIB_RPC
                         }
                         catch (Exception ex)
                         {
-                            _logger.Warn($"[PushFileWithAck] Failed to send to client {kvp.Key}: {ex.Message}");
+                            _logger.Warn($"[Server PushFileWithAck] Failed to send to client {kvp.Key}: {ex.Message}");
                         }
                     }));
                 }
 
                 await Task.WhenAll(tasks);
 
-                _logger.Info($"[PushFileWithAck] Sent file '{fileName}' to {successCount}/{clients.Count} clients");
+                _logger.Info($"[Server PushFileWithAck] Sent file '{fileName}' to {successCount}/{clients.Count} clients");
 
                 return new PushFileResponse
                 {
@@ -520,7 +520,7 @@ namespace LIB_RPC
             }
             catch (Exception ex)
             {
-                _logger.Error($"[PushFileWithAck] Error: {ex.Message}");
+                _logger.Error($"[Server PushFileWithAck] Error: {ex.Message}");
                 return new PushFileResponse
                 {
                     Success = false,

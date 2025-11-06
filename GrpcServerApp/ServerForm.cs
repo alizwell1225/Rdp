@@ -158,7 +158,7 @@ namespace GrpcServerApp
             _totalBytesReceived = 0;
             _serverRuntime.Restart();
             UpdateServerStats();
-            _log.AppendText("統計資料已重置\r\n");
+            _log?.AppendText("統計資料已重置\r\n");
         }
 
         private void RefreshFiles()
@@ -188,12 +188,12 @@ namespace GrpcServerApp
                 }
                 else
                 {
-                    _log.AppendText($"Broadcast sent type={type}\r\n");
+                    _log?.AppendText($"Broadcast sent type={type}\r\n");
                 }
             }
             catch (Exception ex)
             {
-                _log.AppendText($"Broadcast error: {ex.Message}\r\n");
+                _log?.AppendText($"Broadcast error: {ex.Message}\r\n");
             }
         }
 
@@ -216,11 +216,11 @@ namespace GrpcServerApp
                     // Use streaming mode (existing) - pass full path
                     await _controller.PushFileAsync(storagePath);
                 }
-                _log.AppendText($"Pushed file: {Path.GetFileName(storagePath)}\r\n");
+                _log?.AppendText($"Pushed file: {Path.GetFileName(storagePath)}\r\n");
             }
             catch (Exception ex)
             {
-                _log.AppendText($"Push file error: {ex.Message}\r\n");
+                _log?.AppendText($"Push file error: {ex.Message}\r\n");
             }
         }
 
@@ -260,13 +260,13 @@ namespace GrpcServerApp
                 int port = 50051;
                 if (int.TryParse(tbPort, out var p)) port = p;
                 _controller.UpdateConfig(host, port);
-                _log.AppendText($"Config applied: {host}:{port}\r\n");
+                _log?.AppendText($"Config applied: {host}:{port}\r\n");
                 // Optionally start immediately
                 await StartAsync();
             }
             catch (Exception ex)
             {
-                _log.AppendText($"Apply error: {ex.Message}\r\n");
+                _log?.AppendText($"Apply error: {ex.Message}\r\n");
             }
         }
 
@@ -330,9 +330,9 @@ namespace GrpcServerApp
             _chkStressUnlimited.Enabled = false;
             _cmbStressType.Enabled = false;
 
-            _log.AppendText($"=== Server端壓力測試開始 ===\r\n");
-            _log.AppendText($"測試類型: {_cmbStressType.Text}\r\n");
-            _log.AppendText($"間隔: {intervalMs}ms, 大小: {sizeKB}KB, 次數: {(maxIterations == 0 ? "無限制" : maxIterations.ToString())}\r\n");
+            _log?.AppendText($"=== Server端壓力測試開始 ===\r\n");
+            _log?.AppendText($"測試類型: {_cmbStressType.Text}\r\n");
+            _log?.AppendText($"間隔: {intervalMs}ms, 大小: {sizeKB}KB, 次數: {(maxIterations == 0 ? "無限制" : maxIterations.ToString())}\r\n");
 
             try
             {
@@ -340,11 +340,11 @@ namespace GrpcServerApp
             }
             catch (OperationCanceledException)
             {
-                _log.AppendText("壓力測試已取消\r\n");
+                _log?.AppendText("壓力測試已取消\r\n");
             }
             catch (Exception ex)
             {
-                _log.AppendText($"壓力測試錯誤: {ex.Message}\r\n");
+                _log?.AppendText($"壓力測試錯誤: {ex.Message}\r\n");
             }
             finally
             {
@@ -386,7 +386,7 @@ namespace GrpcServerApp
                 catch (Exception ex)
                 {
                     _stressTestFailures++;
-                    _log.AppendText($"[第 {iteration} 次失敗] {ex.Message}\r\n");
+                    _log?.AppendText($"[第 {iteration} 次失敗] {ex.Message}\r\n");
                     UpdateStressTestStats();
                 }
 
@@ -535,7 +535,7 @@ namespace GrpcServerApp
                 _txtStressIterations.Enabled = true;
                 _chkStressUnlimited.Enabled = true;
                 _cmbStressType.Enabled = true;
-                _log.AppendText("=== Server端壓力測試結束 ===\r\n");
+                _log?.AppendText("=== Server端壓力測試結束 ===\r\n");
             }));
         }
 

@@ -195,22 +195,22 @@ namespace LIB_RPC
             if (totalClients == 0)
             {
                 var errorMsg = "No clients connected to receive broadcast";
-                _logger.Warn($"Broadcast JSON failed: {errorMsg}");
+                _logger.Warn($"[Server Sent] failed: {errorMsg}");
                 BroadcastFailed?.Invoke(this, (type, errorMsg));
                 return;
             }
             
             try
             {
-                _logger.Info($"Broadcasting JSON: type={type} to {totalClients} clients");
+                _logger.Info($"[Server Sent] Succeeded: type={type} to {totalClients} clients");
                 var clientCount = await svc.BroadcastJsonAsync(type, json, ct);
                 BroadcastSent?.Invoke(this, (type, clientCount));
-                _logger.Info($"Broadcast sent: type={type}, succeeded={clientCount}/{totalClients}");
+                //_logger.Info($"[Server Sent] type={type}, succeeded={clientCount}/{totalClients}");
             }
             catch (Exception ex)
             {
                 BroadcastFailed?.Invoke(this, (type, ex.Message));
-                _logger.Error($"Broadcast failed: type={type}, error={ex.Message}");
+                _logger.Error($"[Server Sent] failed: type={type}, error={ex.Message}");
                 throw;
             }
         }
@@ -226,7 +226,7 @@ namespace LIB_RPC
             if (totalClients == 0)
             {
                 var errorMsg = "No clients connected to receive file push";
-                _logger.Warn($"File push failed: {errorMsg}");
+                _logger.Warn($"[Server Sent] File push failed: {errorMsg}");
                 FilePushFailed?.Invoke(this, (filePath, errorMsg));
                 return;
             }
@@ -234,17 +234,17 @@ namespace LIB_RPC
             try
             {
                 FilePushStarted?.Invoke(this, filePath);
-                _logger.Info($"Pushing file: {filePath} to {totalClients} clients");
+                _logger.Info($"[Server Sent] Pushing file: {filePath} to {totalClients} clients");
                 
                 await svc.BroadcastFileAsync(filePath, ct);
                 
                 FilePushCompleted?.Invoke(this, filePath);
-                _logger.Info($"File push completed: {filePath}");
+                _logger.Info($"[Server Sent] File push completed: {filePath}");
             }
             catch (Exception ex)
             {
                 FilePushFailed?.Invoke(this, (filePath, ex.Message));
-                _logger.Error($"File push failed: {filePath} - {ex.Message}");
+                _logger.Error($"[Server Sent] File push failed: {filePath} - {ex.Message}");
                 throw;
             }
         }
@@ -280,21 +280,21 @@ namespace LIB_RPC
                     if (response.Success && response.ClientsReached > 0)
                     {
                         BroadcastSent?.Invoke(this, (type, response.ClientsReached));
-                        _logger.Info($"[BroadcastWithAck] Success: {response.ClientsReached} clients reached (Attempt {attempt + 1}/{maxAttempts})");
+                        _logger.Info($"[Server PushFileWithAck] Success: {response.ClientsReached} clients reached (Attempt {attempt + 1}/{maxAttempts})");
                         return (true, response.ClientsReached, string.Empty);
                     }
                     else if (attempt < maxAttempts - 1)
                     {
                         // Not last attempt, retry
                         int delayMs = (int)Math.Pow(2, attempt) * 100; // Exponential backoff: 100ms, 200ms, 400ms...
-                        _logger.Info($"[BroadcastWithAck] Attempt {attempt + 1}/{maxAttempts} failed: {response.Error}. Retrying in {delayMs}ms...");
+                        _logger.Info($"[Server PushFileWithAck] Attempt {attempt + 1}/{maxAttempts} failed: {response.Error}. Retrying in {delayMs}ms...");
                         await Task.Delay(delayMs, ct);
                     }
                     else
                     {
                         // Last attempt failed
                         BroadcastFailed?.Invoke(this, (type, response.Error));
-                        _logger.Warn($"[BroadcastWithAck] Failed after {maxAttempts} attempts: {response.Error}");
+                        _logger.Warn($"[Server PushFileWithAck] Failed after {maxAttempts} attempts: {response.Error}");
                         return (false, 0, response.Error);
                     }
                 }
@@ -303,13 +303,13 @@ namespace LIB_RPC
                     if (attempt < maxAttempts - 1)
                     {
                         int delayMs = (int)Math.Pow(2, attempt) * 100;
-                        _logger.Info($"[BroadcastWithAck] Attempt {attempt + 1}/{maxAttempts} exception: {ex.Message}. Retrying in {delayMs}ms...");
+                        _logger.Info($"[Server PushFileWithAck] Attempt {attempt + 1}/{maxAttempts} exception: {ex.Message}. Retrying in {delayMs}ms...");
                         await Task.Delay(delayMs, ct);
                     }
                     else
                     {
                         BroadcastFailed?.Invoke(this, (type, ex.Message));
-                        _logger.Error($"[BroadcastWithAck] Exception after {maxAttempts} attempts: {ex.Message}");
+                        _logger.Error($"[Server PushFileWithAck] Exception after {maxAttempts} attempts: {ex.Message}");
                         return (false, 0, ex.Message);
                     }
                 }
@@ -318,7 +318,7 @@ namespace LIB_RPC
                 ct.ThrowIfCancellationRequested();
             }
 
-            return (false, 0, "Maximum retry attempts exceeded");
+            return (false, 0, "[Server PushFileWithAck] Maximum retry attempts exceeded");
         }
 
         /// <summary>
@@ -350,21 +350,21 @@ namespace LIB_RPC
                     if (response.Success && response.ClientsReached > 0)
                     {
                         FilePushCompleted?.Invoke(this, filePath);
-                        _logger.Info($"[PushFileWithAck] Success: {response.ClientsReached} clients reached (Attempt {attempt + 1}/{maxAttempts})");
+                        _logger.Info($"[Server PushFileWithAck]Success: {response.ClientsReached} clients reached (Attempt {attempt + 1}/{maxAttempts})");
                         return (true, response.ClientsReached, string.Empty);
                     }
                     else if (attempt < maxAttempts - 1)
                     {
                         // Not last attempt, retry
                         int delayMs = (int)Math.Pow(2, attempt) * 100; // Exponential backoff
-                        _logger.Info($"[PushFileWithAck] Attempt {attempt + 1}/{maxAttempts} failed: {response.Error}. Retrying in {delayMs}ms...");
+                        _logger.Info($"[Server PushFileWithAck]Attempt {attempt + 1}/{maxAttempts} failed: {response.Error}. Retrying in {delayMs}ms...");
                         await Task.Delay(delayMs, ct);
                     }
                     else
                     {
                         // Last attempt failed
                         FilePushFailed?.Invoke(this, (filePath, response.Error));
-                        _logger.Warn($"[PushFileWithAck] Failed after {maxAttempts} attempts: {response.Error}");
+                        _logger.Warn($"[Server PushFileWithAck] Failed after {maxAttempts} attempts: {response.Error}");
                         return (false, 0, response.Error);
                     }
                 }
@@ -373,13 +373,13 @@ namespace LIB_RPC
                     if (attempt < maxAttempts - 1)
                     {
                         int delayMs = (int)Math.Pow(2, attempt) * 100;
-                        _logger.Info($"[PushFileWithAck] Attempt {attempt + 1}/{maxAttempts} exception: {ex.Message}. Retrying in {delayMs}ms...");
+                        _logger.Info($"[Server PushFileWithAck] Attempt {attempt + 1}/{maxAttempts} exception: {ex.Message}. Retrying in {delayMs}ms...");
                         await Task.Delay(delayMs, ct);
                     }
                     else
                     {
                         FilePushFailed?.Invoke(this, (filePath, ex.Message));
-                        _logger.Error($"[PushFileWithAck] Exception after {maxAttempts} attempts: {ex.Message}");
+                        _logger.Error($"[Server PushFileWithAck] Exception after {maxAttempts} attempts: {ex.Message}");
                         return (false, 0, ex.Message);
                     }
                 }
@@ -388,7 +388,7 @@ namespace LIB_RPC
                 ct.ThrowIfCancellationRequested();
             }
 
-            return (false, 0, "Maximum retry attempts exceeded");
+            return (false, 0, "[Server PushFileWithAck] Maximum retry attempts exceeded");
         }
 
         public async ValueTask DisposeAsync()
