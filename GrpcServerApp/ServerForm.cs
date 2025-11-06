@@ -289,9 +289,9 @@ namespace GrpcServerApp
             }
 
             // Parse parameters
-            if (!int.TryParse(_txtStressInterval.Text, out var intervalMs) || intervalMs < 10)
+            if (!int.TryParse(_txtStressInterval.Text, out var intervalMs) || intervalMs < 1)
             {
-                MessageBox.Show("間隔時間必須 >= 10ms", "錯誤", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("間隔時間必須 >= 1ms", "錯誤", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -390,7 +390,6 @@ namespace GrpcServerApp
                     _log?.AppendText($"[第 {iteration} 次失敗] {ex.Message}\r\n");
                     UpdateStressTestStats();
                 }
-
                 // Wait before next iteration
                 await Task.Delay(intervalMs, ct);
             }
