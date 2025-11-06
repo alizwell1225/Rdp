@@ -1,7 +1,9 @@
 using Google.Protobuf.WellKnownTypes;
+using LIB_Log;
 using LIB_RPC;
 using LIB_RPC.Abstractions;
 using LIB_RPC.API;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Diagnostics;
 using System.Drawing;
@@ -168,6 +170,13 @@ namespace GrpcClientApp
             }
         }
 
+        private void btnLog_Click(object sender, EventArgs e)
+        {
+            LogViewerForm dlg = new LogViewerForm();
+            dlg.SetDefinePath(_api.Config.LogFilePath);
+            dlg.ShowDialog();
+        }
+
         private void apiOnServerFileCompleted(string path)
         {
             BeginInvoke(new Action(() =>
@@ -180,7 +189,7 @@ namespace GrpcClientApp
         {
             BeginInvoke(new Action(() =>
             {
-                _log.AppendText($"[ServerPush] type={env.Type} id={env.Id} bytes={env.Json?.Length}\r\n");
+                _log.AppendText($"[Recive] type={env.Type} id={env.Id} bytes={env.Json?.Length}\r\n");
             }));
         }
 
@@ -386,22 +395,22 @@ namespace GrpcClientApp
             }
         }
 
-        private async void _btnSendJson_Click(object sender, EventArgs e)
+        private async void btnSendJson_Click(object sender, EventArgs e)
         {
            await SendJsonAsync();
         }
 
-        private async void _btnUpload_Click(object sender, EventArgs e)
+        private async void btnUpload_Click(object sender, EventArgs e)
         {
             await UploadAsync();
         }
 
-        private async void _btnDownload_Click(object sender, EventArgs e)
+        private async void btnDownload_Click(object sender, EventArgs e)
         {
             await DownloadAsync();
         }
 
-        private async void _btnScreenshot_Click(object sender, EventArgs e)
+        private async void btnScreenshot_Click(object sender, EventArgs e)
         {
              await ScreenshotAsync();
         }
@@ -416,7 +425,7 @@ namespace GrpcClientApp
 
         #region Stress Test Methods
 
-        private async void _btnStartStressTest_Click(object sender, EventArgs e)
+        private async void btnStartStressTest_Click(object sender, EventArgs e)
         {
             if (_isStressTesting)
             {

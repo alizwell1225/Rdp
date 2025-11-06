@@ -111,7 +111,7 @@ public partial class ServerForm
         _btnApply.Size = new Size(120, 26);
         _btnApply.TabIndex = 5;
         _btnApply.Text = "Apply && Start";
-        _btnApply.Click += _btnApply_Click;
+        _btnApply.Click += btnApply_Click;
         // 
         // _btnStart
         // 
@@ -121,7 +121,7 @@ public partial class ServerForm
         _btnStart.Size = new Size(499, 40);
         _btnStart.TabIndex = 6;
         _btnStart.Text = "啟動 Server";
-        _btnStart.Click += _btnStart_Click;
+        _btnStart.Click += btnStart_Click;
         // 
         // _btnStop
         // 
@@ -132,7 +132,7 @@ public partial class ServerForm
         _btnStop.Size = new Size(499, 40);
         _btnStop.TabIndex = 5;
         _btnStop.Text = "停止 Server";
-        _btnStop.Click += _btnStop_Click;
+        _btnStop.Click += btnStop_Click;
         // 
         // _files
         // 
@@ -195,7 +195,7 @@ public partial class ServerForm
         _btnStartStressTest.Size = new Size(150, 35);
         _btnStartStressTest.TabIndex = 5;
         _btnStartStressTest.Text = "開始壓測";
-        _btnStartStressTest.Click += _btnStartStressTest_Click;
+        _btnStartStressTest.Click += btnStartStressTest_Click;
         // 
         // _chkUseAckMode
         // 
@@ -307,7 +307,7 @@ public partial class ServerForm
         _btnPushFile.Size = new Size(499, 40);
         _btnPushFile.TabIndex = 1;
         _btnPushFile.Text = "推送檔案";
-        _btnPushFile.Click += _btnPushFile_Click;
+        _btnPushFile.Click += btnPushFile_Click;
         // 
         // _btnBroadcast
         // 
@@ -318,7 +318,7 @@ public partial class ServerForm
         _btnBroadcast.Size = new Size(499, 40);
         _btnBroadcast.TabIndex = 2;
         _btnBroadcast.Text = "廣播 JSON";
-        _btnBroadcast.Click += _btnBroadcast_Click;
+        _btnBroadcast.Click += btnBroadcast_Click;
         // 
         // _txtJson
         // 

@@ -225,32 +225,32 @@ namespace GrpcServerApp
             }
         }
 
-        private async void _btnPushFile_Click(object sender, EventArgs e)
+        private async void btnPushFile_Click(object sender, EventArgs e)
         {
             using var ofd = new OpenFileDialog();
             if (ofd.ShowDialog() != DialogResult.OK) return;
             await PushFileAsync(ofd.FileName);
         }
 
-        private async void _btnBroadcast_Click(object sender, EventArgs e)
+        private async void btnBroadcast_Click(object sender, EventArgs e)
         {
             var type = string.IsNullOrWhiteSpace(_txtType.Text) ? "broadcast" : _txtType.Text.Trim();
             var body = string.IsNullOrWhiteSpace(_txtJson.Text) ? "{}" : _txtJson.Text;
             await BroadcastAsync(type, body);
         }
 
-        private async void _btnStart_Click(object sender, EventArgs e)
+        private async void btnStart_Click(object sender, EventArgs e)
         {
             await StartAsync();
         }
 
-        private async void _btnStop_Click(object sender, EventArgs e)
+        private async void btnStop_Click(object sender, EventArgs e)
         {
             await StopAsync();
         }
 
         // Apply host/port from designer and start the server
-        private async void _btnApply_Click(object sender, EventArgs e)
+        private async void btnApply_Click(object sender, EventArgs e)
         {
             try
             {
@@ -273,7 +273,7 @@ namespace GrpcServerApp
 
         #region Server Stress Test Methods
 
-        private async void _btnStartStressTest_Click(object sender, EventArgs e)
+        private async void btnStartStressTest_Click(object sender, EventArgs e)
         {
             if (_isStressTesting)
             {
