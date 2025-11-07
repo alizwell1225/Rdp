@@ -57,9 +57,26 @@ namespace GrpcServerApp
         {
             BeginInvoke(new Action(() =>
             {
-                _log?.AppendText(line + Environment.NewLine);
+                AppendTextSafe(line + Environment.NewLine);
                 _logger.Info(line);
             }));
+        }
+
+        private void AppendTextSafe(string text)
+        {
+            if (_log == null)
+                return;
+            if (InvokeRequired)
+            {
+                _log?.BeginInvoke(new Action<string>(AppendTextSafe), text);
+                return;
+            }
+
+            // 限制大小
+            if (_log.TextLength > 50000)
+                _log.Text = _log.Text[^50000..]; // 取最後 5 萬字元           
+            else
+                _log.AppendText(text);
         }
 
         private void ControllerOnFileAdded(string path)
@@ -67,7 +84,7 @@ namespace GrpcServerApp
             BeginInvoke(new Action(() =>
             {
                 RefreshFiles();
-                _log?.AppendText($"File added: {Path.GetFileName(path)}" + Environment.NewLine);
+                AppendTextSafe($"File added: {Path.GetFileName(path)}" + Environment.NewLine);
                 _logger.Info($"File added: {Path.GetFileName(path)}");
                 _totalRequestsReceived++;
                 UpdateServerStats();
@@ -158,7 +175,7 @@ namespace GrpcServerApp
             _totalBytesReceived = 0;
             _serverRuntime.Restart();
             UpdateServerStats();
-            _log?.AppendText("統計資料已重置\r\n");
+            AppendTextSafe("統計資料已重置\r\n");
         }
 
         private void RefreshFiles()
@@ -189,12 +206,12 @@ namespace GrpcServerApp
                 else
                 {
                     await _controller.BroadcastJsonAsync("stress_test", body);
-                    _log?.AppendText($"Broadcast sent type={type}\r\n");
+                    AppendTextSafe($"Broadcast sent type={type}\r\n");
                 }
             }
             catch (Exception ex)
             {
-                _log?.AppendText($"Broadcast error: {ex.Message}\r\n");
+                AppendTextSafe($"Broadcast error: {ex.Message}\r\n");
             }
         }
 
@@ -217,11 +234,11 @@ namespace GrpcServerApp
                     // Use streaming mode (existing) - pass full path
                     await _controller.PushFileAsync(storagePath);
                 }
-                _log?.AppendText($"Pushed file: {Path.GetFileName(storagePath)}\r\n");
+                AppendTextSafe($"Pushed file: {Path.GetFileName(storagePath)}\r\n");
             }
             catch (Exception ex)
             {
-                _log?.AppendText($"Push file error: {ex.Message}\r\n");
+                AppendTextSafe($"Push file error: {ex.Message}\r\n");
             }
         }
 
@@ -261,13 +278,13 @@ namespace GrpcServerApp
                 int port = 50051;
                 if (int.TryParse(tbPort, out var p)) port = p;
                 _controller.UpdateConfig(host, port);
-                _log?.AppendText($"Config applied: {host}:{port}\r\n");
+                AppendTextSafe($"Config applied: {host}:{port}\r\n");
                 // Optionally start immediately
                 await StartAsync();
             }
             catch (Exception ex)
             {
-                _log?.AppendText($"Apply error: {ex.Message}\r\n");
+                AppendTextSafe($"Apply error: {ex.Message}\r\n");
             }
         }
 
@@ -331,9 +348,9 @@ namespace GrpcServerApp
             _chkStressUnlimited.Enabled = false;
             _cmbStressType.Enabled = false;
 
-            _log?.AppendText($"=== Server端壓力測試開始 ===\r\n");
-            _log?.AppendText($"測試類型: {_cmbStressType.Text}\r\n");
-            _log?.AppendText($"間隔: {intervalMs}ms, 大小: {sizeKB}KB, 次數: {(maxIterations == 0 ? "無限制" : maxIterations.ToString())}\r\n");
+            AppendTextSafe($"=== Server端壓力測試開始 ===\r\n");
+            AppendTextSafe($"測試類型: {_cmbStressType.Text}\r\n");
+            AppendTextSafe($"間隔: {intervalMs}ms, 大小: {sizeKB}KB, 次數: {(maxIterations == 0 ? "無限制" : maxIterations.ToString())}\r\n");
 
             try
             {
@@ -341,11 +358,11 @@ namespace GrpcServerApp
             }
             catch (OperationCanceledException)
             {
-                _log?.AppendText("壓力測試已取消\r\n");
+                AppendTextSafe("壓力測試已取消\r\n");
             }
             catch (Exception ex)
             {
-                _log?.AppendText($"壓力測試錯誤: {ex.Message}\r\n");
+                AppendTextSafe($"壓力測試錯誤: {ex.Message}\r\n");
             }
             finally
             {
@@ -387,7 +404,7 @@ namespace GrpcServerApp
                 catch (Exception ex)
                 {
                     _stressTestFailures++;
-                    _log?.AppendText($"[第 {iteration} 次失敗] {ex.Message}\r\n");
+                    AppendTextSafe($"[第 {iteration} 次失敗] {ex.Message}\r\n");
                     UpdateStressTestStats();
                 }
                 // Wait before next iteration
@@ -535,7 +552,7 @@ namespace GrpcServerApp
                 _txtStressIterations.Enabled = true;
                 _chkStressUnlimited.Enabled = true;
                 _cmbStressType.Enabled = true;
-                _log?.AppendText("=== Server端壓力測試結束 ===\r\n");
+                AppendTextSafe("=== Server端壓力測試結束 ===\r\n");
             }));
         }
 

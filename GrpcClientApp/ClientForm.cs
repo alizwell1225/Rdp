@@ -149,7 +149,7 @@ namespace GrpcClientApp
                 {
                     BeginInvoke(new Action(() =>
                     {
-                        _log.AppendText($"Auto-reconnect failed: {ex.Message}\r\n");
+                        AppendTextSafe($"Auto-reconnect failed: {ex.Message}\r\n");
                     }));
                 }
                 finally
@@ -170,6 +170,23 @@ namespace GrpcClientApp
             }
         }
 
+        private void AppendTextSafe(string text)
+        {
+            if (_log == null)
+                return;
+            if (InvokeRequired)
+            {
+                _log.BeginInvoke(new Action<string>(AppendTextSafe), text);
+                return;
+            }
+
+            // 限制大小
+            if (_log.TextLength > 50000)
+                _log.Text = _log.Text[^50000..]; // 取最後 5 萬字元           
+            else
+                _log.AppendText(text);
+        }
+
         private void btnLog_Click(object sender, EventArgs e)
         {
             LogViewerForm dlg = new LogViewerForm();
@@ -181,7 +198,7 @@ namespace GrpcClientApp
         {
             BeginInvoke(new Action(() =>
             {
-                _log.AppendText($"[Recive] FIle Path={path}\r\n");
+                AppendTextSafe($"[Recive] FIle Path={path}\r\n");
             }));
         }
 
@@ -189,7 +206,7 @@ namespace GrpcClientApp
         {
             BeginInvoke(new Action(() =>
             {
-                _log.AppendText($"[Recive] type={env.Type} id={env.Id} bytes={env.Json?.Length}\r\n");
+                AppendTextSafe($"[Recive] type={env.Type} id={env.Id} bytes={env.Json?.Length}\r\n");
             }));
         }
 
@@ -225,7 +242,7 @@ namespace GrpcClientApp
 
         private void apiOnLog(string line)
         {
-            BeginInvoke(new Action(() => _log.AppendText(line + Environment.NewLine)));
+            BeginInvoke(new Action(() => AppendTextSafe(line + Environment.NewLine)));
         }
 
 
@@ -258,7 +275,7 @@ namespace GrpcClientApp
             catch (Exception ex)
             {
                 // log and show minimal feedback
-                _log.AppendText($"Disconnect error: {ex.Message}{Environment.NewLine}");
+                AppendTextSafe($"Disconnect error: {ex.Message}{Environment.NewLine}");
             }
             finally
             {
@@ -274,7 +291,7 @@ namespace GrpcClientApp
         {
             if (_api == null) return;
             var ack = await _api.SendJsonAsync("test", "{\"msg\":\"hello\"}");
-            _log.AppendText($"Ack: {ack.Success} {ack.Error}\r\n");
+            AppendTextSafe($"Ack: {ack.Success} {ack.Error}\r\n");
         }
 
         private async Task UploadAsync()
@@ -283,7 +300,7 @@ namespace GrpcClientApp
             using var ofd = new OpenFileDialog();
             if (ofd.ShowDialog() != DialogResult.OK) return;
             var status = await _api.UploadFileAsync(ofd.FileName);
-            _log.AppendText($"Upload: {status.Success} {status.Error}\r\n");
+            AppendTextSafe($"Upload: {status.Success} {status.Error}\r\n");
         }
 
         private async Task DownloadAsync()
@@ -326,7 +343,7 @@ namespace GrpcClientApp
             sfd.FileName = input;
             if (sfd.ShowDialog() != DialogResult.OK) return;
             await _api.DownloadFileAsync(input, sfd.FileName);
-            _log.AppendText($"Download 完成: {sfd.FileName}\r\n");
+            AppendTextSafe($"Download 完成: {sfd.FileName}\r\n");
         }
 
         private async Task ScreenshotAsync()
@@ -335,14 +352,14 @@ namespace GrpcClientApp
             var bytes = await _api.GetScreenshotAsync();
             if (bytes == null || bytes.Length == 0)
             {
-                _log.AppendText("Screenshot 失敗\r\n");
+                AppendTextSafe("Screenshot 失敗\r\n");
                 return;
             }
             else
             {
                 using var ms = new MemoryStream(bytes);
                 _pic.Image = Image.FromStream(ms);
-                _log.AppendText($"Screenshot 顯示\r\n");
+                AppendTextSafe($"Screenshot 顯示\r\n");
             }
         }
 
@@ -489,9 +506,9 @@ namespace GrpcClientApp
             _chkStressUnlimited.Enabled = false;
             _cmbStressType.Enabled = false;
 
-            _log.AppendText($"=== 壓力測試開始 ===\r\n");
-            _log.AppendText($"測試類型: {_cmbStressType.Text}\r\n");
-            _log.AppendText($"間隔: {intervalMs}ms, 大小: {sizeKB}KB, 次數: {(maxIterations == 0 ? "無限制" : maxIterations.ToString())}\r\n");
+            AppendTextSafe($"=== 壓力測試開始 ===\r\n");
+            AppendTextSafe($"測試類型: {_cmbStressType.Text}\r\n");
+            AppendTextSafe($"間隔: {intervalMs}ms, 大小: {sizeKB}KB, 次數: {(maxIterations == 0 ? "無限制" : maxIterations.ToString())}\r\n");
 
             try
             {
@@ -499,11 +516,11 @@ namespace GrpcClientApp
             }
             catch (OperationCanceledException)
             {
-                _log.AppendText("壓力測試已取消\r\n");
+                AppendTextSafe("壓力測試已取消\r\n");
             }
             catch (Exception ex)
             {
-                _log.AppendText($"壓力測試錯誤: {ex.Message}\r\n");
+                AppendTextSafe($"壓力測試錯誤: {ex.Message}\r\n");
             }
             finally
             {
@@ -548,7 +565,7 @@ namespace GrpcClientApp
                 catch (Exception ex)
                 {
                     _stressTestFailures++;
-                    _log.AppendText($"[第 {iteration} 次失敗] {ex.Message}\r\n");
+                    AppendTextSafe($"[第 {iteration} 次失敗] {ex.Message}\r\n");
                     UpdateStressTestStats();
                     try
                     {
@@ -677,11 +694,11 @@ namespace GrpcClientApp
                 _chkStressUnlimited.Enabled = true;
                 _cmbStressType.Enabled = true;
 
-                _log.AppendText($"=== 壓力測試結束 ===\r\n");
-                _log.AppendText($"總執行: {_stressTestIterations} 次\r\n");
-                _log.AppendText($"成功: {_stressTestSuccesses} 次\r\n");
-                _log.AppendText($"失敗: {_stressTestFailures} 次\r\n");
-                _log.AppendText($"總時間: {_stressTestStopwatch.Elapsed:hh\\:mm\\:ss}\r\n\r\n");
+                AppendTextSafe($"=== 壓力測試結束 ===\r\n");
+                AppendTextSafe($"總執行: {_stressTestIterations} 次\r\n");
+                AppendTextSafe($"成功: {_stressTestSuccesses} 次\r\n");
+                AppendTextSafe($"失敗: {_stressTestFailures} 次\r\n");
+                AppendTextSafe($"總時間: {_stressTestStopwatch.Elapsed:hh\\:mm\\:ss}\r\n\r\n");
             }));
         }
 
