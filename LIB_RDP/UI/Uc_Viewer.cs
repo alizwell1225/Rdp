@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using LIB_RDP.Core;
 using LIB_RDP.Models;
+using Timer = System.Windows.Forms.Timer;
 
 namespace LIB_RDP.UI;
 

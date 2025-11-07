@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using LIB_RDP.Interfaces;
 using LIB_RDP.Models;
+using Timer = System.Threading.Timer;
 
 namespace LIB_RDP.Core
 {

@@ -8,6 +8,7 @@ using System.Windows.Forms;
 using LIB_RDP.Core;
 using LIB_RDP.Models;
 using LIB_RDP.UI;
+using Timer = System.Windows.Forms.Timer;
 
 namespace RDP_DEMO;
 

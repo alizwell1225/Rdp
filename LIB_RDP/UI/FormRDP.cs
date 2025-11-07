@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
+using Timer = System.Windows.Forms.Timer;
 
 namespace LIB_RDP.UI;
 
