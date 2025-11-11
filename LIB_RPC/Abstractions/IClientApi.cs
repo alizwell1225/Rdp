@@ -11,6 +11,11 @@ namespace LIB_RPC.Abstractions
         GrpcConfig Config { get; }
 
         /// <summary>
+        /// Gets whether the client is currently connected to the server.
+        /// </summary>
+        bool IsConnected { get; }
+
+        /// <summary>
         /// Event raised when a log line is produced.
         /// </summary>
         event Action<string>? OnLog;
@@ -149,5 +154,15 @@ namespace LIB_RPC.Abstractions
         /// Gets a screenshot from the server as PNG bytes.
         /// </summary>
         Task<byte[]> GetScreenshotAsync(CancellationToken ct = default);
+
+        /// <summary>
+        /// Sends a JSON message with acknowledgment and retry support.
+        /// </summary>
+        Task<SendJsonResponse> SendJsonWithAckAsync(string type, string json, int retryCount = 0, CancellationToken ct = default);
+
+        /// <summary>
+        /// Uploads a file with acknowledgment and retry support.
+        /// </summary>
+        Task<UploadFileWithAckResponse> UploadFileWithAckAsync(string filePath, int retryCount = 0, CancellationToken ct = default);
     }
 }

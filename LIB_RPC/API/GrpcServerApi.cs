@@ -268,6 +268,9 @@ namespace LIB_RPC.API
                 .ToArray()!;
         }
 
+        /// <inheritdoc/>
+        public bool IsConnected => _host?.IsConnected ?? false;
+
         /// <summary>
         /// Disposes the server resources asynchronously.
         /// </summary>

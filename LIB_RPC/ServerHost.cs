@@ -392,6 +392,20 @@ namespace LIB_RPC
             return (false, 0, "[Server SentWithAck] File Maximum retry attempts exceeded");
         }
 
+        /// <summary>
+        /// Check if the server is currently running and accepting connections
+        /// </summary>
+        public bool IsConnected
+        {
+            get
+            {
+                lock (_lock)
+                {
+                    return _server != null && _isRunning;
+                }
+            }
+        }
+
         public async ValueTask DisposeAsync()
         {
             await StopAsync();

@@ -541,5 +541,69 @@ namespace LIB_RPC
         {
             return _filePushClients.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
         }
+
+        /// <summary>
+        /// Client sends JSON with acknowledgment request (unary RPC for guaranteed delivery)
+        /// </summary>
+        public override Task<SendJsonResponse> SendJsonWithAck(SendJsonRequest request, ServerCallContext context)
+        {
+            try
+            {
+                _logger.Info($"[SendJsonWithAck] Received from client: Type='{request.Type}', Size={request.Json.Length}");
+                
+                // Process the JSON (this is where you'd handle the data)
+                // For now, just acknowledge successful receipt
+                
+                return Task.FromResult(new SendJsonResponse
+                {
+                    Success = true,
+                    Message = "JSON received successfully"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"[SendJsonWithAck] Error: {ex.Message}");
+                return Task.FromResult(new SendJsonResponse
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// Client uploads file with acknowledgment request (unary RPC for guaranteed delivery)
+        /// </summary>
+        public override async Task<UploadFileWithAckResponse> UploadFileWithAck(UploadFileWithAckRequest request, ServerCallContext context)
+        {
+            try
+            {
+                _logger.Info($"[UploadFileWithAck] Receiving file: {request.FileName}, Size={request.FileData.Length} bytes");
+                
+                // Save file to server upload path
+                var uploadPath = _config.GetServerUploadPath();
+                Directory.CreateDirectory(uploadPath);
+                var filePath = Path.Combine(uploadPath, request.FileName);
+                
+                await File.WriteAllBytesAsync(filePath, request.FileData.ToByteArray());
+                
+                _logger.Info($"[UploadFileWithAck] File saved: {filePath}");
+                
+                return new UploadFileWithAckResponse
+                {
+                    Success = true,
+                    Message = $"File uploaded successfully: {request.FileName}"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"[UploadFileWithAck] Error: {ex.Message}");
+                return new UploadFileWithAckResponse
+                {
+                    Success = false,
+                    Message = ex.Message
+                };
+            }
+        }
     }
 }
