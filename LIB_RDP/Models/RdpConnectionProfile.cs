@@ -1,12 +1,18 @@
 using System;
+using LIB_RDP.Core;
 
 namespace LIB_RDP.Models
 {
     /// <summary>
     /// RDP連線配置檔案
     /// </summary>
+    [Serializable]
     public class RdpConnectionProfile
-    {
+    {        
+        /// <summary>
+        /// 排序Index
+        /// </summary>
+        public int Index { get; set; } = -1;
         /// <summary>
         /// 配置ID
         /// </summary>
@@ -26,11 +32,11 @@ namespace LIB_RDP.Models
         /// 使用者名稱
         /// </summary>
         public string UserName { get; set; }
-        
+
         /// <summary>
         /// 加密後的憑證字符串
         /// </summary>
-        public string EncryptedCredentials { get; set; }
+        public string EncryptedCredentials { get; set; } = "";
         
         /// <summary>
         /// 連線配置
@@ -51,37 +57,47 @@ namespace LIB_RDP.Models
         /// 最後使用時間
         /// </summary>
         public DateTime? LastUsedTime { get; set; }
-        
+
         /// <summary>
         /// 使用次數
         /// </summary>
-        public int UseCount { get; set; }
-        
+        public int UseCount { get; set; } = 0;
+
         /// <summary>
         /// 是否為收藏項目
         /// </summary>
-        public bool IsFavorite { get; set; }
+        public bool IsFavorite { get; set; } = false;
         
         /// <summary>
         /// 群組名稱
         /// </summary>
         public string GroupName { get; set; } = "預設群組";
-        
+
         /// <summary>
         /// 備註
         /// </summary>
-        public string Notes { get; set; }
-        
+        public string Notes { get; set; } = "";
+
         /// <summary>
         /// 是否自動連線
         /// </summary>
-        public bool AutoConnect { get; set; }
+        public bool AutoConnect { get; set; } = false;
         
         /// <summary>
         /// 連線超時設定（秒）
         /// </summary>
         public int ConnectionTimeout { get; set; } = 30;
         
+        // XmlSerializer 需要這個無參數建構子
+        public RdpConnectionProfile()
+        {
+        }
+
+        public RdpConnectionProfile(int index)
+        {
+            Index = index;
+        }
+
         /// <summary>
         /// 從加密憑證建立SecureCredentials
         /// </summary>
@@ -135,8 +151,9 @@ namespace LIB_RDP.Models
         /// </summary>
         public RdpConnectionProfile Clone()
         {
-            return new RdpConnectionProfile
+            return new RdpConnectionProfile(this.Index)
             {
+                Index = Index,
                 Id = Guid.NewGuid().ToString(),
                 Name = Name + " (副本)",
                 HostName = HostName,
@@ -157,6 +174,21 @@ namespace LIB_RDP.Models
                 AutoConnect = AutoConnect,
                 ConnectionTimeout = ConnectionTimeout
             };
+        }
+
+        public void SetRdpConnection(RdpConnection rdpConn)
+        {
+            Id = rdpConn.ConnectionId;
+            HostName= rdpConn.GetHostName();
+            UserName = rdpConn.GetUserName();
+            EncryptedCredentials = rdpConn.GetPassword();
+        }
+
+        public RdpConnection GetRdpConnection()
+        {
+            var rdpConn = new RdpConnection();
+            rdpConn.SetConnectionId(Id);
+            return rdpConn;
         }
     }
 }

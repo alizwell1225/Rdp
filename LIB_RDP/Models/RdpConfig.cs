@@ -1,5 +1,6 @@
 namespace LIB_RDP.Models
 {
+    [Serializable]
     public class RdpConfig
     {
         public int ScreenWidth { get; set; } = 1920;

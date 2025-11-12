@@ -2,6 +2,7 @@
 
 public class Logger : LoggerBase
 {
+    private string FileName = "";
     /// <summary>
     /// Creates a new GrpcLogger instance with the specified configuration
     /// </summary>
@@ -13,6 +14,11 @@ public class Logger : LoggerBase
     public Logger(string directory, string fileName, int maxLogEntriesPerFile = 10000, int maxLogRetentionDays = 60) :
         base(GetLogDirectory(directory), GetLogFileName(fileName), GetLogMaxLogPerFile(maxLogEntriesPerFile), GetLogRetentionDays(maxLogRetentionDays))
     {
+        if (string.IsNullOrEmpty(fileName))
+        {
+            throw new ArgumentNullException("log Name is Null");
+        }
+        FileName=fileName;
         EnableWriteLog = true;
         EnableConsoleLog = true;
         ForceAbandonOnException = true;

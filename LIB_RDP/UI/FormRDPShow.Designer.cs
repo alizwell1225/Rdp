@@ -28,61 +28,67 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.splitContainer1 = new System.Windows.Forms.SplitContainer();
-            this.bntClose = new System.Windows.Forms.Button();
-            this.button1 = new System.Windows.Forms.Button();
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
-            this.splitContainer1.Panel2.SuspendLayout();
-            this.splitContainer1.SuspendLayout();
-            this.SuspendLayout();
+            splitContainer1 = new SplitContainer();
+            bntClose = new Button();
+            button1 = new Button();
+            ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
+            splitContainer1.Panel2.SuspendLayout();
+            splitContainer1.SuspendLayout();
+            SuspendLayout();
             // 
             // splitContainer1
             // 
-            this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitContainer1.Location = new System.Drawing.Point(0, 0);
-            this.splitContainer1.Name = "splitContainer1";
-            this.splitContainer1.Orientation = System.Windows.Forms.Orientation.Horizontal;
+            splitContainer1.Dock = DockStyle.Fill;
+            splitContainer1.Location = new Point(0, 0);
+            splitContainer1.Margin = new Padding(4, 4, 4, 4);
+            splitContainer1.Name = "splitContainer1";
+            splitContainer1.Orientation = Orientation.Horizontal;
             // 
             // splitContainer1.Panel2
             // 
-            this.splitContainer1.Panel2.Controls.Add(this.bntClose);
-            this.splitContainer1.Panel2.Controls.Add(this.button1);
-            this.splitContainer1.Size = new System.Drawing.Size(866, 622);
-            this.splitContainer1.SplitterDistance = 537;
-            this.splitContainer1.TabIndex = 1;
+            splitContainer1.Panel2.Controls.Add(bntClose);
+            splitContainer1.Panel2.Controls.Add(button1);
+            splitContainer1.Size = new Size(1010, 778);
+            splitContainer1.SplitterDistance = 676;
+            splitContainer1.SplitterWidth = 5;
+            splitContainer1.TabIndex = 1;
             // 
             // bntClose
             // 
-            this.bntClose.Location = new System.Drawing.Point(760, 12);
-            this.bntClose.Name = "bntClose";
-            this.bntClose.Size = new System.Drawing.Size(94, 57);
-            this.bntClose.TabIndex = 0;
-            this.bntClose.Text = "關閉 (ESC)";
-            this.bntClose.UseVisualStyleBackColor = true;
-            this.bntClose.Click += new System.EventHandler(this.bntClose_Click);
+            bntClose.Location = new Point(887, 15);
+            bntClose.Margin = new Padding(4, 4, 4, 4);
+            bntClose.Name = "bntClose";
+            bntClose.Size = new Size(110, 71);
+            bntClose.TabIndex = 0;
+            bntClose.Text = "關閉 (ESC)";
+            bntClose.UseVisualStyleBackColor = true;
+            bntClose.Click += bntClose_Click;
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(649, 12);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(94, 57);
-            this.button1.TabIndex = 0;
-            this.button1.Text = "button1";
-            this.button1.UseVisualStyleBackColor = true;
+            button1.Location = new Point(757, 15);
+            button1.Margin = new Padding(4, 4, 4, 4);
+            button1.Name = "button1";
+            button1.Size = new Size(110, 71);
+            button1.TabIndex = 0;
+            button1.Text = "button1";
+            button1.UseVisualStyleBackColor = true;
             // 
             // FormRDPShow
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(866, 622);
-            this.ControlBox = false;
-            this.Controls.Add(this.splitContainer1);
-            this.Name = "FormRDPShow";
-            this.Text = "IP:     ";
-            this.splitContainer1.Panel2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
-            this.splitContainer1.ResumeLayout(false);
-            this.ResumeLayout(false);
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(1010, 778);
+            ControlBox = false;
+            Controls.Add(splitContainer1);
+            Margin = new Padding(4, 4, 4, 4);
+            Name = "FormRDPShow";
+            StartPosition = FormStartPosition.Manual;
+            Text = "IP:     ";
+            splitContainer1.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)splitContainer1).EndInit();
+            splitContainer1.ResumeLayout(false);
+            ResumeLayout(false);
 
         }
 

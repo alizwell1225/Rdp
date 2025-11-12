@@ -1,11 +1,14 @@
+using LIB_RDP.Interfaces;
+using LIB_RDP.Models;
+using LIB_RDP.UI;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using LIB_RDP.Interfaces;
-using LIB_RDP.Models;
+using LIB_Log;
 using Timer = System.Threading.Timer;
 
 namespace LIB_RDP.Core
@@ -15,14 +18,18 @@ namespace LIB_RDP.Core
     /// </summary>
     public class RdpManager : IRdpManager, IDisposable
     {
-        private readonly ConcurrentDictionary<string, IRdpConnection> _connections;
-        private readonly RdpLogger _logger;
-        private readonly Timer _healthCheckTimer;
-        private readonly int _maxConnections;
+        private ConcurrentDictionary<string, IRdpConnection> _connections;
+        //private readonly RdpLogger _logger;
+        private Timer _healthCheckTimer;
+        private int _maxConnections;
         private bool _isDisposed;
 
+        //public ProxySettings RdpProxySettings;
+        public RdpConfigurationManager ConfigurationManager;
+        public Logger _logger;
+
         /// <summary>
-        /// 連線數量限制，預設50個連線
+        /// 連線數量限制，預設12個連線
         /// </summary>
         public int MaxConnections => _maxConnections;
 
@@ -36,17 +43,75 @@ namespace LIB_RDP.Core
         /// </summary>
         public int TotalConnectionCount => _connections.Count;
 
-        public RdpManager(int maxConnections = 50)
+        public RdpManager(int maxConnections = 12)
         {
+            if (maxConnections==0)
+            {
+                throw new Exception("Connect Count Error");
+            }
+            _logger = new Logger(Path.Combine(AppContext.BaseDirectory, "Log"), "RDP");
+            //RdpProxySettings = new ProxySettings(maxConnections);
+            ConfigurationManager = RdpConfigurationManager.Instance;
+            ConfigurationManager.SetLog(_logger);
+
             _maxConnections = maxConnections;
-            _connections = new ConcurrentDictionary<string, IRdpConnection>();
-            _logger = RdpLogger.Instance;
-            
+            //_connections = new ConcurrentDictionary<string, IRdpConnection>();
+
+            //LoadConnectData();
             // 每30秒檢查一次連線健康狀態
-            _healthCheckTimer = new Timer(PerformHealthCheck, null, 
-                TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+            _healthCheckTimer = new Timer(PerformHealthCheck, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+            _logger.Info($"RDP管理器已初始化，最大連線數: {maxConnections}");
+        }
+
+
+
+        public void LoadConnectData()
+        {
+            var datas  = ConfigurationManager.LoadAllConnections();
+            try
+            {
+                if (_connections==null)
+                    _connections = new ConcurrentDictionary<string, IRdpConnection>();
+                if (datas == null || datas.Count == 0)
+                {
+                    for (int i = 0; i < _maxConnections; i++)
+                    {
+                        var rdpConn = new RdpConnection(logger: _logger);
+                        _connections.TryAdd(rdpConn.ConnectionId, rdpConn);
+                        var config = new RdpConnectionProfile(i);
+                        config.SetRdpConnection(rdpConn);
+                        ConfigurationManager.SaveConnection(config);
+                        _connections.TryAdd(rdpConn.ConnectionId, rdpConn);
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < datas.Count; i++)
+                    {
+                        var config = datas[i].Config;
+                        var rdpConn = new RdpConnection(logger: _logger);
+                        rdpConn.Configure(config);
+                        rdpConn.LoadConfiguration(datas[i]);
+                        _connections.TryAdd(rdpConn.ConnectionId, rdpConn);
+                    }
+                }
                 
-            _logger.LogInfo($"RDP管理器已初始化，最大連線數: {maxConnections}");
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
+        }
+
+        public IRdpConnection GetConnection(int index)
+        {
+            LoadConnectData();
+            var conn = ConfigurationManager.FindConnIndex(index);
+            if (conn == null)
+                return null;
+            if (_connections.ContainsKey(conn.Id))
+                return _connections[conn.Id];
+            return null;
         }
 
         public IRdpConnection CreateConnection()
@@ -56,7 +121,7 @@ namespace LIB_RDP.Core
 
             if (_connections.Count >= _maxConnections)
             {
-                _logger.LogWarning($"已達到最大連線數限制 ({_maxConnections})，無法建立新連線");
+                _logger.Warn($"已達到最大連線數限制 ({_maxConnections})，無法建立新連線");
                 throw new InvalidOperationException($"已達到最大連線數限制: {_maxConnections}");
             }
 
@@ -65,7 +130,7 @@ namespace LIB_RDP.Core
             
             if (_connections.TryAdd(connectionId, connection))
             {
-                _logger.LogInfo($"已建立新的RDP連線", connectionId);
+                _logger.Info($"已建立新的RDP連線 "+ connectionId);
                 return connection;
             }
             else
@@ -105,15 +170,15 @@ namespace LIB_RDP.Core
 
             if (_connections.TryRemove(connectionId, out var connection))
             {
-                _logger.LogInfo($"正在移除RDP連線", connectionId);
+                _logger.Info($"正在移除RDP連線", connectionId);
                 try
                 {
                     (connection as IDisposable)?.Dispose();
-                    _logger.LogInfo($"RDP連線已成功移除", connectionId);
+                    _logger.Info($"RDP連線已成功移除", connectionId);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError($"移除RDP連線時發生錯誤", ex, connectionId);
+                    _logger.Error($"移除RDP連線時發生錯誤:{connectionId}", ex);
                 }
             }
         }
@@ -142,18 +207,19 @@ namespace LIB_RDP.Core
         /// </summary>
         public void DisconnectAll()
         {
-            _logger.LogInfo($"正在斷開所有連線 (共 {_connections.Count} 個)");
-            
-            Parallel.ForEach(_connections.Values, connection =>
+            _logger.Info($"正在斷開所有連線 (共 {_connections?.Count} 個)");
+            if (_connections == null)
+                return;
+            Parallel.ForEach(_connections?.Values, connection =>
             {
                 try
                 {
-                    connection.Disconnect();
+                    connection?.Disconnect();
                 }
                 catch (Exception ex)
                 {
                     var connectionId = (connection as RdpConnection)?.ConnectionId;
-                    _logger.LogError($"斷開連線時發生錯誤", ex, connectionId);
+                    _logger.Error($"斷開連線時發生錯誤:{connectionId}", ex );
                 }
             });
         }
@@ -174,7 +240,7 @@ namespace LIB_RDP.Core
 
             if (inactiveConnections.Any())
             {
-                _logger.LogInfo($"已清理 {inactiveConnections.Count} 個無效連線");
+                _logger.Info($"已清理 {inactiveConnections.Count} 個無效連線");
             }
 
             return inactiveConnections.Count;
@@ -198,15 +264,11 @@ namespace LIB_RDP.Core
                 int cleanedCount = CleanupInactiveConnections();
                 
                 // 記錄統計資訊
-                _logger.LogDebug($"健康檢查完成 - 總連線: {TotalConnectionCount}, " +
-                               $"活動連線: {ActiveConnectionCount}, 已清理: {cleanedCount}");
-
-                // 清理舊日誌
-                _logger.CleanOldLogs();
+                _logger.Debug($"健康檢查完成 - 總連線: {TotalConnectionCount}, " + $"活動連線: {ActiveConnectionCount}, 已清理: {cleanedCount}");
             }
             catch (Exception ex)
             {
-                _logger.LogError("健康檢查時發生錯誤", ex);
+                _logger.Error("健康檢查時發生錯誤", ex);
             }
         }
 
@@ -214,25 +276,26 @@ namespace LIB_RDP.Core
         {
             if (_isDisposed) return;
 
-            _logger.LogInfo($"正在釋放RDP管理器，共有 {_connections.Count} 個連線");
+            _logger.Info($"正在釋放RDP管理器，共有 {_connections?.Count} 個連線");
 
             try
             {
                 _healthCheckTimer?.Dispose();
                 DisconnectAll();
-
-                foreach (var connection in _connections.Values)
+                if (_connections == null)
+                    return;
+                foreach (var connection in _connections?.Values)
                 {
                     (connection as IDisposable)?.Dispose();
                 }
                 _connections.Clear();
 
                 _isDisposed = true;
-                _logger.LogInfo("RDP管理器已成功釋放");
+                _logger.Info("RDP管理器已成功釋放");
             }
             catch (Exception ex)
             {
-                _logger.LogError("釋放RDP管理器時發生錯誤", ex);
+                _logger.Error("釋放RDP管理器時發生錯誤", ex);
             }
         }
     }

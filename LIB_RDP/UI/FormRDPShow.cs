@@ -27,8 +27,7 @@ namespace LIB_RDP.UI
             Text = $"遠端連線 - {_connection.GetHostName()}";
 
             // 設定視窗的最小尺寸
-            MinimumSize = new Size(800, 600);
-
+            MinimumSize = new Size(1920, 1080);
             // 應用主題
             ThemeManager.ApplyTheme(this);
             BackColor = ThemeManager.BackgroundColor;

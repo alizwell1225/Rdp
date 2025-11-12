@@ -57,6 +57,18 @@ public partial class Uc_Viewer : UserControl, IViewer
         WireMouseEvents(InnerViewer);
     }
 
+    ~Uc_Viewer()
+    {
+        try
+        {
+            InnerViewer.GetRdpConnection()?.Disconnect();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+        }
+    }
+
     public RdpViewer InnerViewer { get; private set; }
 
     public int Index { get; private set; } = -1;
@@ -321,6 +333,8 @@ public partial class Uc_Viewer : UserControl, IViewer
             //frm?.RestoreViewer(viewerIndex);
             ActSinkViewer?.Invoke(Index);
             splitContainer1.Panel2Collapsed = true;
+            this.GetConnection()?.Disconnect();
+            
             //RestoreRequested?.Invoke(viewerIndex);
         }
         catch (Exception ex)

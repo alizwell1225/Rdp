@@ -1,4 +1,4 @@
-namespace RDP_DEMO
+namespace LIB_RDP.UI
 {
     partial class FormProxySettings
     {
@@ -28,8 +28,6 @@ namespace RDP_DEMO
         /// </summary>
         private void InitializeComponent()
         {
-            lblRpcCount = new Label();
-            numRpcCount = new NumericUpDown();
             dgvSettings = new DataGridView();
             Index = new DataGridViewTextBoxColumn();
             HostName = new DataGridViewTextBoxColumn();
@@ -37,29 +35,9 @@ namespace RDP_DEMO
             Password = new DataGridViewTextBoxColumn();
             btnOK = new Button();
             btnCancel = new Button();
-            ((System.ComponentModel.ISupportInitialize)numRpcCount).BeginInit();
+            btnApply = new Button();
             ((System.ComponentModel.ISupportInitialize)dgvSettings).BeginInit();
             SuspendLayout();
-            // 
-            // lblRpcCount
-            // 
-            lblRpcCount.AutoSize = true;
-            lblRpcCount.Location = new Point(20, 20);
-            lblRpcCount.Name = "lblRpcCount";
-            lblRpcCount.Size = new Size(93, 15);
-            lblRpcCount.TabIndex = 0;
-            lblRpcCount.Text = "RPC 控制數量：";
-            // 
-            // numRpcCount
-            // 
-            numRpcCount.Location = new Point(120, 18);
-            numRpcCount.Maximum = new decimal(new int[] { 24, 0, 0, 0 });
-            numRpcCount.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
-            numRpcCount.Name = "numRpcCount";
-            numRpcCount.Size = new Size(100, 23);
-            numRpcCount.TabIndex = 1;
-            numRpcCount.Value = new decimal(new int[] { 12, 0, 0, 0 });
-            numRpcCount.ValueChanged += numRpcCount_ValueChanged;
             // 
             // dgvSettings
             // 
@@ -67,7 +45,7 @@ namespace RDP_DEMO
             dgvSettings.AllowUserToDeleteRows = false;
             dgvSettings.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dgvSettings.Columns.AddRange(new DataGridViewColumn[] { Index, HostName, UserName, Password });
-            dgvSettings.Location = new Point(20, 60);
+            dgvSettings.Location = new Point(20, 24);
             dgvSettings.Name = "dgvSettings";
             dgvSettings.RowHeadersVisible = false;
             dgvSettings.RowTemplate.Height = 30;
@@ -95,13 +73,13 @@ namespace RDP_DEMO
             // 
             // Password
             // 
+            Password.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
             Password.HeaderText = "密碼";
             Password.Name = "Password";
-            Password.Width = 200;
             // 
             // btnOK
             // 
-            btnOK.Location = new Point(580, 540);
+            btnOK.Location = new Point(440, 503);
             btnOK.Name = "btnOK";
             btnOK.Size = new Size(90, 30);
             btnOK.TabIndex = 3;
@@ -111,7 +89,7 @@ namespace RDP_DEMO
             // 
             // btnCancel
             // 
-            btnCancel.Location = new Point(690, 540);
+            btnCancel.Location = new Point(550, 503);
             btnCancel.Name = "btnCancel";
             btnCancel.Size = new Size(90, 30);
             btnCancel.TabIndex = 4;
@@ -119,38 +97,43 @@ namespace RDP_DEMO
             btnCancel.UseVisualStyleBackColor = true;
             btnCancel.Click += btnCancel_Click;
             // 
+            // btnApply
+            // 
+            btnApply.Location = new Point(690, 503);
+            btnApply.Name = "btnApply";
+            btnApply.Size = new Size(90, 30);
+            btnApply.TabIndex = 3;
+            btnApply.Text = "套用";
+            btnApply.UseVisualStyleBackColor = true;
+            btnApply.Click += btnApply_Click;
+            // 
             // FormProxySettings
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(798, 583);
+            ClientSize = new Size(800, 545);
             Controls.Add(btnCancel);
+            Controls.Add(btnApply);
             Controls.Add(btnOK);
             Controls.Add(dgvSettings);
-            Controls.Add(numRpcCount);
-            Controls.Add(lblRpcCount);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             MinimizeBox = false;
             Name = "FormProxySettings";
             StartPosition = FormStartPosition.CenterParent;
             Text = "RPC 連線設定";
-            ((System.ComponentModel.ISupportInitialize)numRpcCount).EndInit();
             ((System.ComponentModel.ISupportInitialize)dgvSettings).EndInit();
             ResumeLayout(false);
-            PerformLayout();
         }
 
         #endregion
-
-        private System.Windows.Forms.Label lblRpcCount;
-        private System.Windows.Forms.NumericUpDown numRpcCount;
         private System.Windows.Forms.DataGridView dgvSettings;
         private System.Windows.Forms.Button btnOK;
         private System.Windows.Forms.Button btnCancel;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Index;
-        private System.Windows.Forms.DataGridViewTextBoxColumn HostName;
-        private System.Windows.Forms.DataGridViewTextBoxColumn UserName;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Password;
+        private DataGridViewTextBoxColumn Index;
+        private DataGridViewTextBoxColumn HostName;
+        private DataGridViewTextBoxColumn UserName;
+        private DataGridViewTextBoxColumn Password;
+        private Button btnApply;
     }
 }

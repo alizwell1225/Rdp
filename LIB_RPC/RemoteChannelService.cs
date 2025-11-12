@@ -59,6 +59,7 @@ namespace LIB_RPC
             }
         }
 
+        //串流方式
         // New duplex JSON channel allowing server to push messages back at any time
         public override async Task JsonDuplex(IAsyncStreamReader<JsonEnvelope> requestStream, IServerStreamWriter<JsonEnvelope> responseStream, ServerCallContext context)
         {
@@ -129,6 +130,7 @@ namespace LIB_RPC
             return successCount;
         }
 
+        //這方式是串流方式
         // FilePush subscription: client opens a stream and we keep its writer for future pushes
         public override async Task FilePush(Google.Protobuf.WellKnownTypes.Empty request, IServerStreamWriter<FileChunk> responseStream, ServerCallContext context)
         {

@@ -9,8 +9,8 @@ namespace LIB_RPC
         public int Port { get;  set; } = 50051;
         public string BaseAddress => $"{Host}:{Port}";
         public string Password { get; private set; } = "changeme"; // simple shared secret metadata
-        public int MaxChunkSizeBytes { get;  set; } = 64 * 1024; // 64KB default
-        public string StorageRoot { get;  set; } = Path.Combine(AppContext.BaseDirectory, "storage");
+        public int MaxChunkSizeBytes { get;  set; } = 100 * 1024; // 64KB default
+        public string StorageRoot { get;  set; } = Path.Combine(AppContext.BaseDirectory, "Storage");
         public bool EnableConsoleLog { get;  set; } = true;
         public string LogFilePath { get;  set; } = Path.Combine(AppContext.BaseDirectory, "Log", "grpc.log");
 

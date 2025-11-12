@@ -10,10 +10,10 @@ namespace LIB_RPC
         private string _host = "localhost";
         private int _port = 50051;
         private string _password = "changeme";
-        private int _maxChunkSizeBytes = 64 * 1024;
-        private string _storageRoot = Path.Combine(AppContext.BaseDirectory, "storage");
+        private int _maxChunkSizeBytes = 100 * 1024;
+        private string _storageRoot = Path.Combine(AppContext.BaseDirectory, "Storage");
         private bool _enableConsoleLog = true;
-        private string _logFilePath = Path.Combine(AppContext.BaseDirectory, "rdp-grpc.log");
+        private string _logFilePath = Path.Combine(AppContext.BaseDirectory, "Config","rdp-grpc.log");
 
         /// <summary>
         /// Sets the host address.

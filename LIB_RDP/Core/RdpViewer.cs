@@ -1,11 +1,12 @@
+using LIB_RDP.Models;
+using LIB_RDP.UI;
 using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using LIB_RDP.Models;
-using LIB_RDP.UI;
 using Timer = System.Windows.Forms.Timer;
 
 namespace LIB_RDP.Core;
@@ -54,6 +55,11 @@ public class RdpViewer : Panel
         MouseMove += RdpViewer_MouseMove;
 
         // RdpViewer no longer creates a bottom menu; host (FormRDP) will create its own
+    }
+
+    public RdpConnection GetRdpConnection()
+    {
+        return _connection;
     }
 
     public bool IsFullScreen { get; private set; }
@@ -135,9 +141,17 @@ public class RdpViewer : Panel
         {
             _connection.ConnectionStateChanged += HandleConnectionStateChanged;
             var axRdpClient9 = _connection.GetRdpClient();
-            axRdpClient9.Dock = DockStyle.Fill;
-            Controls.Clear();
-            Controls.Add(axRdpClient9);
+            try
+            {
+                axRdpClient9.Dock = DockStyle.Fill;
+                Controls.Clear();
+                Controls.Add(axRdpClient9);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+
 
             // attach mouse handler to the embedded client so clicks on the child control
             // are detected (Ctrl+Click should toggle fullscreen). Store reference so
@@ -540,27 +554,39 @@ public class RdpViewer : Panel
         {
             if (_connection == null)
                 return;
-
+            if (_connection.GetConnectionStats().IsConnected == false )
+                return;
             w = Math.Min(w, 4096);
             h = Math.Min(h, 2160);
 
             var axRdpClient9 = _connection.GetRdpClient();
             if (axRdpClient9.Connected == 1)
-                axRdpClient9.UpdateSessionDisplaySettings(
-                    (uint)w,
-                    (uint)h,
-                    32,
-                    0,
-                    0,
-                    0,
-                    0
-                );
+                axRdpClient_OnConnected(null, null);
         }
         catch (AxHost.InvalidActiveXStateException ex)
         {
             Debug.WriteLine($"無法設置桌面尺寸 - 控制項尚未準備好: {ex.Message}");
         }
     }
+
+    private void axRdpClient_OnConnected(object sender, EventArgs e)
+    {
+        Task.Delay(500).ContinueWith(_ =>
+        {
+            try
+            {
+                this.Invoke((Action)(() =>
+                {
+                    SetMax(1920, 1080);
+                }));
+            }
+            catch (Exception exception)
+            {
+            }
+
+        });
+    }
+
 
     internal void SetScreenSize()
     {

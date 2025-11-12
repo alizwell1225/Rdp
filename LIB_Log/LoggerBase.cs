@@ -86,22 +86,24 @@ namespace LIB_Log
         /// Logs an informational message
         /// </summary>
         public void Info(string message) => Write(LogLevel.Info, message);
+        public void Info(string message,string context) => Write(LogLevel.Info, message + " " + context);
 
         /// <summary>
         /// Logs an error message
         /// </summary>
         public void Error(string message) => Write(LogLevel.Error, message);
+        public void Error(string message, Exception ex) => Write(LogLevel.Error, message + " ex:"+ex);
 
         /// <summary>
         /// Logs a warning message
         /// </summary>
         public void Warn(string message) => Write(LogLevel.Warn, message);
-
+        public void Warn(string message, string context) => Write(LogLevel.Warn, message + " " + context);
         /// <summary>
         /// Logs a debug message
         /// </summary>
         public void Debug(string message) => Write(LogLevel.Debug, message);
-
+        public void Debug(string message, string context) => Write(LogLevel.Debug, message + " " + context);
         /// <summary>
         /// Writes a log entry
         /// </summary>

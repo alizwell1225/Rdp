@@ -4,7 +4,7 @@ namespace LIB_RDP.Interfaces
 {
     public interface IRdpManager
     {
-        IRdpConnection CreateConnection();
+        //IRdpConnection CreateConnection();
         void RemoveConnection(string connectionId);
         IEnumerable<IRdpConnection> ActiveConnections { get; }
     }
