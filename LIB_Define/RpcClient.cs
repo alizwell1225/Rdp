@@ -359,6 +359,14 @@ public class RpcClient
     private void apiOnServerJson(JsonMessage env)
     {
         AppendTextSafe($"[Recive] type={env.Type} id={env.Id} bytes={env.Json?.Length}\r\n");
+        
+        // Handle image messages specially
+        if (env.Type == "image")
+        {
+            HandleServerImageMessage(env);
+        }
+        
+        // Always invoke the generic handler for application-level processing
         ActionOnServerJson?.Invoke(Index,env);
     }
 
