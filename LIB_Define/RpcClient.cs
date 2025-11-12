@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Text.Json;
 using LIB_Log;
 using LIB_RPC;
 using LIB_RPC.Abstractions;
@@ -35,6 +36,10 @@ public class RpcClient
     public Action<int, string, double> ActionOnDownloadProgress;
     public Action<int, Image> ActionScreenshot;
     public Action<int, double> ActionScreenshotProgress;
+    
+    // New actions for enhanced functionality
+    public Action<int, ShowPictureType, Image> ActionOnServerImage;
+    public Action<int, ShowPictureType, string> ActionOnServerImagePath;
 
     private string configPath ;
     public GrpcConfig? _config;
@@ -391,6 +396,128 @@ public class RpcClient
     private void apiOnLog(string line)
     {
         AppendTextSafe(line + Environment.NewLine);
+    }
+
+    #endregion
+
+    #region Generic JSON Methods
+
+    /// <summary>
+    /// Send a generic object as JSON to the server
+    /// </summary>
+    public async Task<JsonAcknowledgment> SendObjectAsJsonAsync<T>(string type, T obj, CancellationToken ct = default)
+    {
+        if (_api == null)
+        {
+            return new JsonAcknowledgment { Success = false, Error = "Not connected" };
+        }
+
+        try
+        {
+            var json = JsonSerializer.Serialize(obj, new JsonSerializerOptions 
+            { 
+                WriteIndented = false,
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never
+            });
+            
+            var ack = await _api.SendJsonAsync(type, json, ct);
+            AppendTextSafe($"Sent {typeof(T).Name}: {ack.Success} {ack.Error}\r\n");
+            return ack;
+        }
+        catch (Exception ex)
+        {
+            AppendTextSafe($"Failed to serialize/send {typeof(T).Name}: {ex.Message}\r\n");
+            return new JsonAcknowledgment { Success = false, Error = ex.Message };
+        }
+    }
+
+    /// <summary>
+    /// Send FlowChartOBJ as JSON to the server
+    /// </summary>
+    public async Task<JsonAcknowledgment> SendFlowChartAsync(FlowChartOBJ flowChart, CancellationToken ct = default)
+    {
+        // Sync colors before sending
+        flowChart.SyncColorsToArgb();
+        return await SendObjectAsJsonAsync("flowchart", flowChart, ct);
+    }
+
+    /// <summary>
+    /// Deserialize JSON message to a specific type
+    /// </summary>
+    public T? DeserializeJsonMessage<T>(JsonMessage message) where T : class
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(message.Json))
+            {
+                AppendTextSafe($"Empty JSON in message type={message.Type}\r\n");
+                return null;
+            }
+
+            var obj = JsonSerializer.Deserialize<T>(message.Json, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            if (obj == null)
+            {
+                AppendTextSafe($"Failed to deserialize {typeof(T).Name} from type={message.Type}\r\n");
+                return null;
+            }
+
+            // If it's a FlowChartOBJ, sync colors from ARGB
+            if (obj is FlowChartOBJ flowChart)
+            {
+                flowChart.SyncColorsFromArgb();
+            }
+
+            return obj;
+        }
+        catch (Exception ex)
+        {
+            AppendTextSafe($"Exception deserializing {typeof(T).Name}: {ex.Message}\r\n");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Handle server image message - expects JSON with ShowPictureType and either ImagePath or ImageData (base64)
+    /// </summary>
+    private void HandleServerImageMessage(JsonMessage message)
+    {
+        try
+        {
+            var imageMsg = JsonSerializer.Deserialize<ImageTransferMessage>(message.Json, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            if (imageMsg == null)
+            {
+                AppendTextSafe("Failed to deserialize image message\r\n");
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(imageMsg.ImagePath))
+            {
+                // Path-based image
+                ActionOnServerImagePath?.Invoke(Index, imageMsg.PictureType, imageMsg.ImagePath);
+                AppendTextSafe($"Received image path: {imageMsg.ImagePath} (Type: {imageMsg.PictureType})\r\n");
+            }
+            else if (!string.IsNullOrEmpty(imageMsg.ImageDataBase64))
+            {
+                // Base64 image data
+                var imageBytes = Convert.FromBase64String(imageMsg.ImageDataBase64);
+                using var ms = new MemoryStream(imageBytes);
+                var image = Image.FromStream(ms);
+                ActionOnServerImage?.Invoke(Index, imageMsg.PictureType, image);
+                AppendTextSafe($"Received image data: {imageBytes.Length} bytes (Type: {imageMsg.PictureType})\r\n");
+            }
+        }
+        catch (Exception ex)
+        {
+            AppendTextSafe($"Error handling server image: {ex.Message}\r\n");
+        }
     }
 
     #endregion

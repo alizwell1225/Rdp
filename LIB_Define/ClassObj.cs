@@ -1,4 +1,6 @@
-﻿namespace LIB_Define
+﻿using System.Text.Json.Serialization;
+
+namespace LIB_Define
 {
     [Serializable]
     public class FlowChartOBJ
@@ -50,8 +52,15 @@
             Set_IFCondition = 2;
         }
 
-        public List<string> WorkList = new List<string>(); //工作清單 Modes
-        public List<Color> WorkList_Color = new List<Color>(); //工作清單 Modes_Color
+        public List<string> WorkList { get; set; } = new List<string>(); //工作清單 Modes
+        
+        // Note: Color is not JSON-serializable by default. Store as string (e.g., #RRGGBB) or ARGB int
+        [JsonIgnore]
+        public List<Color> WorkList_Color { get; set; } = new List<Color>(); //工作清單 Modes_Color
+        
+        // Color values serialized as ARGB integers for JSON compatibility
+        public List<int> WorkList_ColorArgb { get; set; } = new List<int>();
+        
         private string type = ""; //種類
         private string ContentText = ""; //元件內容
         private string Name = ""; //元件名稱 唯一性
@@ -61,36 +70,50 @@
         public int DoCounter
         {
             get { return ExeCounter; }
-
             set { ExeCounter = value; }
         }
 
         public string AddressName
         {
             get { return Name; }
-
             set { Name = value; }
         }
 
         public string Type
         {
             get { return type; }
-
             set { type = value; }
         }
 
         public string Caption
         {
             get { return ContentText; }
-
             set { ContentText = value; }
         }
 
         public string Info
         {
             get { return Content; }
-
             set { Content = value; }
+        }
+        
+        // Helper methods for color conversion
+        public void SyncColorsToArgb()
+        {
+            WorkList_ColorArgb.Clear();
+            foreach (var color in WorkList_Color)
+            {
+                WorkList_ColorArgb.Add(color.ToArgb());
+            }
+        }
+        
+        public void SyncColorsFromArgb()
+        {
+            WorkList_Color.Clear();
+            foreach (var argb in WorkList_ColorArgb)
+            {
+                WorkList_Color.Add(Color.FromArgb(argb));
+            }
         }
     }
 
@@ -99,5 +122,28 @@
         None = 0,
         Flow = 1,
         Map = 2,
+    }
+
+    /// <summary>
+    /// Message for transferring images between RpcServer and RpcClient
+    /// </summary>
+    public class ImageTransferMessage
+    {
+        public ShowPictureType PictureType { get; set; } = ShowPictureType.None;
+        
+        /// <summary>
+        /// Image file path (if sending by path)
+        /// </summary>
+        public string ImagePath { get; set; } = string.Empty;
+        
+        /// <summary>
+        /// Base64-encoded image data (if sending by data)
+        /// </summary>
+        public string ImageDataBase64 { get; set; } = string.Empty;
+        
+        /// <summary>
+        /// Optional: original file name
+        /// </summary>
+        public string FileName { get; set; } = string.Empty;
     }
 }
