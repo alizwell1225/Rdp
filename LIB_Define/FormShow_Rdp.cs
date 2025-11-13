@@ -4,12 +4,12 @@ using LIB_RDP.UI;
 
 namespace LIB_Define
 {
-    public partial class FormShowRdp : Form
+    public partial class FormShow_Rdp : Form
     {
         public event EventHandler<RdpStateEventArgs> ConnectionStateChanged;
         private RdpConnection _connection;
 
-        public FormShowRdp()
+        public FormShow_Rdp()
         {
             InitializeComponent();
             uc.ActSinkViewer += CloseForm;
@@ -39,7 +39,6 @@ namespace LIB_Define
             _connection.ConnectionStateChanged += Connection_StateChanged;
 
             // 設定視窗的最小尺寸
-            MinimumSize = new Size(1920, 1080);
             // 應用主題
             ThemeManager.ApplyTheme(this);
             BackColor = ThemeManager.BackgroundColor;
@@ -73,8 +72,11 @@ namespace LIB_Define
 
         private void FormShowRdp_Load(object sender, EventArgs e)
         {
+            this.WindowState = FormWindowState.Maximized;
+            this.FormBorderStyle = FormBorderStyle.None;
             uc.SetRdpConnection(_connection);
             ToggleViewerSize();
+
         }
 
 

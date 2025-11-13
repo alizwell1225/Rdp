@@ -49,7 +49,7 @@ namespace LIB_RDP.Core
             {
                 throw new Exception("Connect Count Error");
             }
-            _logger = new Logger(Path.Combine(AppContext.BaseDirectory, "Log"), "RDP");
+            _logger = new Logger(Path.Combine(AppContext.BaseDirectory, "Log", "RDP.log"), "RDP.log");
             //RdpProxySettings = new ProxySettings(maxConnections);
             ConfigurationManager = RdpConfigurationManager.Instance;
             ConfigurationManager.SetLog(_logger);
@@ -143,12 +143,12 @@ namespace LIB_RDP.Core
         /// <summary>
         /// 建立連線並立即連接到指定主機
         /// </summary>
-        public async Task<IRdpConnection> CreateAndConnectAsync(string hostName, string userName, string password, int timeoutSeconds = 30)
+        public async Task<IRdpConnection> CreateAndConnectAsync(string hostName, string userName, string password, int timeoutSeconds = 30, bool usePingFlag = true)
         {
             var connection = CreateConnection() as RdpConnection;
             try
             {
-                bool success = await connection.ConnectAsync(hostName, userName, password, timeoutSeconds);
+                bool success = await connection.ConnectAsync(hostName, userName, password, timeoutSeconds,usePingFlag);
                 if (!success)
                 {
                     RemoveConnection(connection.ConnectionId);

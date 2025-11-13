@@ -128,7 +128,7 @@ public class RdpConnection : IRdpConnection, IDisposable
         }
     }
 
-    public bool Connect(string hostName, string userName, string password)
+    public bool Connect(string hostName, string userName, string password, bool usedPingFlag = true)
     {
         if (_isDisposed)
             throw new ObjectDisposedException(nameof(RdpConnection));
@@ -142,7 +142,7 @@ public class RdpConnection : IRdpConnection, IDisposable
         // 為了相容既有同步 API，我們仍然回傳一個布林，但實際的連線流程會在背景執行。
         // 呼叫者不應該依賴此同步回傳的結果來判斷畫面是否已呈現。
         // 背景 Task 會處理重試、連線和驗證；ConnectAsync 可用來等待最終結果。
-        Task.Run(() => ConnectWithRetry(hostName, userName, password));
+        Task.Run(() => ConnectWithRetry(hostName, userName, password, usedPingFlag));
         return true;
     }
 
@@ -150,8 +150,7 @@ public class RdpConnection : IRdpConnection, IDisposable
     ///     異步連線方法
     /// </summary>
     // 新增一個真正會回傳最終驗證結果的非同步 ConnectAsync
-    public async Task<bool> ConnectAsync(string hostName, string userName, string password,
-        int timeoutSeconds = DEFAULT_CONNECTION_TIMEOUT)
+    public async Task<bool> ConnectAsync(string hostName, string userName, string password, int timeoutSeconds = DEFAULT_CONNECTION_TIMEOUT,bool usePingFlag=false)
     {
         if (_isDisposed) throw new ObjectDisposedException(nameof(RdpConnection));
 
@@ -181,7 +180,7 @@ public class RdpConnection : IRdpConnection, IDisposable
         ConnectionTimeoutOccurred += timeoutHandler;
 
         // 啟動背景連線（若已由 Connect() 啟動，這不會造成問題）
-        Connect(hostName, userName, password);
+        Connect(hostName, userName, password, usePingFlag);
 
         var cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
         using (cts)
@@ -264,7 +263,7 @@ public class RdpConnection : IRdpConnection, IDisposable
     /// <summary>
     ///     帶重試機制的連線方法
     /// </summary>
-    private bool ConnectWithRetry(string hostName, string userName, string password)
+    private bool ConnectWithRetry(string hostName, string userName, string password,bool usedPingFlag=true)
     {
         var attempt = 0;
 
@@ -288,7 +287,7 @@ public class RdpConnection : IRdpConnection, IDisposable
 
                 _logger?.Info($"開始連線到 {hostName} (嘗試 {attempt + 1}/{MAX_RETRY_ATTEMPTS + 1})", ConnectionId);
 
-                if (ConnectInternal(hostName, userName, password))
+                if (ConnectInternal(hostName, userName, password, usedPingFlag))
                 {
                     RetryCount = 0;
                     IsRetrying = false;
@@ -308,7 +307,7 @@ public class RdpConnection : IRdpConnection, IDisposable
     /// <summary>
     ///     內部連線方法(不含重試邏輯)
     /// </summary>
-    private bool ConnectInternal(string hostName, string userName, string password)
+    private bool ConnectInternal(string hostName, string userName, string password,bool usePingFlag=true)
     {
         try
         {
@@ -322,7 +321,7 @@ public class RdpConnection : IRdpConnection, IDisposable
             try
             {
                 const int pingTimeout = 1000; // 1s
-                if (!PingHost(hostName))
+                if (usePingFlag && !PingHost(hostName))
                 {
                     _logger?.Warn($"目標主機 {hostName} 無法 ping 通，略過本次連線嘗試", ConnectionId);
                     StopConnectionTimer();

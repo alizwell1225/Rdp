@@ -305,7 +305,7 @@ public partial class FormRDP : Form, IFormRDP
             DisconnectViewer(e.RowIndex);
     }
 
-    private async void ConnectViewer(int index)
+    private async void ConnectViewer(int index, bool usePingFlag = true)
     {
         var row = dgvConnections.Rows[index];
         var hostName = row.Cells["HostName"].Value?.ToString();
@@ -343,7 +343,7 @@ public partial class FormRDP : Form, IFormRDP
         connection.ConnectionStateChanged += stateHandler;
 
         // 啟動非同步連線，等待最終驗證結果；UI 由事件驅動更新
-        var success = await connection.ConnectAsync(hostName, userName, password);
+        var success = await connection.ConnectAsync(hostName, userName, password, usePingFlag:usePingFlag);
         if (!success) _logger.LogWarning($"連線到 {hostName} 失敗");
     }
 

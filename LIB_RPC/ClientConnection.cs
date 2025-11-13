@@ -91,8 +91,17 @@ namespace LIB_RPC
             _ = Task.Run(async () => await ReceiveDuplexJsonAsync());
             _ = Task.Run(async () => await ReceiveFilePushAsync());
             await startedTcs.Task.ConfigureAwait(false);
-            _logger.Info("Client connected and JSON stream opened");
-            OnConnected?.Invoke(true);
+            //_logger.Info("Client connected and JSON stream opened");
+            try
+            {
+                //var ddd = await SendJsonAsync("test", "{\"msg\":\"hello\"}").WaitAsync(new TimeSpan(1000));
+                await SendJsonAsync("test", "{\"msg\":\"hello\"}").WaitAsync(new TimeSpan(500)); ;
+            }
+            catch (Exception e)
+            {
+                OnConnected?.Invoke(false);  //沒走這邊
+            }
+
         }
 
         private async Task ReceiveJsonAsync()
@@ -102,8 +111,8 @@ namespace LIB_RPC
             {
                 while (await _jsonStream.ResponseStream.MoveNext(CancellationToken.None))
                 {
-                    var ack = _jsonStream.ResponseStream.Current;
-                    if (_pending.TryRemove(ack.Id, out var tcs)) tcs.TrySetResult(ack);
+                    var ack = _jsonStream?.ResponseStream.Current;
+                    if (_pending.TryRemove(ack?.Id, out var tcs)) tcs.TrySetResult(ack);
                     OnJsonAck?.Invoke(ack);
                 }
             }
@@ -126,6 +135,7 @@ namespace LIB_RPC
                 _pending[id] = tcs;
                 await _jsonStream.RequestStream.WriteAsync(env);
                 using var reg = ct.Register(() => tcs.TrySetCanceled());
+                OnConnected?.Invoke(true);
             }
             catch (Exception)
             {

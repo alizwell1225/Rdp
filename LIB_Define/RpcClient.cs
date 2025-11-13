@@ -33,6 +33,7 @@ public class RpcClient
     public Action<int, string> ActionOnServerFileCompleted;
     public Action<int, JsonMessage> ActionOnServerJson;
     public Action<int, string, double> ActionOnUploadProgress;
+
     public Action<int, string, double> ActionOnDownloadProgress;
     public Action<int, Image> ActionScreenshot;
     public Action<int, double> ActionScreenshotProgress;
@@ -40,6 +41,7 @@ public class RpcClient
     // New actions for enhanced functionality
     public Action<int, ShowPictureType, Image> ActionOnServerImage;
     public Action<int, ShowPictureType, string> ActionOnServerImagePath;
+    public Action<int, bool> ActionConnectedState;
 
     private string configPath ;
     public GrpcConfig? _config;
@@ -95,22 +97,26 @@ public class RpcClient
 
     private async Task ConnectAsync(bool retry = false)
     {
-        if (_api == null || _config == null)
+        lock (_connectionLock)
         {
-            _config ??= new GrpcConfig();
-            _api ??= new GrpcClientApi(_config);
-            // forward api logs to UI
-            _api.OnLog += apiOnLog;
-            _api.OnUploadProgress += apiOnUploadProgress;
-            _api.OnDownloadProgress += apiOnDownloadProgress;
-            _api.OnScreenshotProgress += apiOnScreenshotProgress;
-            _api.OnServerJson += apiOnServerJson;
-            _api.OnServerFileCompleted += apiOnServerFileCompleted;
-            _api.OnConnected += api_OnConnected;
-            _api.OnDisconnected += apiOnDisconnected;
-            _api.OnConnectionError += apiOnConnectionError;
+            if (_api == null || _config == null)
+            {
+                if (_config == null)
+                    _config ??= new GrpcConfig();
+                _api ??= new GrpcClientApi(_config);
+                // forward api logs to UI
+                _api.OnLog += apiOnLog;
+                _api.OnUploadProgress += apiOnUploadProgress;
+                _api.OnDownloadProgress += apiOnDownloadProgress;
+                _api.OnScreenshotProgress += apiOnScreenshotProgress;
+                _api.OnServerJson += apiOnServerJson;
+                _api.OnServerFileCompleted += apiOnServerFileCompleted;
+                _api.OnConnected += api_OnConnected;
+                _api.OnDisconnected += apiOnDisconnected;
+                _api.OnConnectionError += apiOnConnectionError;
+            }
         }
-
+        await Task.Delay(10);
         await _api.ConnectAsync(retry);
     }
 
@@ -163,6 +169,10 @@ public class RpcClient
         lock (_connectionLock)
         {
             IsConnected = connected;
+            if (IsConnected==false)
+            {
+                ActionConnectedState?.Invoke(Index, IsConnected);
+            }
         }
     }
 
@@ -270,7 +280,7 @@ public class RpcClient
         await Connect();
     }
 
-    private async Task Connect()
+    public async Task Connect(bool force=false)
     {
         IsEnableConnect = false;
         try
@@ -284,7 +294,15 @@ public class RpcClient
             if (!isConnected)
                 await ConnectAsync(autoReStart);
             else
-                await DisconnectAsync();
+            {
+                if (force)
+                {
+                    await DisconnectAsync();
+                    await ConnectAsync(autoReStart);
+                }
+                else
+                    await DisconnectAsync();
+            }
         }
         finally
         {
@@ -347,6 +365,7 @@ public class RpcClient
         {
             shouldReconnect = false;
             UpdateUiConnectedState(true);
+            ActionConnectedState?.Invoke(Index, IsConnected);
         }
     }
 
