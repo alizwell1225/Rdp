@@ -115,11 +115,11 @@ public class RpcClient
                 _api.OnDisconnected += apiOnDisconnected;
                 _api.OnConnectionError += apiOnConnectionError;
             }
-            else
-            {
-                // Update existing API with new config (important when server port changes)
-                _api.UpdateConfig(_config);
-            }
+            //else
+            //{
+            //    // Update existing API with new config (important when server port changes)
+            //    _api.UpdateConfig(_config);
+            //}
         }
         await Task.Delay(10);
         await _api.ConnectAsync(retry);
