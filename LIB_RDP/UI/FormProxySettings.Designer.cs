@@ -36,6 +36,8 @@ namespace LIB_RDP.UI
             btnOK = new Button();
             btnCancel = new Button();
             btnApply = new Button();
+            btnApplyTemplate = new Button();
+            chkUseJsonFormat = new CheckBox();
             ((System.ComponentModel.ISupportInitialize)dgvSettings).BeginInit();
             SuspendLayout();
             // 
@@ -107,11 +109,34 @@ namespace LIB_RDP.UI
             btnApply.UseVisualStyleBackColor = true;
             btnApply.Click += btnApply_Click;
             // 
+            // btnApplyTemplate
+            // 
+            btnApplyTemplate.Location = new Point(20, 503);
+            btnApplyTemplate.Name = "btnApplyTemplate";
+            btnApplyTemplate.Size = new Size(120, 30);
+            btnApplyTemplate.TabIndex = 5;
+            btnApplyTemplate.Text = "批次設定...";
+            btnApplyTemplate.UseVisualStyleBackColor = true;
+            btnApplyTemplate.Click += btnApplyTemplate_Click;
+            // 
+            // chkUseJsonFormat
+            // 
+            chkUseJsonFormat.AutoSize = true;
+            chkUseJsonFormat.Location = new Point(160, 510);
+            chkUseJsonFormat.Name = "chkUseJsonFormat";
+            chkUseJsonFormat.Size = new Size(130, 19);
+            chkUseJsonFormat.TabIndex = 6;
+            chkUseJsonFormat.Text = "使用 JSON 格式儲存";
+            chkUseJsonFormat.UseVisualStyleBackColor = true;
+            chkUseJsonFormat.CheckedChanged += chkUseJsonFormat_CheckedChanged;
+            // 
             // FormProxySettings
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 545);
+            Controls.Add(chkUseJsonFormat);
+            Controls.Add(btnApplyTemplate);
             Controls.Add(btnCancel);
             Controls.Add(btnApply);
             Controls.Add(btnOK);
@@ -124,6 +149,7 @@ namespace LIB_RDP.UI
             Text = "RPC 連線設定";
             ((System.ComponentModel.ISupportInitialize)dgvSettings).EndInit();
             ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
@@ -135,5 +161,7 @@ namespace LIB_RDP.UI
         private DataGridViewTextBoxColumn UserName;
         private DataGridViewTextBoxColumn Password;
         private Button btnApply;
+        private Button btnApplyTemplate;
+        private CheckBox chkUseJsonFormat;
     }
 }

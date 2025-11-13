@@ -22,6 +22,8 @@ namespace LIB_RDP.Core
         private readonly string _configDirectory;
         private readonly string _connectionsFilePath;
         
+        private bool _useJsonFormat = false;
+        
         private RdpConfigurationManager()
         {
             //_logger = RdpLogger.Instance;
@@ -29,6 +31,22 @@ namespace LIB_RDP.Core
             _configDirectory = Path.Combine(AppContext.BaseDirectory, "Config");
             _connectionsFilePath = Path.Combine(_configDirectory, "Rdp_Connections.xml");
             Directory.CreateDirectory(_configDirectory);
+        }
+        
+        /// <summary>
+        /// 設定使用 JSON 格式儲存設定
+        /// </summary>
+        public void SetUseJsonFormat(bool useJson)
+        {
+            _useJsonFormat = useJson;
+            if (useJson)
+            {
+                _connectionsFilePath = Path.Combine(_configDirectory, "Rdp_Connections.json");
+            }
+            else
+            {
+                _connectionsFilePath = Path.Combine(_configDirectory, "Rdp_Connections.xml");
+            }
         }
         
         /// <summary>
@@ -47,10 +65,25 @@ namespace LIB_RDP.Core
                 else
                     profiles.Add(profile);
                 
-                var serializer = new XmlSerializer(typeof(List<RdpConnectionProfile>));
-                using (var writer = new FileStream(_connectionsFilePath, FileMode.Create))
+                if (_useJsonFormat)
                 {
-                    serializer.Serialize(writer, profiles);
+                    // 使用 JSON 格式保存
+                    var options = new JsonSerializerOptions
+                    {
+                        WriteIndented = true,
+                        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                    };
+                    string json = JsonSerializer.Serialize(profiles, options);
+                    File.WriteAllText(_connectionsFilePath, json);
+                }
+                else
+                {
+                    // 使用 XML 格式保存
+                    var serializer = new XmlSerializer(typeof(List<RdpConnectionProfile>));
+                    using (var writer = new FileStream(_connectionsFilePath, FileMode.Create))
+                    {
+                        serializer.Serialize(writer, profiles);
+                    }
                 }
                 
                 _logger?.Info($"已保存連線設定: {profile.Name}");
@@ -72,29 +105,25 @@ namespace LIB_RDP.Core
                 if (!File.Exists(_connectionsFilePath))
                     return new List<RdpConnectionProfile>();
 
-                var serializer = new XmlSerializer(typeof(List<RdpConnectionProfile>));
-
-                using (var stream = new FileStream(_connectionsFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                if (_useJsonFormat)
                 {
-                    _logger?.Info($"已載入連線設定");
-                    return (List<RdpConnectionProfile>)serializer.Deserialize(stream);
+                    // 使用 JSON 格式載入
+                    string json = File.ReadAllText(_connectionsFilePath);
+                    var profiles = JsonSerializer.Deserialize<List<RdpConnectionProfile>>(json) ?? new List<RdpConnectionProfile>();
+                    _logger?.Info($"已載入 {profiles.Count} 個連線設定 (JSON)");
+                    return profiles;
                 }
-
-
-
-                //if (!File.Exists(_connectionsFilePath))
-                //    return new List<RdpConnectionProfile>();
-                
-                //var serializer = new XmlSerializer(typeof(List<RdpConnectionProfile>));
-
-                //using (var reader = new FileStream(_connectionsFilePath, FileMode.Open))
-                //{
-                //    var profiles = (List<RdpConnectionProfile>)serializer.Deserialize(reader) ?? 
-                //                   new List<RdpConnectionProfile>();
-                    
-                //    _logger?.Info($"已載入 {profiles.Count} 個連線設定");
-                //    return profiles;
-                //}
+                else
+                {
+                    // 使用 XML 格式載入
+                    var serializer = new XmlSerializer(typeof(List<RdpConnectionProfile>));
+                    using (var stream = new FileStream(_connectionsFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    {
+                        var profiles = (List<RdpConnectionProfile>)serializer.Deserialize(stream);
+                        _logger?.Info($"已載入 {profiles.Count} 個連線設定 (XML)");
+                        return profiles;
+                    }
+                }
             }
             catch (Exception ex)
             {
