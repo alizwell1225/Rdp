@@ -9,22 +9,23 @@ namespace LIB_Define
 {
     /// <summary>
     /// Multi-client configuration manager for running multiple RpcClients on one machine
+    /// Only stores the number of clients and their config file paths
     /// </summary>
     public class MultiClientConfig
     {
         public int ClientCount { get; set; } = 12;
-        public List<ClientInstanceConfig> Clients { get; set; } = new List<ClientInstanceConfig>();
+        public List<ClientInstanceReference> Clients { get; set; } = new List<ClientInstanceReference>();
 
         public MultiClientConfig()
         {
             // Initialize with default configs
             for (int i = 0; i < ClientCount; i++)
             {
-                Clients.Add(new ClientInstanceConfig
+                Clients.Add(new ClientInstanceReference
                 {
                     Index = i,
                     Enabled = true,
-                    ConfigPath = $"./Config/client_{i}_config.json"
+                    ConfigPath = NormalizePath($"./Config/client_{i}_config.json")
                 });
             }
         }
@@ -37,7 +38,15 @@ namespace LIB_Define
             try
             {
                 var json = File.ReadAllText(path);
-                return System.Text.Json.JsonSerializer.Deserialize<MultiClientConfig>(json) ?? new MultiClientConfig();
+                var config = System.Text.Json.JsonSerializer.Deserialize<MultiClientConfig>(json) ?? new MultiClientConfig();
+                
+                // Normalize all paths after loading
+                foreach (var client in config.Clients)
+                {
+                    client.ConfigPath = NormalizePath(client.ConfigPath);
+                }
+                
+                return config;
             }
             catch
             {
@@ -49,6 +58,12 @@ namespace LIB_Define
         {
             try
             {
+                // Normalize all paths before saving
+                foreach (var client in Clients)
+                {
+                    client.ConfigPath = NormalizePath(client.ConfigPath);
+                }
+                
                 var json = System.Text.Json.JsonSerializer.Serialize(this, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
                 var folder = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(folder))
@@ -68,11 +83,11 @@ namespace LIB_Define
             // Add missing clients
             while (Clients.Count < count)
             {
-                Clients.Add(new ClientInstanceConfig
+                Clients.Add(new ClientInstanceReference
                 {
                     Index = Clients.Count,
                     Enabled = true,
-                    ConfigPath = $"./Config/client_{Clients.Count}_config.json"
+                    ConfigPath = NormalizePath($"./Config/client_{Clients.Count}_config.json")
                 });
             }
             
@@ -88,77 +103,84 @@ namespace LIB_Define
                 Clients[i].Index = i;
             }
         }
+
+        /// <summary>
+        /// Normalize path to use forward slashes
+        /// </summary>
+        private static string NormalizePath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return path;
+            return path.Replace('\\', '/');
+        }
     }
 
     /// <summary>
-    /// Configuration for a single client instance
+    /// Reference to a single client instance - only stores index, enabled state, and config path
+    /// Actual client settings are stored in the individual config file
     /// </summary>
-    public class ClientInstanceConfig
+    public class ClientInstanceReference
     {
         public int Index { get; set; }
         public bool Enabled { get; set; }
         public string ConfigPath { get; set; } = string.Empty;
-        public string Host { get; set; } = "localhost";
-        public int Port { get; set; } = 50051;
-        public string LogFilePath { get; set; } = string.Empty;
-        public string StorageRoot { get; set; } = string.Empty;
-        public string DisplayName { get; set; } = string.Empty;
 
-        public ClientInstanceConfig()
+        /// <summary>
+        /// Load the full GrpcConfig from the config file
+        /// </summary>
+        public GrpcConfig LoadConfig()
         {
-            LogFilePath = $"./Logs/client_{Index}_grpc.log";
-            StorageRoot = $"./Storage/client_{Index}";
-            DisplayName = $"Client {Index}";
+            if (string.IsNullOrEmpty(ConfigPath) || !File.Exists(ConfigPath))
+            {
+                // Return default config
+                return CreateDefaultConfig();
+            }
+
+            try
+            {
+                return GrpcConfig.Load(ConfigPath);
+            }
+            catch
+            {
+                return CreateDefaultConfig();
+            }
         }
 
-        public GrpcConfig ToGrpcConfig()
+        /// <summary>
+        /// Save the GrpcConfig to the config file
+        /// </summary>
+        public void SaveConfig(GrpcConfig config)
+        {
+            if (string.IsNullOrEmpty(ConfigPath))
+                return;
+
+            config.Save(ConfigPath);
+        }
+
+        /// <summary>
+        /// Create a default config for this client
+        /// </summary>
+        private GrpcConfig CreateDefaultConfig()
         {
             var config = new GrpcConfig
             {
-                Host = this.Host,
-                Port = this.Port,
-                LogFilePath = string.IsNullOrEmpty(this.LogFilePath) 
-                    ? $"./Logs/client_{Index}_grpc.log" 
-                    : this.LogFilePath,
-                StorageRoot = string.IsNullOrEmpty(this.StorageRoot)
-                    ? $"./Storage/client_{Index}"
-                    : this.StorageRoot
+                Host = "localhost",
+                Port = 50051 + Index,
+                LogFilePath = NormalizePath($"./Logs/client_{Index}_grpc.log"),
+                StorageRoot = NormalizePath($"./Storage/client_{Index}")
             };
             config.ClientDownloadPath = config.StorageRoot;
             return config;
         }
 
-        public void FromGrpcConfig(GrpcConfig config)
+        /// <summary>
+        /// Normalize path to use forward slashes
+        /// </summary>
+        private static string NormalizePath(string path)
         {
-            this.Host = config.Host;
-            this.Port = config.Port;
-            this.LogFilePath = config.LogFilePath;
-            this.StorageRoot = config.GetClientDownloadPath();
-        }
-
-        public void SaveIndividualConfig()
-        {
-            if (string.IsNullOrEmpty(ConfigPath))
-                return;
-
-            var config = ToGrpcConfig();
-            config.Save(ConfigPath);
-        }
-
-        public void LoadIndividualConfig()
-        {
-            if (string.IsNullOrEmpty(ConfigPath) || !File.Exists(ConfigPath))
-                return;
-
-            try
-            {
-                var config = GrpcConfig.Load(ConfigPath);
-                FromGrpcConfig(config);
-            }
-            catch
-            {
-                // Use default values if load fails
-            }
+            if (string.IsNullOrEmpty(path))
+                return path;
+            return path.Replace('\\', '/');
         }
     }
 }
