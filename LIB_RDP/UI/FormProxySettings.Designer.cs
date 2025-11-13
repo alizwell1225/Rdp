@@ -37,7 +37,6 @@ namespace LIB_RDP.UI
             btnCancel = new Button();
             btnApply = new Button();
             btnApplyTemplate = new Button();
-            chkUseJsonFormat = new CheckBox();
             ((System.ComponentModel.ISupportInitialize)dgvSettings).BeginInit();
             SuspendLayout();
             // 
@@ -51,7 +50,7 @@ namespace LIB_RDP.UI
             dgvSettings.Name = "dgvSettings";
             dgvSettings.RowHeadersVisible = false;
             dgvSettings.RowTemplate.Height = 30;
-            dgvSettings.Size = new Size(760, 460);
+            dgvSettings.Size = new Size(760, 410);
             dgvSettings.TabIndex = 2;
             // 
             // Index
@@ -81,7 +80,7 @@ namespace LIB_RDP.UI
             // 
             // btnOK
             // 
-            btnOK.Location = new Point(440, 503);
+            btnOK.Location = new Point(440, 442);
             btnOK.Name = "btnOK";
             btnOK.Size = new Size(90, 30);
             btnOK.TabIndex = 3;
@@ -91,7 +90,7 @@ namespace LIB_RDP.UI
             // 
             // btnCancel
             // 
-            btnCancel.Location = new Point(550, 503);
+            btnCancel.Location = new Point(550, 442);
             btnCancel.Name = "btnCancel";
             btnCancel.Size = new Size(90, 30);
             btnCancel.TabIndex = 4;
@@ -101,7 +100,7 @@ namespace LIB_RDP.UI
             // 
             // btnApply
             // 
-            btnApply.Location = new Point(690, 503);
+            btnApply.Location = new Point(690, 442);
             btnApply.Name = "btnApply";
             btnApply.Size = new Size(90, 30);
             btnApply.TabIndex = 3;
@@ -111,7 +110,7 @@ namespace LIB_RDP.UI
             // 
             // btnApplyTemplate
             // 
-            btnApplyTemplate.Location = new Point(20, 503);
+            btnApplyTemplate.Location = new Point(20, 442);
             btnApplyTemplate.Name = "btnApplyTemplate";
             btnApplyTemplate.Size = new Size(120, 30);
             btnApplyTemplate.TabIndex = 5;
@@ -119,23 +118,11 @@ namespace LIB_RDP.UI
             btnApplyTemplate.UseVisualStyleBackColor = true;
             btnApplyTemplate.Click += btnApplyTemplate_Click;
             // 
-            // chkUseJsonFormat
-            // 
-            chkUseJsonFormat.AutoSize = true;
-            chkUseJsonFormat.Location = new Point(160, 510);
-            chkUseJsonFormat.Name = "chkUseJsonFormat";
-            chkUseJsonFormat.Size = new Size(130, 19);
-            chkUseJsonFormat.TabIndex = 6;
-            chkUseJsonFormat.Text = "使用 JSON 格式儲存";
-            chkUseJsonFormat.UseVisualStyleBackColor = true;
-            chkUseJsonFormat.CheckedChanged += chkUseJsonFormat_CheckedChanged;
-            // 
             // FormProxySettings
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 545);
-            Controls.Add(chkUseJsonFormat);
+            ClientSize = new Size(800, 482);
             Controls.Add(btnApplyTemplate);
             Controls.Add(btnCancel);
             Controls.Add(btnApply);
@@ -149,7 +136,6 @@ namespace LIB_RDP.UI
             Text = "RPC 連線設定";
             ((System.ComponentModel.ISupportInitialize)dgvSettings).EndInit();
             ResumeLayout(false);
-            PerformLayout();
         }
 
         #endregion
@@ -162,6 +148,5 @@ namespace LIB_RDP.UI
         private DataGridViewTextBoxColumn Password;
         private Button btnApply;
         private Button btnApplyTemplate;
-        private CheckBox chkUseJsonFormat;
     }
 }
