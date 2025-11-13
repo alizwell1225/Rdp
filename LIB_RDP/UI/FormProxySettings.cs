@@ -12,7 +12,7 @@ namespace LIB_RDP.UI
         {
             InitializeComponent();
             _rdpManager=rdpManager;
-            //_settings = _rdpManager.RdpProxySettings;
+            _rdpManager.ConfigurationManager.SetUseJsonFormat(true);
             LoadSettings();
         }
 
@@ -218,7 +218,7 @@ namespace LIB_RDP.UI
 
         private void chkUseJsonFormat_CheckedChanged(object sender, EventArgs e)
         {
-            _rdpManager.ConfigurationManager.SetUseJsonFormat(chkUseJsonFormat.Checked);
+            
         }
     }
 

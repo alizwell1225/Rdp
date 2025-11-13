@@ -19,17 +19,22 @@ namespace LIB_RDP.Core
         
         //private readonly RdpLogger _logger;
         private Logger _logger;
-        private readonly string _configDirectory;
-        private readonly string _connectionsFilePath;
+        private string _configDirectory;
+        private string _connectionsFilePath;
         
         private bool _useJsonFormat = false;
         
-        private RdpConfigurationManager()
+        private RdpConfigurationManager(bool useJsonFormat=true)
         {
             //_logger = RdpLogger.Instance;
             //_logger = new Logger(Path.Combine(AppContext.BaseDirectory, "Log"), "RDP"); 
+            _useJsonFormat = useJsonFormat;
+
             _configDirectory = Path.Combine(AppContext.BaseDirectory, "Config");
-            _connectionsFilePath = Path.Combine(_configDirectory, "Rdp_Connections.xml");
+            if (_useJsonFormat)
+                _connectionsFilePath = Path.Combine(_configDirectory, "Rdp_Connections.json");
+            else
+                _connectionsFilePath = Path.Combine(_configDirectory, "Rdp_Connections.xml");
             Directory.CreateDirectory(_configDirectory);
         }
         

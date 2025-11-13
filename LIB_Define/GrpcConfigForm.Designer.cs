@@ -28,231 +28,219 @@ namespace LIB_Define
         /// </summary>
         private void InitializeComponent()
         {
-            this.lblMode = new System.Windows.Forms.Label();
-            this.grpConnection = new System.Windows.Forms.GroupBox();
-            this.numPort = new System.Windows.Forms.NumericUpDown();
-            this.txtHost = new System.Windows.Forms.TextBox();
-            this.lblPort = new System.Windows.Forms.Label();
-            this.lblHost = new System.Windows.Forms.Label();
-            this.grpPaths = new System.Windows.Forms.GroupBox();
-            this.btnBrowseStorageRoot = new System.Windows.Forms.Button();
-            this.txtStorageRoot = new System.Windows.Forms.TextBox();
-            this.lblStorageRoot = new System.Windows.Forms.Label();
-            this.btnBrowseLogPath = new System.Windows.Forms.Button();
-            this.txtLogFilePath = new System.Windows.Forms.TextBox();
-            this.lblLogFilePath = new System.Windows.Forms.Label();
-            this.btnSave = new System.Windows.Forms.Button();
-            this.btnCancel = new System.Windows.Forms.Button();
-            this.btnLoad = new System.Windows.Forms.Button();
-            this.btnResetDefaults = new System.Windows.Forms.Button();
-            this.grpConnection.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.numPort)).BeginInit();
-            this.grpPaths.SuspendLayout();
-            this.SuspendLayout();
+            lblMode = new Label();
+            grpConnection = new GroupBox();
+            numPort = new NumericUpDown();
+            txtHost = new TextBox();
+            lblPort = new Label();
+            lblHost = new Label();
+            grpPaths = new GroupBox();
+            btnBrowseStorageRoot = new Button();
+            txtStorageRoot = new TextBox();
+            lblStorageRoot = new Label();
+            btnBrowseLogPath = new Button();
+            txtLogFilePath = new TextBox();
+            lblLogFilePath = new Label();
+            btnSave = new Button();
+            btnCancel = new Button();
+            btnLoad = new Button();
+            btnResetDefaults = new Button();
+            grpConnection.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)numPort).BeginInit();
+            grpPaths.SuspendLayout();
+            SuspendLayout();
             // 
             // lblMode
             // 
-            this.lblMode.AutoSize = true;
-            this.lblMode.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.lblMode.Location = new System.Drawing.Point(12, 9);
-            this.lblMode.Name = "lblMode";
-            this.lblMode.Size = new System.Drawing.Size(101, 17);
-            this.lblMode.TabIndex = 0;
-            this.lblMode.Text = "Mode: Client";
+            lblMode.AutoSize = true;
+            lblMode.Font = new Font("Microsoft Sans Serif", 10F, FontStyle.Bold);
+            lblMode.Location = new Point(12, 9);
+            lblMode.Name = "lblMode";
+            lblMode.Size = new Size(98, 17);
+            lblMode.TabIndex = 0;
+            lblMode.Text = "Mode: Client";
             // 
             // grpConnection
             // 
-            this.grpConnection.Controls.Add(this.numPort);
-            this.grpConnection.Controls.Add(this.txtHost);
-            this.grpConnection.Controls.Add(this.lblPort);
-            this.grpConnection.Controls.Add(this.lblHost);
-            this.grpConnection.Location = new System.Drawing.Point(12, 35);
-            this.grpConnection.Name = "grpConnection";
-            this.grpConnection.Size = new System.Drawing.Size(460, 90);
-            this.grpConnection.TabIndex = 1;
-            this.grpConnection.TabStop = false;
-            this.grpConnection.Text = "Connection Settings";
+            grpConnection.Controls.Add(numPort);
+            grpConnection.Controls.Add(txtHost);
+            grpConnection.Controls.Add(lblPort);
+            grpConnection.Controls.Add(lblHost);
+            grpConnection.Location = new Point(12, 35);
+            grpConnection.Name = "grpConnection";
+            grpConnection.Size = new Size(460, 90);
+            grpConnection.TabIndex = 1;
+            grpConnection.TabStop = false;
+            grpConnection.Text = "Connection Settings";
             // 
             // numPort
             // 
-            this.numPort.Location = new System.Drawing.Point(80, 55);
-            this.numPort.Maximum = new decimal(new int[] {
-            65535,
-            0,
-            0,
-            0});
-            this.numPort.Minimum = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            this.numPort.Name = "numPort";
-            this.numPort.Size = new System.Drawing.Size(120, 23);
-            this.numPort.TabIndex = 3;
-            this.numPort.Value = new decimal(new int[] {
-            50051,
-            0,
-            0,
-            0});
+            numPort.Location = new Point(80, 55);
+            numPort.Maximum = new decimal(new int[] { 65535, 0, 0, 0 });
+            numPort.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
+            numPort.Name = "numPort";
+            numPort.Size = new Size(120, 23);
+            numPort.TabIndex = 3;
+            numPort.Value = new decimal(new int[] { 50051, 0, 0, 0 });
             // 
             // txtHost
             // 
-            this.txtHost.Location = new System.Drawing.Point(80, 25);
-            this.txtHost.Name = "txtHost";
-            this.txtHost.Size = new System.Drawing.Size(360, 23);
-            this.txtHost.TabIndex = 1;
-            this.txtHost.Text = "localhost";
+            txtHost.Location = new Point(80, 25);
+            txtHost.Name = "txtHost";
+            txtHost.Size = new Size(360, 23);
+            txtHost.TabIndex = 1;
+            txtHost.Text = "localhost";
             // 
             // lblPort
             // 
-            this.lblPort.AutoSize = true;
-            this.lblPort.Location = new System.Drawing.Point(15, 57);
-            this.lblPort.Name = "lblPort";
-            this.lblPort.Size = new System.Drawing.Size(32, 15);
-            this.lblPort.TabIndex = 2;
-            this.lblPort.Text = "Port:";
+            lblPort.AutoSize = true;
+            lblPort.Location = new Point(15, 57);
+            lblPort.Name = "lblPort";
+            lblPort.Size = new Size(33, 15);
+            lblPort.TabIndex = 2;
+            lblPort.Text = "Port:";
             // 
             // lblHost
             // 
-            this.lblHost.AutoSize = true;
-            this.lblHost.Location = new System.Drawing.Point(15, 28);
-            this.lblHost.Name = "lblHost";
-            this.lblHost.Size = new System.Drawing.Size(35, 15);
-            this.lblHost.TabIndex = 0;
-            this.lblHost.Text = "Host:";
+            lblHost.AutoSize = true;
+            lblHost.Location = new Point(15, 28);
+            lblHost.Name = "lblHost";
+            lblHost.Size = new Size(36, 15);
+            lblHost.TabIndex = 0;
+            lblHost.Text = "Host:";
             // 
             // grpPaths
             // 
-            this.grpPaths.Controls.Add(this.btnBrowseStorageRoot);
-            this.grpPaths.Controls.Add(this.txtStorageRoot);
-            this.grpPaths.Controls.Add(this.lblStorageRoot);
-            this.grpPaths.Controls.Add(this.btnBrowseLogPath);
-            this.grpPaths.Controls.Add(this.txtLogFilePath);
-            this.grpPaths.Controls.Add(this.lblLogFilePath);
-            this.grpPaths.Location = new System.Drawing.Point(12, 131);
-            this.grpPaths.Name = "grpPaths";
-            this.grpPaths.Size = new System.Drawing.Size(460, 110);
-            this.grpPaths.TabIndex = 2;
-            this.grpPaths.TabStop = false;
-            this.grpPaths.Text = "File Paths";
+            grpPaths.Controls.Add(btnBrowseStorageRoot);
+            grpPaths.Controls.Add(txtStorageRoot);
+            grpPaths.Controls.Add(lblStorageRoot);
+            grpPaths.Controls.Add(btnBrowseLogPath);
+            grpPaths.Controls.Add(txtLogFilePath);
+            grpPaths.Controls.Add(lblLogFilePath);
+            grpPaths.Location = new Point(12, 131);
+            grpPaths.Name = "grpPaths";
+            grpPaths.Size = new Size(460, 123);
+            grpPaths.TabIndex = 2;
+            grpPaths.TabStop = false;
+            grpPaths.Text = "File Paths";
             // 
             // btnBrowseStorageRoot
             // 
-            this.btnBrowseStorageRoot.Location = new System.Drawing.Point(410, 70);
-            this.btnBrowseStorageRoot.Name = "btnBrowseStorageRoot";
-            this.btnBrowseStorageRoot.Size = new System.Drawing.Size(30, 23);
-            this.btnBrowseStorageRoot.TabIndex = 5;
-            this.btnBrowseStorageRoot.Text = "...";
-            this.btnBrowseStorageRoot.UseVisualStyleBackColor = true;
-            this.btnBrowseStorageRoot.Click += new System.EventHandler(this.btnBrowseStorageRoot_Click);
+            btnBrowseStorageRoot.Location = new Point(410, 87);
+            btnBrowseStorageRoot.Name = "btnBrowseStorageRoot";
+            btnBrowseStorageRoot.Size = new Size(30, 23);
+            btnBrowseStorageRoot.TabIndex = 5;
+            btnBrowseStorageRoot.Text = "...";
+            btnBrowseStorageRoot.UseVisualStyleBackColor = true;
+            btnBrowseStorageRoot.Click += btnBrowseStorageRoot_Click;
             // 
             // txtStorageRoot
             // 
-            this.txtStorageRoot.Location = new System.Drawing.Point(15, 70);
-            this.txtStorageRoot.Name = "txtStorageRoot";
-            this.txtStorageRoot.Size = new System.Drawing.Size(389, 23);
-            this.txtStorageRoot.TabIndex = 4;
+            txtStorageRoot.Location = new Point(15, 87);
+            txtStorageRoot.Name = "txtStorageRoot";
+            txtStorageRoot.Size = new Size(389, 23);
+            txtStorageRoot.TabIndex = 4;
             // 
             // lblStorageRoot
             // 
-            this.lblStorageRoot.AutoSize = true;
-            this.lblStorageRoot.Location = new System.Drawing.Point(15, 52);
-            this.lblStorageRoot.Name = "lblStorageRoot";
-            this.lblStorageRoot.Size = new System.Drawing.Size(110, 15);
-            this.lblStorageRoot.TabIndex = 3;
-            this.lblStorageRoot.Text = "Storage Root / Path:";
+            lblStorageRoot.AutoSize = true;
+            lblStorageRoot.Location = new Point(15, 69);
+            lblStorageRoot.Name = "lblStorageRoot";
+            lblStorageRoot.Size = new Size(122, 15);
+            lblStorageRoot.TabIndex = 3;
+            lblStorageRoot.Text = "Storage Root / Path:";
             // 
             // btnBrowseLogPath
             // 
-            this.btnBrowseLogPath.Location = new System.Drawing.Point(410, 25);
-            this.btnBrowseLogPath.Name = "btnBrowseLogPath";
-            this.btnBrowseLogPath.Size = new System.Drawing.Size(30, 23);
-            this.btnBrowseLogPath.TabIndex = 2;
-            this.btnBrowseLogPath.Text = "...";
-            this.btnBrowseLogPath.UseVisualStyleBackColor = true;
-            this.btnBrowseLogPath.Click += new System.EventHandler(this.btnBrowseLogPath_Click);
+            btnBrowseLogPath.Location = new Point(410, 42);
+            btnBrowseLogPath.Name = "btnBrowseLogPath";
+            btnBrowseLogPath.Size = new Size(30, 23);
+            btnBrowseLogPath.TabIndex = 2;
+            btnBrowseLogPath.Text = "...";
+            btnBrowseLogPath.UseVisualStyleBackColor = true;
+            btnBrowseLogPath.Click += btnBrowseLogPath_Click;
             // 
             // txtLogFilePath
             // 
-            this.txtLogFilePath.Location = new System.Drawing.Point(15, 25);
-            this.txtLogFilePath.Name = "txtLogFilePath";
-            this.txtLogFilePath.Size = new System.Drawing.Size(389, 23);
-            this.txtLogFilePath.TabIndex = 1;
+            txtLogFilePath.Location = new Point(15, 42);
+            txtLogFilePath.Name = "txtLogFilePath";
+            txtLogFilePath.Size = new Size(389, 23);
+            txtLogFilePath.TabIndex = 1;
             // 
             // lblLogFilePath
             // 
-            this.lblLogFilePath.AutoSize = true;
-            this.lblLogFilePath.Location = new System.Drawing.Point(15, 7);
-            this.lblLogFilePath.Name = "lblLogFilePath";
-            this.lblLogFilePath.Size = new System.Drawing.Size(79, 15);
-            this.lblLogFilePath.TabIndex = 0;
-            this.lblLogFilePath.Text = "Log File Path:";
+            lblLogFilePath.AutoSize = true;
+            lblLogFilePath.Location = new Point(15, 24);
+            lblLogFilePath.Name = "lblLogFilePath";
+            lblLogFilePath.Size = new Size(82, 15);
+            lblLogFilePath.TabIndex = 0;
+            lblLogFilePath.Text = "Log File Path:";
             // 
             // btnSave
             // 
-            this.btnSave.Location = new System.Drawing.Point(316, 256);
-            this.btnSave.Name = "btnSave";
-            this.btnSave.Size = new System.Drawing.Size(75, 30);
-            this.btnSave.TabIndex = 3;
-            this.btnSave.Text = "Save";
-            this.btnSave.UseVisualStyleBackColor = true;
-            this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
+            btnSave.Location = new Point(316, 260);
+            btnSave.Name = "btnSave";
+            btnSave.Size = new Size(75, 30);
+            btnSave.TabIndex = 3;
+            btnSave.Text = "Save";
+            btnSave.UseVisualStyleBackColor = true;
+            btnSave.Click += btnSave_Click;
             // 
             // btnCancel
             // 
-            this.btnCancel.Location = new System.Drawing.Point(397, 256);
-            this.btnCancel.Name = "btnCancel";
-            this.btnCancel.Size = new System.Drawing.Size(75, 30);
-            this.btnCancel.TabIndex = 4;
-            this.btnCancel.Text = "Cancel";
-            this.btnCancel.UseVisualStyleBackColor = true;
-            this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
+            btnCancel.Location = new Point(397, 260);
+            btnCancel.Name = "btnCancel";
+            btnCancel.Size = new Size(75, 30);
+            btnCancel.TabIndex = 4;
+            btnCancel.Text = "Cancel";
+            btnCancel.UseVisualStyleBackColor = true;
+            btnCancel.Click += btnCancel_Click;
             // 
             // btnLoad
             // 
-            this.btnLoad.Location = new System.Drawing.Point(12, 256);
-            this.btnLoad.Name = "btnLoad";
-            this.btnLoad.Size = new System.Drawing.Size(100, 30);
-            this.btnLoad.TabIndex = 5;
-            this.btnLoad.Text = "Load Config...";
-            this.btnLoad.UseVisualStyleBackColor = true;
-            this.btnLoad.Click += new System.EventHandler(this.btnLoad_Click);
+            btnLoad.Location = new Point(12, 260);
+            btnLoad.Name = "btnLoad";
+            btnLoad.Size = new Size(100, 30);
+            btnLoad.TabIndex = 5;
+            btnLoad.Text = "Load Config...";
+            btnLoad.UseVisualStyleBackColor = true;
+            btnLoad.Click += btnLoad_Click;
             // 
             // btnResetDefaults
             // 
-            this.btnResetDefaults.Location = new System.Drawing.Point(118, 256);
-            this.btnResetDefaults.Name = "btnResetDefaults";
-            this.btnResetDefaults.Size = new System.Drawing.Size(100, 30);
-            this.btnResetDefaults.TabIndex = 6;
-            this.btnResetDefaults.Text = "Reset Defaults";
-            this.btnResetDefaults.UseVisualStyleBackColor = true;
-            this.btnResetDefaults.Click += new System.EventHandler(this.btnResetDefaults_Click);
+            btnResetDefaults.Location = new Point(118, 260);
+            btnResetDefaults.Name = "btnResetDefaults";
+            btnResetDefaults.Size = new Size(100, 30);
+            btnResetDefaults.TabIndex = 6;
+            btnResetDefaults.Text = "Reset Defaults";
+            btnResetDefaults.UseVisualStyleBackColor = true;
+            btnResetDefaults.Click += btnResetDefaults_Click;
             // 
             // GrpcConfigForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(484, 298);
-            this.Controls.Add(this.btnResetDefaults);
-            this.Controls.Add(this.btnLoad);
-            this.Controls.Add(this.btnCancel);
-            this.Controls.Add(this.btnSave);
-            this.Controls.Add(this.grpPaths);
-            this.Controls.Add(this.grpConnection);
-            this.Controls.Add(this.lblMode);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
-            this.MinimizeBox = false;
-            this.Name = "GrpcConfigForm";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "gRPC Configuration";
-            this.grpConnection.ResumeLayout(false);
-            this.grpConnection.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.numPort)).EndInit();
-            this.grpPaths.ResumeLayout(false);
-            this.grpPaths.PerformLayout();
-            this.ResumeLayout(false);
-            this.PerformLayout();
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(484, 303);
+            Controls.Add(btnResetDefaults);
+            Controls.Add(btnLoad);
+            Controls.Add(btnCancel);
+            Controls.Add(btnSave);
+            Controls.Add(grpPaths);
+            Controls.Add(grpConnection);
+            Controls.Add(lblMode);
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            MaximizeBox = false;
+            MinimizeBox = false;
+            Name = "GrpcConfigForm";
+            StartPosition = FormStartPosition.CenterParent;
+            Text = "gRPC Configuration";
+            grpConnection.ResumeLayout(false);
+            grpConnection.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)numPort).EndInit();
+            grpPaths.ResumeLayout(false);
+            grpPaths.PerformLayout();
+            ResumeLayout(false);
+            PerformLayout();
 
         }
 
