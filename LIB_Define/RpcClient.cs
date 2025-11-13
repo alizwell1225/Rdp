@@ -127,10 +127,18 @@ public class RpcClient
 
     private async void AutoReStartWork()
     {
+        bool shouldAttemptReconnect;
         lock (_connectionLock)
         {
+            // Prevent multiple reconnection attempts if one is already in progress
+            if (_isReconnecting)
+                return;
+                
             if (autoReStart && !IsConnected)
+            {
                 shouldReconnect = true;
+                _isReconnecting = true;
+            }
             else
                 return;
         }
@@ -141,17 +149,26 @@ public class RpcClient
 
             lock (_connectionLock)
             {
-                shouldReconnect = !IsConnected && autoReStart;
-                if (shouldReconnect)
-                {
-                    DisconnectAsync();
-                    ConnectAsync(shouldReconnect);
-                }
+                shouldAttemptReconnect = !IsConnected && autoReStart && shouldReconnect;
+            }
+            
+            if (shouldAttemptReconnect)
+            {
+                // Await these calls to ensure proper cleanup before reconnecting
+                await DisconnectAsync();
+                await ConnectAsync(true);
             }
         }
         catch (Exception ex)
         {
             AppendTextSafe($"Auto-reconnect failed: {ex.Message}\r\n");
+        }
+        finally
+        {
+            lock (_connectionLock)
+            {
+                _isReconnecting = false;
+            }
         }
     }
 
