@@ -20,6 +20,9 @@ namespace LIB_Define
         {
             try
             {
+                // Normalize path
+                configPath = NormalizePath(configPath);
+                
                 // Ensure directory exists
                 var directory = Path.GetDirectoryName(configPath);
                 if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
@@ -49,6 +52,8 @@ namespace LIB_Define
         /// <returns>MultiClientConfig instance</returns>
         public static MultiClientConfig LoadMultiClientConfig(string configPath = "./Config/multi_client_config.json")
         {
+            configPath = NormalizePath(configPath);
+            
             if (File.Exists(configPath))
             {
                 return MultiClientConfig.Load(configPath);
@@ -65,22 +70,25 @@ namespace LIB_Define
         {
             var clients = new List<RpcClient>();
 
-            foreach (var clientConfig in config.Clients)
+            foreach (var clientRef in config.Clients)
             {
-                if (clientConfig.Enabled)
+                if (clientRef.Enabled)
                 {
                     try
                     {
+                        // Load or create the config
+                        var grpcConfig = clientRef.LoadConfig();
+                        
                         // Ensure individual config file exists
-                        clientConfig.SaveIndividualConfig();
+                        clientRef.SaveConfig(grpcConfig);
 
                         // Create RpcClient instance
-                        var client = new RpcClient(clientConfig.ConfigPath, clientConfig.Index);
+                        var client = new RpcClient(clientRef.ConfigPath, clientRef.Index);
                         clients.Add(client);
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error creating client {clientConfig.Index}: {ex.Message}",
+                        MessageBox.Show($"Error creating client {clientRef.Index}: {ex.Message}",
                             "Client Creation Error",
                             MessageBoxButtons.OK,
                             MessageBoxIcon.Warning);
@@ -98,6 +106,7 @@ namespace LIB_Define
         /// <returns>List of connected RpcClient instances</returns>
         public static async Task<List<RpcClient>> CreateAndStartClientsAsync(string configPath = "./Config/multi_client_config.json")
         {
+            configPath = NormalizePath(configPath);
             var config = LoadMultiClientConfig(configPath);
             var clients = CreateClients(config);
 
@@ -132,6 +141,16 @@ namespace LIB_Define
             }
 
             await Task.WhenAll(tasks);
+        }
+
+        /// <summary>
+        /// Normalize path to use forward slashes
+        /// </summary>
+        private static string NormalizePath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return path;
+            return path.Replace('\\', '/');
         }
     }
 }

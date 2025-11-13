@@ -56,24 +56,25 @@ namespace LIB_Define
         {
             dgvClients.Rows.Clear();
             
-            foreach (var client in _config.Clients)
+            foreach (var clientRef in _config.Clients)
             {
+                // Load the actual config for display
+                var config = clientRef.LoadConfig();
+                
                 int rowIndex = dgvClients.Rows.Add();
                 var row = dgvClients.Rows[rowIndex];
                 
-                row.Cells["colIndex"].Value = client.Index;
-                row.Cells["colEnabled"].Value = client.Enabled;
-                row.Cells["colDisplayName"].Value = string.IsNullOrEmpty(client.DisplayName) 
-                    ? $"Client {client.Index}" 
-                    : client.DisplayName;
-                row.Cells["colHost"].Value = client.Host;
-                row.Cells["colPort"].Value = client.Port;
-                row.Cells["colLogPath"].Value = client.LogFilePath;
-                row.Cells["colStoragePath"].Value = client.StorageRoot;
-                row.Cells["colConfigPath"].Value = client.ConfigPath;
+                row.Cells["colIndex"].Value = clientRef.Index;
+                row.Cells["colEnabled"].Value = clientRef.Enabled;
+                row.Cells["colDisplayName"].Value = $"Client {clientRef.Index}";
+                row.Cells["colHost"].Value = config.Host;
+                row.Cells["colPort"].Value = config.Port;
+                row.Cells["colLogPath"].Value = config.LogFilePath;
+                row.Cells["colStoragePath"].Value = config.GetClientDownloadPath();
+                row.Cells["colConfigPath"].Value = clientRef.ConfigPath;
                 
                 // Color code based on enabled state
-                if (!client.Enabled)
+                if (!clientRef.Enabled)
                 {
                     row.DefaultCellStyle.BackColor = Color.LightGray;
                     row.DefaultCellStyle.ForeColor = Color.DarkGray;
@@ -85,35 +86,40 @@ namespace LIB_Define
         {
             try
             {
-                // Update config from grid
+                // Update config from grid and save individual configs
                 for (int i = 0; i < dgvClients.Rows.Count && i < _config.Clients.Count; i++)
                 {
                     var row = dgvClients.Rows[i];
-                    var client = _config.Clients[i];
+                    var clientRef = _config.Clients[i];
 
-                    client.Enabled = row.Cells["colEnabled"].Value is bool enabled && enabled;
-                    client.DisplayName = row.Cells["colDisplayName"].Value?.ToString() ?? $"Client {i}";
-                    client.Host = row.Cells["colHost"].Value?.ToString() ?? "localhost";
+                    // Update enabled state and config path in the reference
+                    clientRef.Enabled = row.Cells["colEnabled"].Value is bool enabled && enabled;
+                    var configPath = row.Cells["colConfigPath"].Value?.ToString() ?? $"./Config/client_{i}_config.json";
+                    clientRef.ConfigPath = NormalizePath(configPath);
+                    
+                    // Load or create the individual config
+                    var config = clientRef.LoadConfig();
+                    
+                    // Update config values from grid
+                    config.Host = row.Cells["colHost"].Value?.ToString() ?? "localhost";
                     
                     if (int.TryParse(row.Cells["colPort"].Value?.ToString(), out int port))
-                        client.Port = port;
+                        config.Port = port;
                     
-                    client.LogFilePath = row.Cells["colLogPath"].Value?.ToString() ?? $"./Logs/client_{i}_grpc.log";
-                    client.StorageRoot = row.Cells["colStoragePath"].Value?.ToString() ?? $"./Storage/client_{i}";
-                    client.ConfigPath = row.Cells["colConfigPath"].Value?.ToString() ?? $"./Config/client_{i}_config.json";
-                }
-
-                // Save multi-client config
-                _config.Save(_configFilePath);
-
-                // Save individual client configs
-                foreach (var client in _config.Clients)
-                {
-                    if (client.Enabled)
+                    config.LogFilePath = NormalizePath(row.Cells["colLogPath"].Value?.ToString() ?? $"./Logs/client_{i}_grpc.log");
+                    var storageRoot = NormalizePath(row.Cells["colStoragePath"].Value?.ToString() ?? $"./Storage/client_{i}");
+                    config.StorageRoot = storageRoot;
+                    config.ClientDownloadPath = storageRoot;
+                    
+                    // Save individual config file
+                    if (clientRef.Enabled)
                     {
-                        client.SaveIndividualConfig();
+                        clientRef.SaveConfig(config);
                     }
                 }
+
+                // Save multi-client config (only references)
+                _config.Save(_configFilePath);
 
                 MessageBox.Show("Configuration saved successfully.\nAll enabled client configurations have been updated.",
                     "Success",
@@ -233,18 +239,19 @@ namespace LIB_Define
                     // Apply template to all enabled clients
                     int basePort = (int)numPort.Value;
                     
-                    foreach (var client in _config.Clients)
+                    for (int i = 0; i < dgvClients.Rows.Count && i < _config.Clients.Count; i++)
                     {
-                        if (client.Enabled)
+                        var clientRef = _config.Clients[i];
+                        if (clientRef.Enabled)
                         {
-                            client.Host = txtHost.Text;
-                            client.Port = chkIncrementPort.Checked ? basePort + client.Index : basePort;
-                            client.LogFilePath = Path.Combine(txtLogPath.Text, $"client_{client.Index}_grpc.log");
-                            client.StorageRoot = Path.Combine(txtStoragePath.Text, $"client_{client.Index}");
+                            var row = dgvClients.Rows[i];
+                            row.Cells["colHost"].Value = txtHost.Text;
+                            row.Cells["colPort"].Value = chkIncrementPort.Checked ? basePort + clientRef.Index : basePort;
+                            row.Cells["colLogPath"].Value = NormalizePath(Path.Combine(txtLogPath.Text, $"client_{clientRef.Index}_grpc.log"));
+                            row.Cells["colStoragePath"].Value = NormalizePath(Path.Combine(txtStoragePath.Text, $"client_{clientRef.Index}"));
                         }
                     }
                     
-                    RefreshClientGrid();
                     templateForm.DialogResult = DialogResult.OK;
                     templateForm.Close();
                 };
@@ -282,16 +289,15 @@ namespace LIB_Define
             int selectedIndex = dgvClients.SelectedRows[0].Index;
             if (selectedIndex >= 0 && selectedIndex < _config.Clients.Count)
             {
-                var client = _config.Clients[selectedIndex];
-                var configPath = client.ConfigPath;
+                var clientRef = _config.Clients[selectedIndex];
+                var configPath = clientRef.ConfigPath;
 
                 // Show individual config form for this client
                 using (var configForm = new GrpcConfigForm(configPath, isServerMode: false))
                 {
                     if (configForm.ShowDialog(this) == DialogResult.OK)
                     {
-                        // Reload the config
-                        client.LoadIndividualConfig();
+                        // Reload the grid to show updated values
                         RefreshClientGrid();
                     }
                 }
@@ -300,18 +306,18 @@ namespace LIB_Define
 
         private void btnEnableAll_Click(object sender, EventArgs e)
         {
-            foreach (var client in _config.Clients)
+            foreach (var clientRef in _config.Clients)
             {
-                client.Enabled = true;
+                clientRef.Enabled = true;
             }
             RefreshClientGrid();
         }
 
         private void btnDisableAll_Click(object sender, EventArgs e)
         {
-            foreach (var client in _config.Clients)
+            foreach (var clientRef in _config.Clients)
             {
-                client.Enabled = false;
+                clientRef.Enabled = false;
             }
             RefreshClientGrid();
         }
@@ -320,14 +326,14 @@ namespace LIB_Define
         {
             if (e.RowIndex >= 0 && e.RowIndex < _config.Clients.Count)
             {
-                var client = _config.Clients[e.RowIndex];
+                var clientRef = _config.Clients[e.RowIndex];
                 var row = dgvClients.Rows[e.RowIndex];
 
                 // Update color based on enabled state
                 if (e.ColumnIndex == dgvClients.Columns["colEnabled"].Index)
                 {
                     bool isEnabled = row.Cells["colEnabled"].Value is bool enabled && enabled;
-                    client.Enabled = isEnabled;
+                    clientRef.Enabled = isEnabled;
                     
                     if (!isEnabled)
                     {
@@ -350,6 +356,16 @@ namespace LIB_Define
             {
                 dgvClients.CommitEdit(DataGridViewDataErrorContexts.Commit);
             }
+        }
+
+        /// <summary>
+        /// Normalize path to use forward slashes
+        /// </summary>
+        private static string NormalizePath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return path;
+            return path.Replace('\\', '/');
         }
     }
 }
