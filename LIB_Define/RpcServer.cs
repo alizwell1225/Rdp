@@ -10,7 +10,7 @@ namespace LIB_Define;
 public class RpcServer
 {
     private readonly IServerApi _controller;
-    private readonly LoggerServer? _logger;
+    private readonly Logger _logger;
     
     // Monitoring fields
     private int _totalRequestsReceived = 0;
@@ -50,7 +50,7 @@ public class RpcServer
         
         if (!string.IsNullOrEmpty(logPath))
         {
-            _logger = new LoggerServer(logPath, "rpcserver");
+            _logger = new Logger(logPath, "rpcserver");
         }
     }
     
