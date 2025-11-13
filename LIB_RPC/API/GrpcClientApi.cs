@@ -184,7 +184,7 @@ namespace LIB_RPC.API
         bool IsConnected = false;
         private void ConnOnConnected(bool flag)
         {
-            if (IsConnected == flag) return;
+            //if (IsConnected == flag) return;
             IsConnected = flag;
             if (flag)
                 OnConnected?.Invoke();

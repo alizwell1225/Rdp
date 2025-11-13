@@ -2,7 +2,7 @@
 
 namespace LIB_Define
 {
-    partial class FormShowRdp
+    partial class FormShow_Rdp
     {
         /// <summary>
         /// Required designer variable.
@@ -37,17 +37,18 @@ namespace LIB_Define
             // 
             uc.Dock = DockStyle.Fill;
             uc.Location = new Point(0, 0);
+            uc.Margin = new Padding(0);
             uc.Name = "uc";
             uc.Size = new Size(800, 450);
             uc.TabIndex = 0;
             // 
-            // FormShowRdp
+            // FormShow_Rdp
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
             Controls.Add(uc);
-            Name = "FormShowRdp";
+            Name = "FormShow_Rdp";
             StartPosition = FormStartPosition.Manual;
             Text = "FormShowRdp";
             FormClosing += FormShowRdp_FormClosing;

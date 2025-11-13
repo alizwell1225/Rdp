@@ -115,6 +115,11 @@ namespace LIB_Define
                 WorkList_Color.Add(Color.FromArgb(argb));
             }
         }
+
+        public override string ToString()
+        {
+            return $"ID: {ID}, Type: {Type}, Name: {Name}, Location: ({Location_X}, {Location_Y}), Size: ({Size_Width}x{Size_Height})";
+        }
     }
 
     public enum ShowPictureType

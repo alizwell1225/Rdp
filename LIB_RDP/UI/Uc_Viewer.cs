@@ -24,7 +24,10 @@ public partial class Uc_Viewer : UserControl, IViewer
 
     public Uc_Viewer()
     {
+       
         InitializeComponent();
+        
+        rdpViewerInit();
         // 預設隱藏右側 panel（panel2）—由 hover 顯示
         try
         {
@@ -55,6 +58,24 @@ public partial class Uc_Viewer : UserControl, IViewer
         WireMouseEvents(this);
         if (splitContainer1?.Panel2 != null) WireMouseEvents(splitContainer1.Panel2);
         WireMouseEvents(InnerViewer);
+    }
+
+    void rdpViewerInit()
+    {
+        // 
+        // rdpViewer
+        // 
+        InnerViewer = new LIB_RDP.Core.RdpViewer();
+        InnerViewer.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+        InnerViewer.Dock = System.Windows.Forms.DockStyle.Fill;
+        InnerViewer.Location = new System.Drawing.Point(0, 0);
+        InnerViewer.Name = "InnerViewer";
+        InnerViewer.Size = new System.Drawing.Size(674, 487);
+        InnerViewer.TabIndex = 0;
+        // 
+        // splitContainer1.Panel1
+        // 
+        splitContainer1.Panel1.Controls.Add(InnerViewer);
     }
 
     ~Uc_Viewer()

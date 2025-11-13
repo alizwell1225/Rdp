@@ -13,7 +13,7 @@ namespace LIB_RDP.Core;
 
 public class RdpViewer : Panel
 {
-    private static readonly string _debugLogPath = Path.Combine(Path.GetTempPath(), "RdpViewer-debug.log");
+    private static readonly string _debugLogPath = Path.Combine(Path.GetTempPath(), "Log","RdpViewer-debug.log");
     private readonly int _bottomHoverThreshold = 48; // px from bottom to trigger hover
     private readonly Font _messageFont;
     private readonly Timer _refreshTimer;

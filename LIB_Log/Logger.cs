@@ -27,7 +27,14 @@ public class Logger : LoggerBase
     private static string GetLogDirectory(string LogFilePath)
     {
         var logPath = LogFilePath;
-        var directory = Path.GetDirectoryName(logPath);
+        var directory = string.Empty;
+        if (Path.HasExtension(logPath)==false)
+        {
+            if (Directory.Exists(logPath) == false)
+                Directory.CreateDirectory(logPath);
+        }
+        else 
+            directory = Path.GetDirectoryName(logPath);
         return !string.IsNullOrWhiteSpace(directory)
             ? directory
             : AppContext.BaseDirectory;
