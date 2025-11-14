@@ -51,6 +51,11 @@ namespace LIB_RPC.Abstractions
         event Action<string, byte[], string?>? OnServerByteData;
 
         /// <summary>
+        /// Event raised during byte transfer progress (type, bytesTransferred, totalBytes, percentage).
+        /// </summary>
+        event Action<string, long, long, double>? OnByteTransferProgress;
+
+        /// <summary>
         /// Event raised when connection to server is established successfully.
         /// </summary>
         event Action? OnConnected;

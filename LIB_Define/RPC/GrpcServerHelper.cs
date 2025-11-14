@@ -74,6 +74,11 @@ namespace LIB_Define.RPC
         /// </summary>
         public event Action<string>? OnFileUploadCompleted;
 
+        /// <summary>
+        /// Event raised during byte transfer progress (type, bytesTransferred, totalBytes, percentage).
+        /// </summary>
+        public event Action<string, long, long, double>? OnByteTransferProgress;
+
         #endregion
 
         /// <summary>
@@ -102,6 +107,7 @@ namespace LIB_Define.RPC
             _serverApi.OnClientConnected += (clientId) => OnClientConnected?.Invoke(clientId);
             _serverApi.OnClientDisconnected += (clientId) => OnClientDisconnected?.Invoke(clientId);
             _serverApi.OnFileUploadCompleted += (fileName) => OnFileUploadCompleted?.Invoke(fileName);
+            _serverApi.OnByteTransferProgress += (type, bytes, total, pct) => OnByteTransferProgress?.Invoke(type, bytes, total, pct);
         }
 
         /// <summary>

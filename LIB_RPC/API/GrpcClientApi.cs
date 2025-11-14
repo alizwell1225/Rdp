@@ -57,6 +57,11 @@ namespace LIB_RPC.API
         public event Action<string, byte[], string?>? OnServerByteData;
 
         /// <summary>
+        /// Event raised during byte transfer progress (type, bytesTransferred, totalBytes, percentage).
+        /// </summary>
+        public event Action<string, long, long, double>? OnByteTransferProgress;
+
+        /// <summary>
         /// Event raised when connection to server is established successfully.
         /// </summary>
         public event Action? OnConnected;
@@ -174,6 +179,7 @@ namespace LIB_RPC.API
                     Json = env.Json,
                     Timestamp = env.Timestamp
                 });
+                _conn.OnServerByteData += (type, data, metadata) => OnServerByteData?.Invoke(type, data, metadata);
                 _conn.OnConnected+= ConnOnConnected;
                 await _conn.ConnectAsync();
                 _logger.Info("Client connected successfully");

@@ -87,6 +87,11 @@ namespace LIB_RPC.API
         /// </summary>
         public event Action<string, string>? OnBroadcastFailed;
 
+        /// <summary>
+        /// Event raised during byte transfer progress (type, bytesTransferred, totalBytes, percentage).
+        /// </summary>
+        public event Action<string, long, long, double>? OnByteTransferProgress;
+
         private string configPath = Path.Combine(AppContext.BaseDirectory, "Config", "Config.json");
         /// <summary>
         /// Initializes a new instance of the <see cref="GrpcServerApi"/> class with default configuration.
@@ -182,6 +187,7 @@ namespace LIB_RPC.API
                 _host.BroadcastFailed += (s, args) => OnBroadcastFailed?.Invoke(args.Item1, args.Item2);
                 _host.ClientConnected += (s, clientId) => OnClientConnected?.Invoke(clientId);
                 _host.ClientDisconnected += (s, clientId) => OnClientDisconnected?.Invoke(clientId);
+                _host.ByteTransferProgress += (s, args) => OnByteTransferProgress?.Invoke(args.Item1, args.Item2, args.Item3, args.Item4);
                 
                 await _host.StartAsync(_cts.Token);
                 OnServerStarted?.Invoke();
