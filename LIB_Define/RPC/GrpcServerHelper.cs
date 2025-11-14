@@ -644,6 +644,126 @@ namespace LIB_Define.RPC
         }
 
         /// <summary>
+        /// Sends an image using efficient byte transfer with automatic optimization.
+        /// </summary>
+        /// <param name="pictureType">Type of picture (Flow or Map).</param>
+        /// <param name="imagePath">Path to the image file.</param>
+        /// <param name="useAckMode">Whether to wait for acknowledgment.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Tuple indicating success, number of clients reached, and error message if any.</returns>
+        public async Task<(bool Success, int ClientsReached, string Error)> SendImageByteAsync(
+            ShowPictureType pictureType,
+            Image image,
+            bool useAckMode = true,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (image == null)
+                {
+                    return (false, 0, "Image file does not exist");
+                }
+
+                // Load and optimize image (same logic as BroadcastImageByPathAsync)
+                using var originalImage = image;
+                int width = originalImage.Width;
+                int height = originalImage.Height;
+
+                const int maxImageSize = 5 * 1024 * 1024; // 5MB
+                const int maxDimension = 2048;
+
+                Image imageToSend = originalImage;
+                bool resized = false;
+
+                // Resize if necessary
+                if (width > maxDimension || height > maxDimension)
+                {
+                    double ratio = Math.Min((double)maxDimension / width, (double)maxDimension / height);
+                    int newWidth = (int)(width * ratio);
+                    int newHeight = (int)(height * ratio);
+
+                    var resizedImage = new Bitmap(newWidth, newHeight);
+                    using (var graphics = Graphics.FromImage(resizedImage))
+                    {
+                        graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                        graphics.DrawImage(originalImage, 0, 0, newWidth, newHeight);
+                    }
+
+                    imageToSend = resizedImage;
+                    resized = true;
+                    OnLog?.Invoke($"Image resized from {width}x{height} to {newWidth}x{newHeight}");
+                }
+
+                // Convert to bytes with compression
+                byte[] imageBytes;
+                using (var ms = new MemoryStream())
+                {
+                    long originalSize;
+                    using (var tempMs = new MemoryStream())
+                    {
+                        originalImage.Save(tempMs, System.Drawing.Imaging.ImageFormat.Png);
+                        originalSize = tempMs.Length;
+                    }
+
+                    if (originalSize > maxImageSize / 2)
+                    {
+                        // Use JPEG compression
+                        var encoderParams = new System.Drawing.Imaging.EncoderParameters(1);
+                        encoderParams.Param[0] = new System.Drawing.Imaging.EncoderParameter(
+                            System.Drawing.Imaging.Encoder.Quality, 85L);
+                        var jpegCodec = System.Drawing.Imaging.ImageCodecInfo.GetImageEncoders()
+                            .First(c => c.FormatID == System.Drawing.Imaging.ImageFormat.Jpeg.Guid);
+                        imageToSend.Save(ms, jpegCodec, encoderParams);
+                        OnLog?.Invoke($"Image compressed with JPEG (original: {originalSize / 1024}KB)");
+                    }
+                    else
+                    {
+                        // Use PNG
+                        imageToSend.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                    }
+
+                    imageBytes = ms.ToArray();
+                }
+
+                if (resized && imageToSend != originalImage)
+                {
+                    imageToSend.Dispose();
+                }
+
+
+                var metadata = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    pictureType = (int)pictureType,
+                    width = imageToSend.Width,
+                    height = imageToSend.Height,
+                    fileSize = imageBytes.Length,
+                    timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                });
+
+                OnLog?.Invoke($"Sending image via byte transfer: (Type: {pictureType}, Size: {imageToSend.Width}x{imageToSend.Height}, {imageBytes.Length / 1024}KB)");
+
+                if (useAckMode)
+                {
+                    var result = await _serverApi.SendByteAsync("image", imageBytes, metadata, null, cancellationToken);
+                    OnLog?.Invoke($"Image sent: - Success: {result.Success}, Clients: {result.ClientsReached}");
+                    return result;
+                }
+                else
+                {
+                    await _serverApi.SendByteNoAckAsync("image", imageBytes, metadata, null, cancellationToken);
+                    OnLog?.Invoke($"Image sent (no-ack)");
+                    return (true, -1, string.Empty);
+                }
+            }
+            catch (Exception ex)
+            {
+                var errorMsg = $"Send image via byte transfer failed: {ex.Message}";
+                OnLog?.Invoke(errorMsg);
+                return (false, 0, errorMsg);
+            }
+        }
+
+        /// <summary>
         /// Disposes of resources.
         /// </summary>
         public void Dispose()

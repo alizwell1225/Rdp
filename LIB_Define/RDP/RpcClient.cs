@@ -1,10 +1,11 @@
-﻿using System.Diagnostics;
-using System.Text.Json;
-using LIB_Log;
+﻿using LIB_Log;
 using LIB_RPC;
 using LIB_RPC.Abstractions;
 using LIB_RPC.API;
 using Microsoft.VisualBasic;
+using System.Diagnostics;
+using System.IO;
+using System.Text.Json;
 
 namespace LIB_Define.RDP;
 
@@ -114,6 +115,7 @@ public class RpcClient
                 _api.OnConnected += api_OnConnected;
                 _api.OnDisconnected += apiOnDisconnected;
                 _api.OnConnectionError += apiOnConnectionError;
+                _api.OnServerByteData += apiOnServerByteData;
             }
             //else
             //{
@@ -123,6 +125,12 @@ public class RpcClient
         }
         await Task.Delay(10);
         await _api.ConnectAsync(retry);
+    }
+
+    public Action<int, string, byte[], string> ActionOnServerByteData;
+    private void apiOnServerByteData(string type, byte[] data, string? metadata)
+    {
+        ActionOnServerByteData?.Invoke(Index, type, data, metadata);
     }
 
     private async void AutoReStartWork()
