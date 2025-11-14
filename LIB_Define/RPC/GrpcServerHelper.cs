@@ -3,7 +3,9 @@ using LIB_RPC.Abstractions;
 using LIB_RPC.API;
 using System;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -289,8 +291,9 @@ namespace LIB_Define.RPC
 
         /// <summary>
         /// Broadcasts an image to all connected clients by file path.
-        /// The image is loaded from the file, converted to base64, and sent to clients.
+        /// The image is loaded from the file, optionally compressed, and sent to clients.
         /// Clients will receive this via ActionOnServerImage event with the actual image data.
+        /// Large images are automatically compressed to prevent client crashes.
         /// </summary>
         /// <param name="pictureType">Type of picture (Flow, Map, etc.)</param>
         /// <param name="imagePath">Full path to the image file.</param>
@@ -312,11 +315,71 @@ namespace LIB_Define.RPC
                     return (false, 0, "Image file not found");
                 }
 
-                // Load image from file and convert to base64
-                using var image = Image.FromFile(imagePath);
+                // Load image from file
+                using var originalImage = Image.FromFile(imagePath);
+                
+                // Define size limits to prevent client crashes
+                const int maxImageSize = 5 * 1024 * 1024; // 5MB max for base64 JSON
+                const int maxDimension = 2048; // Max width/height
+                
+                Image imageToSend = originalImage;
+                bool needsDisposal = false;
+                
+                // Check if image needs compression or resizing
+                using var testMs = new MemoryStream();
+                originalImage.Save(testMs, System.Drawing.Imaging.ImageFormat.Png);
+                long originalSize = testMs.Length;
+                
+                if (originalSize > maxImageSize || originalImage.Width > maxDimension || originalImage.Height > maxDimension)
+                {
+                    // Resize image to reduce size
+                    int newWidth = originalImage.Width;
+                    int newHeight = originalImage.Height;
+                    
+                    if (newWidth > maxDimension || newHeight > maxDimension)
+                    {
+                        double ratio = Math.Min((double)maxDimension / newWidth, (double)maxDimension / newHeight);
+                        newWidth = (int)(newWidth * ratio);
+                        newHeight = (int)(newHeight * ratio);
+                    }
+                    
+                    var resized = new Bitmap(newWidth, newHeight);
+                    using (var graphics = Graphics.FromImage(resized))
+                    {
+                        graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                        graphics.DrawImage(originalImage, 0, 0, newWidth, newHeight);
+                    }
+                    
+                    imageToSend = resized;
+                    needsDisposal = true;
+                    
+                    OnLog?.Invoke($"Image resized from {originalImage.Width}x{originalImage.Height} to {newWidth}x{newHeight} (original: {originalSize / 1024}KB)");
+                }
+                
+                // Convert to base64 with JPEG for better compression
                 using var ms = new MemoryStream();
-                image.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                if (originalSize > maxImageSize / 2)
+                {
+                    // Use JPEG with quality setting for large images
+                    var encoder = System.Drawing.Imaging.ImageCodecInfo.GetImageEncoders()
+                        .FirstOrDefault(e => e.FormatID == System.Drawing.Imaging.ImageFormat.Jpeg.Guid);
+                    var encoderParams = new System.Drawing.Imaging.EncoderParameters(1);
+                    encoderParams.Param[0] = new System.Drawing.Imaging.EncoderParameter(
+                        System.Drawing.Imaging.Encoder.Quality, 85L);
+                    imageToSend.Save(ms, encoder, encoderParams);
+                }
+                else
+                {
+                    imageToSend.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                }
+                
+                if (needsDisposal)
+                {
+                    imageToSend.Dispose();
+                }
+                
                 var base64 = Convert.ToBase64String(ms.ToArray());
+                long finalSize = ms.Length;
 
                 var imageMsg = new ImageTransferMessage
                 {
@@ -334,7 +397,7 @@ namespace LIB_Define.RPC
                 
                 if (result.Success)
                 {
-                    OnLog?.Invoke($"Broadcast image: {Path.GetFileName(imagePath)} (Type: {pictureType}, Size: {image.Width}x{image.Height})");
+                    OnLog?.Invoke($"Broadcast image: {Path.GetFileName(imagePath)} (Type: {pictureType}, Size: {imageToSend.Width}x{imageToSend.Height}, {finalSize / 1024}KB)");
                 }
                 
                 return result;

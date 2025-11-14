@@ -79,6 +79,28 @@ message PushFileResponse {
   string error = 3;
 }
 
+// Image transfer messages for efficient streaming
+message ImageChunk {
+  string fileName = 1;        // Image file name
+  bytes data = 2;             // Raw image bytes
+  int32 index = 3;            // Chunk index starting 0
+  int32 totalChunks = 4;      // Total chunk count
+  bool isLast = 5;            // Convenience flag
+  int32 pictureType = 6;      // ShowPictureType enum (0=None, 1=Flow, 2=Map)
+  string error = 7;           // Error message if any
+}
+
+message ImageTransferRequest {
+  string fileName = 1;        // Image file name
+  int32 pictureType = 2;      // ShowPictureType enum
+}
+
+message ImageTransferStatus {
+  bool success = 1;
+  string error = 2;
+  int32 clientsReached = 3;   // For broadcast operations
+}
+
 service RemoteChannel {
   // Bidirectional JSON messaging
   rpc JsonStream(stream JsonEnvelope) returns (stream JsonAck);
@@ -106,4 +128,10 @@ service RemoteChannel {
   
   // NEW: Unary file push with acknowledgment (for guaranteed delivery)
   rpc PushFileWithAck(PushFileRequest) returns (PushFileResponse);
+  
+  // NEW: Server broadcasts image to clients via streaming (efficient for large images)
+  rpc BroadcastImage(stream ImageChunk) returns (ImageTransferStatus);
+  
+  // NEW: Server-initiated image push subscription: client subscribes and receives pushed ImageChunk streams
+  rpc ImagePush(google.protobuf.Empty) returns (stream ImageChunk);
 }

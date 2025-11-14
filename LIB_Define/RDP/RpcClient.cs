@@ -555,12 +555,31 @@ public class RpcClient
             }
             else if (!string.IsNullOrEmpty(imageMsg.ImageDataBase64))
             {
-                // Base64 image data
-                var imageBytes = Convert.FromBase64String(imageMsg.ImageDataBase64);
-                using var ms = new MemoryStream(imageBytes);
-                var image = Image.FromStream(ms);
-                ActionOnServerImage?.Invoke(Index, imageMsg.PictureType, image);
-                AppendTextSafe($"Received image data: {imageBytes.Length} bytes (Type: {imageMsg.PictureType})\r\n");
+                // Base64 image data - wrap in try-catch to prevent crashes on corrupt/large data
+                try
+                {
+                    var imageBytes = Convert.FromBase64String(imageMsg.ImageDataBase64);
+                    
+                    // Validate size before attempting to load
+                    if (imageBytes.Length > 50 * 1024 * 1024) // 50MB limit
+                    {
+                        AppendTextSafe($"Image too large: {imageBytes.Length / (1024 * 1024)}MB (max 50MB)\r\n");
+                        return;
+                    }
+                    
+                    using var ms = new MemoryStream(imageBytes);
+                    var image = Image.FromStream(ms);
+                    ActionOnServerImage?.Invoke(Index, imageMsg.PictureType, image);
+                    AppendTextSafe($"Received image: {image.Width}x{image.Height}, {imageBytes.Length / 1024}KB (Type: {imageMsg.PictureType})\r\n");
+                }
+                catch (OutOfMemoryException)
+                {
+                    AppendTextSafe($"Out of memory loading image - image too large\r\n");
+                }
+                catch (ArgumentException ex)
+                {
+                    AppendTextSafe($"Invalid image data: {ex.Message}\r\n");
+                }
             }
         }
         catch (Exception ex)
