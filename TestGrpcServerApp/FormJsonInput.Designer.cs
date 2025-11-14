@@ -1,6 +1,6 @@
 namespace TestGrpcServerApp
 {
-    partial class JsonInputForm
+    partial class FormJsonInput
     {
         private System.ComponentModel.IContainer components = null;
         

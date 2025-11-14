@@ -1,6 +1,6 @@
 namespace TestGrpcServerApp
 {
-    partial class ServerConfigForm
+    partial class FormServerConfig
     {
         private System.ComponentModel.IContainer components = null;
         

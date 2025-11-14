@@ -7,12 +7,12 @@ using System.Windows.Forms;
 
 namespace TestGrpcServerApp
 {
-    public partial class TestServerForm : Form
+    public partial class FormTestServer : Form
     {
         private GrpcServerHelper? _serverHelper;
-        private LoggerServer? _logger;
+        private Logger? _logger;
         
-        public TestServerForm()
+        public FormTestServer()
         {
             InitializeComponent();
             InitializeServerHelper();
@@ -46,7 +46,7 @@ namespace TestGrpcServerApp
                 
                 // Initialize logger
                 var logPath = Path.Combine(AppContext.BaseDirectory, "Log");
-                _logger = new LoggerServer(logPath, "TestServer");
+                _logger = new Logger(logPath, "TestServer.log");
                 
                 // Load auto-start setting
                 LoadAutoStartSetting();
@@ -196,7 +196,7 @@ namespace TestGrpcServerApp
             {
                 if (_serverHelper == null) return;
                 
-                var configForm = new ServerConfigForm(_serverHelper);
+                var configForm = new FormServerConfig(_serverHelper);
                 if (configForm.ShowDialog() == DialogResult.OK)
                 {
                     AppendLog("Configuration updated.");
@@ -260,7 +260,7 @@ namespace TestGrpcServerApp
                 }
                 
                 // Show dialog to input JSON
-                var jsonForm = new JsonInputForm();
+                var jsonForm = new FormJsonInput();
                 if (jsonForm.ShowDialog() == DialogResult.OK)
                 {
                     AppendLog($"Broadcasting JSON message (Type: {jsonForm.MessageType})...");

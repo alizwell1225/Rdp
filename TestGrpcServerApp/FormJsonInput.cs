@@ -4,12 +4,12 @@ using System.Windows.Forms;
 
 namespace TestGrpcServerApp
 {
-    public partial class JsonInputForm : Form
+    public partial class FormJsonInput : Form
     {
         public string MessageType { get; private set; } = "test_message";
         public string JsonContent { get; private set; } = "{}";
         
-        public JsonInputForm()
+        public FormJsonInput()
         {
             InitializeComponent();
             LoadDefaultValues();

@@ -6,7 +6,7 @@ namespace TestGrpcServerApp
         static void Main()
         {
             ApplicationConfiguration.Initialize();
-            Application.Run(new TestServerForm());
+            Application.Run(new FormTestServer());
         }
     }
 }

@@ -4,11 +4,11 @@ using System.Windows.Forms;
 
 namespace TestGrpcServerApp
 {
-    public partial class ServerConfigForm : Form
+    public partial class FormServerConfig : Form
     {
         private readonly GrpcServerHelper _serverHelper;
         
-        public ServerConfigForm(GrpcServerHelper serverHelper)
+        public FormServerConfig(GrpcServerHelper serverHelper)
         {
             _serverHelper = serverHelper;
             InitializeComponent();
