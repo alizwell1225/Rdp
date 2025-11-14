@@ -1,6 +1,6 @@
 ﻿using LIB_RDP.UI;
 
-namespace LIB_Define
+namespace LIB_Define.RDP
 {
     partial class FormShow_Rdp
     {

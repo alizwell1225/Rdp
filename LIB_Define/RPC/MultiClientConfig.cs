@@ -1,11 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Windows.Forms;
 using LIB_RPC;
 
-namespace LIB_Define
+namespace LIB_Define.RPC
 {
     /// <summary>
     /// Multi-client configuration manager for running multiple RpcClients on one machine

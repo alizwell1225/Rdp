@@ -1,4 +1,4 @@
-namespace LIB_Define
+namespace LIB_Define.RPC
 {
     partial class MultiClientConfigForm
     {
@@ -28,7 +28,6 @@ namespace LIB_Define
         /// </summary>
         private void InitializeComponent()
         {
-            lblTitle = new Label();
             numClientCount = new NumericUpDown();
             lblClientCount = new Label();
             dgvClients = new DataGridView();
@@ -51,36 +50,27 @@ namespace LIB_Define
             ((System.ComponentModel.ISupportInitialize)dgvClients).BeginInit();
             SuspendLayout();
             // 
-            // lblTitle
-            // 
-            lblTitle.AutoSize = true;
-            lblTitle.Font = new Font("Microsoft Sans Serif", 12F, FontStyle.Bold);
-            lblTitle.ForeColor = Color.DarkBlue;
-            lblTitle.Location = new Point(12, 9);
-            lblTitle.Name = "lblTitle";
-            lblTitle.Size = new Size(287, 20);
-            lblTitle.TabIndex = 0;
-            lblTitle.Text = "Multi-Client Configuration Manager";
-            // 
             // numClientCount
             // 
-            numClientCount.Location = new Point(449, 9);
+            numClientCount.Location = new Point(735, 413);
             numClientCount.Maximum = new decimal(new int[] { 50, 0, 0, 0 });
             numClientCount.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
             numClientCount.Name = "numClientCount";
             numClientCount.Size = new Size(70, 23);
             numClientCount.TabIndex = 1;
             numClientCount.Value = new decimal(new int[] { 12, 0, 0, 0 });
+            numClientCount.Visible = false;
             numClientCount.ValueChanged += numClientCount_ValueChanged;
             // 
             // lblClientCount
             // 
             lblClientCount.AutoSize = true;
-            lblClientCount.Location = new Point(331, 14);
+            lblClientCount.Location = new Point(617, 418);
             lblClientCount.Name = "lblClientCount";
             lblClientCount.Size = new Size(112, 15);
             lblClientCount.TabIndex = 0;
             lblClientCount.Text = "Number of Clients:";
+            lblClientCount.Visible = false;
             // 
             // dgvClients
             // 
@@ -89,12 +79,12 @@ namespace LIB_Define
             dgvClients.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             dgvClients.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dgvClients.Columns.AddRange(new DataGridViewColumn[] { colIndex, colEnabled, colDisplayName, colHost, colPort, colLogPath, colStoragePath, colConfigPath });
-            dgvClients.Location = new Point(12, 38);
+            dgvClients.Location = new Point(12, 12);
             dgvClients.MultiSelect = false;
             dgvClients.Name = "dgvClients";
             dgvClients.RowHeadersWidth = 25;
             dgvClients.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvClients.Size = new Size(1119, 366);
+            dgvClients.Size = new Size(1119, 392);
             dgvClients.TabIndex = 2;
             dgvClients.CellValueChanged += dgvClients_CellValueChanged;
             dgvClients.CurrentCellDirtyStateChanged += dgvClients_CurrentCellDirtyStateChanged;
@@ -230,6 +220,7 @@ namespace LIB_Define
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1154, 452);
+            ControlBox = false;
             Controls.Add(numClientCount);
             Controls.Add(btnDisableAll);
             Controls.Add(lblClientCount);
@@ -240,10 +231,9 @@ namespace LIB_Define
             Controls.Add(btnCancel);
             Controls.Add(btnSave);
             Controls.Add(dgvClients);
-            Controls.Add(lblTitle);
             Name = "MultiClientConfigForm";
             StartPosition = FormStartPosition.CenterScreen;
-            Text = "Multi-Client Configuration Manager";
+            Text = "Configuration Manager";
             ((System.ComponentModel.ISupportInitialize)numClientCount).EndInit();
             ((System.ComponentModel.ISupportInitialize)dgvClients).EndInit();
             ResumeLayout(false);
@@ -252,8 +242,6 @@ namespace LIB_Define
         }
 
         #endregion
-
-        private System.Windows.Forms.Label lblTitle;
         private System.Windows.Forms.NumericUpDown numClientCount;
         private System.Windows.Forms.Label lblClientCount;
         private System.Windows.Forms.DataGridView dgvClients;

@@ -2,7 +2,7 @@
 using LIB_RDP.Models;
 using LIB_RDP.UI;
 
-namespace LIB_Define
+namespace LIB_Define.RDP
 {
     public partial class FormShow_Rdp : Form
     {
