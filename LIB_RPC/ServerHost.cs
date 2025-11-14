@@ -419,18 +419,13 @@ namespace LIB_RPC
 
             try
             {
-                var byteData = new RdpGrpc.Proto.ByteData
-                {
-                    Type = type,
-                    Data = Google.Protobuf.ByteString.CopyFrom(data),
-                    Metadata = metadata ?? string.Empty,
-                    Id = Guid.NewGuid().ToString("N")
-                };
-
-                // For now, we broadcast to all clients (clientId parameter can be used for future targeted sends)
-                var response = await svc.BroadcastByte(byteData, new Grpc.Core.ServerCallContext());
+                // Use the helper method to push byte data to subscribed clients
+                await svc.PushByteDataToClientsAsync(type, data, metadata);
                 
-                return (response.Success, response.ClientsReached, response.Error);
+                // Note: PushByteDataToClientsAsync doesn't return individual acks, so we report success
+                // if the push completed without exception
+                var clientCount = svc.GetBytePushClientCount();
+                return (true, clientCount, string.Empty);
             }
             catch (Exception ex)
             {
@@ -451,16 +446,8 @@ namespace LIB_RPC
 
             try
             {
-                var byteData = new RdpGrpc.Proto.ByteData
-                {
-                    Type = type,
-                    Data = Google.Protobuf.ByteString.CopyFrom(data),
-                    Metadata = metadata ?? string.Empty,
-                    Id = Guid.NewGuid().ToString("N")
-                };
-
-                // Fire and forget broadcast
-                await svc.BroadcastByteNoAck(byteData, new Grpc.Core.ServerCallContext());
+                // Use the helper method to push byte data to subscribed clients (fire and forget)
+                await svc.PushByteDataToClientsAsync(type, data, metadata);
             }
             catch (Exception ex)
             {

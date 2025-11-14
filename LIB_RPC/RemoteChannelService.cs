@@ -718,10 +718,10 @@ namespace LIB_RPC
         // NEW: Byte push subscription (server -> client streaming)
         private readonly ConcurrentDictionary<string, IServerStreamWriter<ByteData>> _bytePushClients = new();
 
-        public override async Task BytePush(Empty request, ServerCallContext context)
+        public override async Task BytePush(Empty request, IServerStreamWriter<ByteData> responseStream, ServerCallContext context)
         {
             var id = Guid.NewGuid().ToString("N");
-            _bytePushClients[id] = context.ResponseStream;
+            _bytePushClients[id] = responseStream;
             _logger.Info($"BytePush client subscribed {id}, total={_bytePushClients.Count}");
             ClientConnected?.Invoke(this, id);
 
@@ -779,6 +779,12 @@ namespace LIB_RPC
             });
 
             await Task.WhenAll(tasks);
+        }
+
+        // Helper method to get byte push client count
+        public int GetBytePushClientCount()
+        {
+            return _bytePushClients.Count;
         }
 
         // Helper method to get duplex clients snapshot
