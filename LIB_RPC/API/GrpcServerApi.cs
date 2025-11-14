@@ -295,6 +295,24 @@ namespace LIB_RPC.API
         }
 
         /// <summary>
+        /// Sends byte data to a specific client or broadcasts to all clients with acknowledgment.
+        /// </summary>
+        public async Task<(bool Success, int ClientsReached, string Error)> SendByteAsync(string type, byte[] data, string? metadata = null, string? clientId = null, CancellationToken ct = default)
+        {
+            if (_host == null) throw new InvalidOperationException("Host not started");
+            return await _host.SendByteAsync(type, data, metadata, clientId, ct);
+        }
+
+        /// <summary>
+        /// Sends byte data to a specific client or broadcasts to all clients without acknowledgment (fire and forget).
+        /// </summary>
+        public async Task SendByteNoAckAsync(string type, byte[] data, string? metadata = null, string? clientId = null, CancellationToken ct = default)
+        {
+            if (_host == null) throw new InvalidOperationException("Host not started");
+            await _host.SendByteNoAckAsync(type, data, metadata, clientId, ct);
+        }
+
+        /// <summary>
         /// Disposes the server resources asynchronously.
         /// </summary>
         /// <returns>A task representing the asynchronous disposal operation.</returns>

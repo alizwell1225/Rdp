@@ -101,6 +101,26 @@ message ImageTransferStatus {
   int32 clientsReached = 3;   // For broadcast operations
 }
 
+// Generic byte transfer messages for efficient data transmission
+message ByteData {
+  string type = 1;            // Data type (e.g., "image", "file", "custom")
+  bytes data = 2;             // Raw byte data
+  string metadata = 3;        // Optional JSON metadata
+  string id = 4;              // Correlation ID
+}
+
+message ByteAck {
+  string id = 1;              // Correlation ID from request
+  bool success = 2;
+  string error = 3;           // Optional error message
+}
+
+message ByteBroadcastResponse {
+  bool success = 1;
+  int32 clientsReached = 2;   // Number of clients that received the data
+  string error = 3;
+}
+
 service RemoteChannel {
   // Bidirectional JSON messaging
   rpc JsonStream(stream JsonEnvelope) returns (stream JsonAck);
@@ -134,4 +154,19 @@ service RemoteChannel {
   
   // NEW: Server-initiated image push subscription: client subscribes and receives pushed ImageChunk streams
   rpc ImagePush(google.protobuf.Empty) returns (stream ImageChunk);
+  
+  // NEW: Efficient byte transfer with acknowledgment (server → client or client → server)
+  rpc SendByte(ByteData) returns (ByteAck);
+  
+  // NEW: Efficient byte transfer without acknowledgment (fire and forget)
+  rpc SendByteNoAck(ByteData) returns (google.protobuf.Empty);
+  
+  // NEW: Server broadcasts byte data to all clients with acknowledgment
+  rpc BroadcastByte(ByteData) returns (ByteBroadcastResponse);
+  
+  // NEW: Server broadcasts byte data to all clients without acknowledgment
+  rpc BroadcastByteNoAck(ByteData) returns (google.protobuf.Empty);
+  
+  // NEW: Server-initiated byte push subscription: client subscribes and receives pushed byte data
+  rpc BytePush(google.protobuf.Empty) returns (stream ByteData);
 }

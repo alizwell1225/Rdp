@@ -136,6 +136,27 @@ namespace LIB_RPC.Abstractions
         /// </summary>
         string[] GetFiles();
 
+        /// <summary>
+        /// Sends byte data to a specific client or broadcasts to all clients with acknowledgment.
+        /// </summary>
+        /// <param name="type">Data type identifier (e.g., "image", "file")</param>
+        /// <param name="data">Raw byte data to send</param>
+        /// <param name="metadata">Optional JSON metadata</param>
+        /// <param name="clientId">Target client ID, or null to broadcast to all clients</param>
+        /// <param name="ct">Cancellation token</param>
+        /// <returns>Tuple with success status, number of clients reached, and error message</returns>
+        Task<(bool Success, int ClientsReached, string Error)> SendByteAsync(string type, byte[] data, string? metadata = null, string? clientId = null, CancellationToken ct = default);
+
+        /// <summary>
+        /// Sends byte data to a specific client or broadcasts to all clients without acknowledgment (fire and forget).
+        /// </summary>
+        /// <param name="type">Data type identifier (e.g., "image", "file")</param>
+        /// <param name="data">Raw byte data to send</param>
+        /// <param name="metadata">Optional JSON metadata</param>
+        /// <param name="clientId">Target client ID, or null to broadcast to all clients</param>
+        /// <param name="ct">Cancellation token</param>
+        Task SendByteNoAckAsync(string type, byte[] data, string? metadata = null, string? clientId = null, CancellationToken ct = default);
+
         void SetCancel();
         void InitToken();
         CancellationTokenSource GetTokenSource();

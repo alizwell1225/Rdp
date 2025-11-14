@@ -52,6 +52,11 @@ namespace LIB_RPC.API
         public event Action<JsonMessage>? OnServerJson;
 
         /// <summary>
+        /// Event raised when server pushes byte data.
+        /// </summary>
+        public event Action<string, byte[], string?>? OnServerByteData;
+
+        /// <summary>
         /// Event raised when connection to server is established successfully.
         /// </summary>
         public event Action? OnConnected;
@@ -348,6 +353,45 @@ namespace LIB_RPC.API
             {
                 OnScreenshotFailed?.Invoke(ex.Message);
                 _logger.Error($"Screenshot failed: {ex.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Sends byte data to the server with acknowledgment.
+        /// </summary>
+        public async Task<bool> SendByteAsync(string type, byte[] data, string? metadata = null, CancellationToken ct = default)
+        {
+            if (_conn == null) throw new InvalidOperationException("Not connected");
+            
+            try
+            {
+                var result = await _conn.SendByteAsync(type, data, metadata, ct);
+                _logger.Info($"SendByte completed: type={type}, size={data.Length}, success={result}");
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"SendByte failed: {ex.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Sends byte data to the server without acknowledgment (fire and forget).
+        /// </summary>
+        public async Task SendByteNoAckAsync(string type, byte[] data, string? metadata = null, CancellationToken ct = default)
+        {
+            if (_conn == null) throw new InvalidOperationException("Not connected");
+            
+            try
+            {
+                await _conn.SendByteNoAckAsync(type, data, metadata, ct);
+                _logger.Info($"SendByteNoAck: type={type}, size={data.Length}");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"SendByteNoAck failed: {ex.Message}");
                 throw;
             }
         }

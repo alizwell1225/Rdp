@@ -99,7 +99,7 @@ namespace LIB_RPC
             }
             catch (Exception e)
             {
-                OnConnected?.Invoke(false);  //¨S¨«³oÃä
+                OnConnected?.Invoke(false);  //ï¿½Sï¿½ï¿½ï¿½oï¿½ï¿½
             }
 
         }
@@ -366,6 +366,59 @@ namespace LIB_RPC
             {
                 _logger.Error($"File push stream error: {ex.Message}");
                 OnConnected?.Invoke(false);
+            }
+        }
+
+        /// <summary>
+        /// Sends byte data to the server with acknowledgment.
+        /// </summary>
+        public async Task<bool> SendByteAsync(string type, byte[] data, string? metadata = null, CancellationToken ct = default)
+        {
+            if (_client == null) throw new InvalidOperationException("Not connected");
+
+            try
+            {
+                var byteData = new ByteData
+                {
+                    Type = type,
+                    Data = Google.Protobuf.ByteString.CopyFrom(data),
+                    Metadata = metadata ?? string.Empty,
+                    Id = Guid.NewGuid().ToString("N")
+                };
+
+                var response = await _client.SendByteAsync(byteData, headers: BuildAuth(), cancellationToken: ct);
+                return response.Success;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"SendByte error: {ex.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Sends byte data to the server without acknowledgment (fire and forget).
+        /// </summary>
+        public async Task SendByteNoAckAsync(string type, byte[] data, string? metadata = null, CancellationToken ct = default)
+        {
+            if (_client == null) throw new InvalidOperationException("Not connected");
+
+            try
+            {
+                var byteData = new ByteData
+                {
+                    Type = type,
+                    Data = Google.Protobuf.ByteString.CopyFrom(data),
+                    Metadata = metadata ?? string.Empty,
+                    Id = Guid.NewGuid().ToString("N")
+                };
+
+                await _client.SendByteNoAckAsync(byteData, headers: BuildAuth(), cancellationToken: ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"SendByteNoAck error: {ex.Message}");
+                throw;
             }
         }
     }

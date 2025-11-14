@@ -60,7 +60,7 @@ namespace LIB_RPC
             _host = Host.CreateDefaultBuilder()
                 .ConfigureHostOptions(o =>
                 {
-                    o.ShutdownTimeout = TimeSpan.FromSeconds(5); // ±Nµ¥«Ý®É¶¡§ïµu
+                    o.ShutdownTimeout = TimeSpan.FromSeconds(5); // ï¿½Nï¿½ï¿½ï¿½Ý®É¶ï¿½ï¿½ï¿½u
                 })
                 .ConfigureServices(services =>
                 {
@@ -405,6 +405,67 @@ namespace LIB_RPC
             }
 
             return (false, 0, "[Server SentWithAck] File Maximum retry attempts exceeded");
+        }
+
+        /// <summary>
+        /// Sends byte data to a specific client or broadcasts to all clients with acknowledgment.
+        /// </summary>
+        public async Task<(bool Success, int ClientsReached, string Error)> SendByteAsync(string type, byte[] data, string? metadata = null, string? clientId = null, CancellationToken ct = default)
+        {
+            if (_host == null) throw new InvalidOperationException("Server not started");
+            
+            var svc = _host.Services.GetService(typeof(RemoteChannelService)) as RemoteChannelService;
+            if (svc == null) throw new InvalidOperationException("RemoteChannelService not found");
+
+            try
+            {
+                var byteData = new RdpGrpc.Proto.ByteData
+                {
+                    Type = type,
+                    Data = Google.Protobuf.ByteString.CopyFrom(data),
+                    Metadata = metadata ?? string.Empty,
+                    Id = Guid.NewGuid().ToString("N")
+                };
+
+                // For now, we broadcast to all clients (clientId parameter can be used for future targeted sends)
+                var response = await svc.BroadcastByte(byteData, new Grpc.Core.ServerCallContext());
+                
+                return (response.Success, response.ClientsReached, response.Error);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"[SendByte] Error: {ex.Message}");
+                return (false, 0, ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Sends byte data to a specific client or broadcasts to all clients without acknowledgment (fire and forget).
+        /// </summary>
+        public async Task SendByteNoAckAsync(string type, byte[] data, string? metadata = null, string? clientId = null, CancellationToken ct = default)
+        {
+            if (_host == null) throw new InvalidOperationException("Server not started");
+            
+            var svc = _host.Services.GetService(typeof(RemoteChannelService)) as RemoteChannelService;
+            if (svc == null) throw new InvalidOperationException("RemoteChannelService not found");
+
+            try
+            {
+                var byteData = new RdpGrpc.Proto.ByteData
+                {
+                    Type = type,
+                    Data = Google.Protobuf.ByteString.CopyFrom(data),
+                    Metadata = metadata ?? string.Empty,
+                    Id = Guid.NewGuid().ToString("N")
+                };
+
+                // Fire and forget broadcast
+                await svc.BroadcastByteNoAck(byteData, new Grpc.Core.ServerCallContext());
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"[SendByteNoAck] Error: {ex.Message}");
+            }
         }
 
         public async ValueTask DisposeAsync()
