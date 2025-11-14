@@ -18,6 +18,7 @@ namespace LIB_RPC
         private AsyncDuplexStreamingCall<JsonEnvelope, JsonAck>? _jsonStream;
         private AsyncDuplexStreamingCall<JsonEnvelope, JsonEnvelope>? _jsonDuplex;
         private AsyncServerStreamingCall<FileChunk>? _filePushStream;
+        private AsyncServerStreamingCall<ByteData>? _bytePushStream;
         private readonly ConcurrentDictionary<string, TaskCompletionSource<JsonAck>> _pending = new();
 
         /// <summary>
@@ -59,6 +60,12 @@ namespace LIB_RPC
         /// Event raised when server file push encounters an error with path and error message.
         /// </summary>
         public event Action<string, string>? OnServerFileError;
+        
+        /// <summary>
+        /// Event raised when server sends byte data with type, data bytes, and metadata.
+        /// </summary>
+        public event Action<string, byte[], string>? OnServerByteData;
+        
         public event Action<bool>? OnConnected;
 
         /// <summary>
@@ -82,6 +89,7 @@ namespace LIB_RPC
             _jsonStream = _client.JsonStream(headers: BuildAuth());
             _jsonDuplex = _client.JsonDuplex(headers: BuildAuth());
             _filePushStream = _client.FilePush(new Google.Protobuf.WellKnownTypes.Empty(), headers: BuildAuth());
+            _bytePushStream = _client.BytePush(new Google.Protobuf.WellKnownTypes.Empty(), headers: BuildAuth());
             var startedTcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             _ = Task.Run(async () =>
             {
@@ -90,6 +98,7 @@ namespace LIB_RPC
             });
             _ = Task.Run(async () => await ReceiveDuplexJsonAsync());
             _ = Task.Run(async () => await ReceiveFilePushAsync());
+            _ = Task.Run(async () => await ReceiveBytePushAsync());
             await startedTcs.Task.ConfigureAwait(false);
             //_logger.Info("Client connected and JSON stream opened");
             try
@@ -287,8 +296,9 @@ namespace LIB_RPC
         {
             try
             {
-                // file push stream has no request side; nothing to Complete, just dispose
+                // file push and byte push streams have no request side; nothing to Complete, just dispose
                 _filePushStream?.Dispose();
+                _bytePushStream?.Dispose();
                 if (_jsonStream != null)
                 {
                     await _jsonStream.RequestStream.CompleteAsync();
@@ -309,6 +319,7 @@ namespace LIB_RPC
             finally
             {
                 _filePushStream = null;
+                _bytePushStream = null;
                 _jsonStream = null;
                 _jsonDuplex = null;
                 _client = null;
@@ -365,6 +376,27 @@ namespace LIB_RPC
             catch (Exception ex)
             {
                 _logger.Error($"File push stream error: {ex.Message}");
+                OnConnected?.Invoke(false);
+            }
+        }
+
+        private async Task ReceiveBytePushAsync()
+        {
+            if (_bytePushStream == null) return;
+            try
+            {
+                while (await _bytePushStream.ResponseStream.MoveNext(CancellationToken.None))
+                {
+                    var byteData = _bytePushStream.ResponseStream.Current;
+                    if (byteData != null && byteData.Data != null)
+                    {
+                        OnServerByteData?.Invoke(byteData.Type, byteData.Data.ToByteArray(), byteData.Metadata);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"Byte push receive loop error: {ex.Message}");
                 OnConnected?.Invoke(false);
             }
         }

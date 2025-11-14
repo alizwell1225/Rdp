@@ -179,6 +179,7 @@ namespace LIB_RPC.API
                     Json = env.Json,
                     Timestamp = env.Timestamp
                 });
+                _conn.OnServerByteData += (type, data, metadata) => OnServerByteData?.Invoke(type, data, metadata);
                 _conn.OnConnected+= ConnOnConnected;
                 await _conn.ConnectAsync();
                 _logger.Info("Client connected successfully");
