@@ -10,6 +10,7 @@ TestGrpcServerApp is a .NET 8 Windows Forms test application designed to simplif
 - **Open Server Config**: Configure server host, port, storage path, and log path
 - **Start Server**: Start the gRPC server with current configuration
 - **Stop Server**: Gracefully stop the running server
+- **Auto-start on Launch**: Enable automatic server startup when the application launches
 
 ### Test Operations
 - **Send JSON**: Broadcast JSON messages to all connected clients with validation and formatting
@@ -47,9 +48,11 @@ LIB_Define.RPC.GrpcServerHelper
    - Storage Path: Directory for file storage
    - Log Path: Location of log files
 
-2. Click **Start Server** to begin accepting client connections
+2. (Optional) Enable **Auto-start on Launch** checkbox to automatically start the server when the application launches
 
-3. Monitor the log window for server events:
+3. Click **Start Server** to begin accepting client connections
+
+4. Monitor the log window for server events:
    - Server started/stopped
    - Client connections/disconnections
    - File uploads
@@ -84,7 +87,7 @@ LIB_Define.RPC.GrpcServerHelper
 
 ## Configuration
 
-Configuration is stored in `Config/ServerConfig.json` relative to the application directory:
+Server configuration is stored in `Config/ServerConfig.json` relative to the application directory:
 
 ```json
 {
@@ -92,6 +95,14 @@ Configuration is stored in `Config/ServerConfig.json` relative to the applicatio
   "Port": 50051,
   "StorageRoot": "C:\\Path\\To\\Storage",
   "LogFilePath": "C:\\Path\\To\\Log\\grpc.log"
+}
+```
+
+Application settings (including auto-start preference) are stored in `Config/AppSettings.json`:
+
+```json
+{
+  "AutoStartServer": true
 }
 ```
 

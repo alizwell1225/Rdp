@@ -48,6 +48,9 @@ namespace TestGrpcServerApp
                 var logPath = Path.Combine(AppContext.BaseDirectory, "Log");
                 _logger = new LoggerServer(logPath, "TestServer");
                 
+                // Load auto-start setting
+                LoadAutoStartSetting();
+                
                 UpdateUIState();
             }
             catch (Exception ex)
@@ -55,6 +58,50 @@ namespace TestGrpcServerApp
                 MessageBox.Show($"Failed to initialize server: {ex.Message}", "Error", 
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void LoadAutoStartSetting()
+        {
+            try
+            {
+                var settingsPath = Path.Combine(AppContext.BaseDirectory, "Config", "AppSettings.json");
+                if (File.Exists(settingsPath))
+                {
+                    var json = File.ReadAllText(settingsPath);
+                    var settings = JsonSerializer.Deserialize<AppSettings>(json);
+                    chkAutoStart.Checked = settings?.AutoStartServer ?? false;
+                }
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"Failed to load auto-start setting: {ex.Message}");
+            }
+        }
+
+        private void SaveAutoStartSetting()
+        {
+            try
+            {
+                var settingsPath = Path.Combine(AppContext.BaseDirectory, "Config", "AppSettings.json");
+                var configDir = Path.GetDirectoryName(settingsPath);
+                if (!string.IsNullOrEmpty(configDir))
+                {
+                    Directory.CreateDirectory(configDir);
+                }
+                
+                var settings = new AppSettings { AutoStartServer = chkAutoStart.Checked };
+                var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(settingsPath, json);
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"Failed to save auto-start setting: {ex.Message}");
+            }
+        }
+
+        private class AppSettings
+        {
+            public bool AutoStartServer { get; set; }
         }
 
         private void ServerHelper_OnLog(string message)
@@ -368,6 +415,37 @@ namespace TestGrpcServerApp
         {
             txtLog.Clear();
             AppendLog("Log cleared.");
+        }
+
+        private void chkAutoStart_CheckedChanged(object sender, EventArgs e)
+        {
+            SaveAutoStartSetting();
+            AppendLog($"Auto-start on launch: {(chkAutoStart.Checked ? "enabled" : "disabled")}");
+        }
+
+        private async void TestServerForm_Load(object sender, EventArgs e)
+        {
+            // Auto-start server if enabled
+            if (chkAutoStart.Checked && _serverHelper != null && !_serverHelper.IsRunning)
+            {
+                AppendLog("Auto-starting server...");
+                await Task.Delay(500); // Small delay to ensure UI is ready
+                
+                try
+                {
+                    btnStartServer.Enabled = false;
+                    var success = await _serverHelper.StartServerAsync();
+                    if (!success)
+                    {
+                        btnStartServer.Enabled = true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    AppendLog($"Auto-start failed: {ex.Message}");
+                    btnStartServer.Enabled = true;
+                }
+            }
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)

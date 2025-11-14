@@ -16,6 +16,7 @@ namespace TestGrpcServerApp
         private GroupBox grpServerControl;
         private GroupBox grpOperations;
         private GroupBox grpLog;
+        private CheckBox chkAutoStart;
 
         protected override void Dispose(bool disposing)
         {
@@ -40,6 +41,7 @@ namespace TestGrpcServerApp
             this.grpServerControl = new GroupBox();
             this.grpOperations = new GroupBox();
             this.grpLog = new GroupBox();
+            this.chkAutoStart = new CheckBox();
             
             this.grpServerControl.SuspendLayout();
             this.grpOperations.SuspendLayout();
@@ -50,6 +52,7 @@ namespace TestGrpcServerApp
             this.grpServerControl.Controls.Add(this.btnOpenConfig);
             this.grpServerControl.Controls.Add(this.btnStartServer);
             this.grpServerControl.Controls.Add(this.btnStopServer);
+            this.grpServerControl.Controls.Add(this.chkAutoStart);
             this.grpServerControl.Location = new Point(12, 12);
             this.grpServerControl.Name = "grpServerControl";
             this.grpServerControl.Size = new Size(760, 80);
@@ -84,6 +87,16 @@ namespace TestGrpcServerApp
             this.btnStopServer.Enabled = false;
             this.btnStopServer.UseVisualStyleBackColor = true;
             this.btnStopServer.Click += new EventHandler(this.btnStopServer_Click);
+            
+            // chkAutoStart
+            this.chkAutoStart.AutoSize = true;
+            this.chkAutoStart.Location = new Point(470, 38);
+            this.chkAutoStart.Name = "chkAutoStart";
+            this.chkAutoStart.Size = new Size(150, 19);
+            this.chkAutoStart.TabIndex = 3;
+            this.chkAutoStart.Text = "Auto-start on Launch";
+            this.chkAutoStart.UseVisualStyleBackColor = true;
+            this.chkAutoStart.CheckedChanged += new EventHandler(this.chkAutoStart_CheckedChanged);
             
             // grpOperations
             this.grpOperations.Controls.Add(this.btnSendJson);
@@ -174,8 +187,10 @@ namespace TestGrpcServerApp
             this.Name = "TestServerForm";
             this.Text = "Test gRPC Server Application";
             this.StartPosition = FormStartPosition.CenterScreen;
+            this.Load += new EventHandler(this.TestServerForm_Load);
             
             this.grpServerControl.ResumeLayout(false);
+            this.grpServerControl.PerformLayout();
             this.grpOperations.ResumeLayout(false);
             this.grpLog.ResumeLayout(false);
             this.grpLog.PerformLayout();

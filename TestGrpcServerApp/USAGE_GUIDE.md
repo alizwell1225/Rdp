@@ -12,6 +12,7 @@ TestGrpcServerApp is a .NET 8 Windows Forms test application designed to simplif
 - **開啟伺服器設定 (Open Server Config)**: 配置伺服器主機、端口、存儲路徑和日誌路徑
 - **啟動伺服器 (Start Server)**: 使用當前配置啟動 gRPC 伺服器
 - **停止伺服器 (Stop Server)**: 優雅地停止運行中的伺服器
+- **自動啟動 (Auto-start on Launch)**: 啟用後應用程式啟動時自動啟動伺服器
 
 ### 測試操作 / Test Operations
 - **發送 JSON (Send JSON)**: 向所有連接的客戶端廣播 JSON 消息，帶有驗證和格式化功能
@@ -38,7 +39,8 @@ TestGrpcServerApp is a .NET 8 Windows Forms test application designed to simplif
 3. 點擊 **"OK"** 保存配置
 
 ### 3. 啟動伺服器 / Start Server
-點擊 **"啟動伺服器"** 按鈕開始接受客戶端連接
+1. (可選) 勾選 **"自動啟動"** 複選框，以便應用程式啟動時自動啟動伺服器
+2. 點擊 **"啟動伺服器"** 按鈕開始接受客戶端連接
 
 ### 4. 監控日誌 / Monitor Logs
 在日誌窗口中查看伺服器事件：
