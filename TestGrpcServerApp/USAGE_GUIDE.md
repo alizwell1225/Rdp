@@ -17,7 +17,7 @@ TestGrpcServerApp is a .NET 8 Windows Forms test application designed to simplif
 ### 測試操作 / Test Operations
 - **發送 JSON (Send JSON)**: 向所有連接的客戶端廣播 JSON 消息，帶有驗證和格式化功能
 - **發送文件 (Send File)**: 向所有連接的客戶端推送任何文件
-- **發送圖片 (Send Image)**: 專門發送從選定路徑的圖片文件
+- **發送圖片 (Send Image)**: 向客戶端廣播圖片，可選擇圖片類型（流程圖/地圖）。客戶端將透過 `ActionOnServerImage(index, ShowPictureType, Image)` 事件接收
 
 ### 日誌記錄 / Logging
 - **即時日誌顯示**: 實時查看伺服器事件和操作
@@ -70,11 +70,15 @@ TestGrpcServerApp is a .NET 8 Windows Forms test application designed to simplif
 5. 在日誌中查看確認信息
 
 #### 發送圖片 / Send Image
-1. 確保伺服器正在運行
-2. 點擊 **"發送圖片 (路徑)"** 按鈕
-3. 選擇圖片文件（PNG, JPG, JPEG, BMP, GIF）
-4. 圖片將被推送到所有連接的客戶端
-5. 在日誌中查看確認信息
+1. 確保伺服器正在運行 / Ensure the server is running
+2. 點擊 **"發送圖片 (路徑)"** 按鈕 / Click **"Send Image (Path)"** button
+3. 在對話框中 / In the dialog:
+   - 選擇圖片類型（流程圖或地圖圖片）/ Select picture type (Flow Chart or Map Image)
+   - 瀏覽並選擇圖片文件（PNG, JPG, JPEG, BMP, GIF）/ Browse and select an image file
+   - 點擊 **"發送"** 廣播 / Click **"Send"** to broadcast
+4. 圖片將作為類型化的圖片消息廣播到所有連接的客戶端 / The image will be broadcast to all connected clients as a typed image message
+5. 客戶端將透過 `ActionOnServerImage` 事件接收，並帶有指定的圖片類型 / Clients will receive this via `ActionOnServerImage` event with the specified picture type
+6. 在日誌中查看確認信息 / Check the log for confirmation
 
 ## 配置文件 / Configuration File
 
