@@ -76,10 +76,19 @@ TestGrpcServerApp is a .NET 8 Windows Forms test application designed to simplif
    - 選擇圖片類型（流程圖或地圖圖片）/ Select picture type (Flow Chart or Map Image)
    - 瀏覽並選擇圖片文件（PNG, JPG, JPEG, BMP, GIF）/ Browse and select an image file
    - 點擊 **"發送"** 廣播 / Click **"Send"** to broadcast
-4. 圖片檔案會被載入並轉換為 base64，然後廣播到所有連接的客戶端 / The image file is loaded, converted to base64, and broadcast to all connected clients
-5. 客戶端接收實際的圖片資料（不只是路徑），可以解碼並顯示在畫面上 / Clients receive the actual image data (not just a path) and can decode it to display on screen
-6. 客戶端將透過 `ActionOnServerImage` 事件接收，並帶有指定的圖片類型和 Image 物件 / Clients will receive this via `ActionOnServerImage` event with the specified picture type and Image object
-7. 在日誌中查看確認信息 / Check the log for confirmation
+4. 圖片會自動優化後發送 / The image is automatically optimized before sending:
+   - 大圖片 (>2048px) 自動縮小 / Large images automatically resized
+   - 圖片若 > 2.5MB 會使用 JPEG 壓縮 (85% 品質) / Compressed using JPEG if > 2.5MB
+   - 最大限制 5MB 防止客戶端崩潰 / Max 5MB limit to prevent crashes
+5. 客戶端接收實際的圖片資料並顯示 / Clients receive actual image data and display
+6. 客戶端透過 `ActionOnServerImage` 事件接收 / Received via `ActionOnServerImage` event
+7. 客戶端保護：拒絕 > 50MB 的圖片 / Client protection: Rejects images > 50MB
+8. 查看日誌確認（顯示原始大小、壓縮後大小、尺寸）/ Check log for details
+
+**性能說明 / Performance Notes:**
+- 小圖片 (< 2.5MB): 使用 PNG 保持最佳品質 / Small images: PNG for best quality
+- 大圖片 (> 2.5MB): 自動壓縮為 JPEG (85% 品質) / Large images: Auto-compressed to JPEG
+- 超大圖片: 自動縮放至最大 2048px / Oversized: Auto-resized to max 2048px
 
 ## 配置文件 / Configuration File
 

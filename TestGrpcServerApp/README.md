@@ -85,10 +85,20 @@ LIB_Define.RPC.GrpcServerHelper
    - Select the picture type (Flow Chart or Map Image)
    - Browse and select an image file (PNG, JPG, JPEG, BMP, GIF)
    - Click **Send** to broadcast
-4. The image file is loaded, converted to base64, and broadcast to all connected clients
-5. Clients receive the actual image data (not just a path) and can decode it to display on screen
+4. The image is automatically optimized before sending:
+   - Large images (>2048px) are automatically resized
+   - Images are compressed using JPEG (85% quality) if > 2.5MB
+   - Maximum size limit: 5MB to prevent client crashes
+5. Clients receive the actual image data and can decode it to display on screen
 6. Clients will receive this via the `ActionOnServerImage` event with the specified picture type and Image object
-7. Check the log for confirmation
+7. Client-side protection: Images > 50MB are rejected with error message
+8. Check the log for confirmation (shows original size, compressed size, and dimensions)
+
+**Performance Notes:**
+- Small images (< 2.5MB): Sent as PNG for best quality
+- Large images (> 2.5MB): Automatically compressed to JPEG (85% quality)
+- Oversized images: Automatically resized to max 2048px while maintaining aspect ratio
+- Log shows: "Image resized from WxH to WxH (original: XKB)" when compression occurs
 
 ## Configuration
 
