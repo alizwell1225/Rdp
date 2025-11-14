@@ -6,7 +6,7 @@ using LIB_RPC.Abstractions;
 using LIB_RPC.API;
 using Microsoft.VisualBasic;
 
-namespace LIB_Define;
+namespace LIB_Define.RDP;
 
 public class RpcClient
 {

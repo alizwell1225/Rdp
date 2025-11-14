@@ -1,10 +1,11 @@
+using LIB_Define.RDP;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace LIB_Define
+namespace LIB_Define.RPC
 {
     /// <summary>
     /// Helper class for managing multiple RpcClient instances

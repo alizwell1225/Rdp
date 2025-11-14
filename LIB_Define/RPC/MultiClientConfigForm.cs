@@ -1,10 +1,4 @@
-using System;
-using System.Drawing;
-using System.IO;
-using System.Windows.Forms;
-using LIB_RPC;
-
-namespace LIB_Define
+namespace LIB_Define.RPC
 {
     /// <summary>
     /// Form for configuring multiple RpcClient instances on a single machine
