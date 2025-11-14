@@ -14,8 +14,8 @@ TestGrpcServerApp is a .NET 8 Windows Forms test application designed to simplif
 
 ### Test Operations
 - **Send JSON**: Broadcast JSON messages to all connected clients with validation and formatting
-- **Send File**: Push any file to all connected clients
-- **Send Image (Path)**: Broadcast images to clients with picture type selection (Flow/Map). Clients receive this via `ActionOnServerImage(index, ShowPictureType, Image)` event
+- **Send File**: Push any file to all connected clients (file bytes are sent via gRPC)
+- **Send Image (Path)**: Broadcast images to clients with picture type selection (Flow/Map). Image is loaded and converted to base64, then sent to clients. Clients receive actual image data via `ActionOnServerImage(index, ShowPictureType, Image)` event
 
 ### Logging
 - **Real-time Log Display**: View server events and operations in real-time
@@ -85,9 +85,10 @@ LIB_Define.RPC.GrpcServerHelper
    - Select the picture type (Flow Chart or Map Image)
    - Browse and select an image file (PNG, JPG, JPEG, BMP, GIF)
    - Click **Send** to broadcast
-4. The image will be broadcast to all connected clients as a typed image message
-5. Clients will receive this via the `ActionOnServerImage` event with the specified picture type
-6. Check the log for confirmation
+4. The image file is loaded, converted to base64, and broadcast to all connected clients
+5. Clients receive the actual image data (not just a path) and can decode it to display on screen
+6. Clients will receive this via the `ActionOnServerImage` event with the specified picture type and Image object
+7. Check the log for confirmation
 
 ## Configuration
 

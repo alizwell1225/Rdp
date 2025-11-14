@@ -16,8 +16,8 @@ TestGrpcServerApp is a .NET 8 Windows Forms test application designed to simplif
 
 ### 測試操作 / Test Operations
 - **發送 JSON (Send JSON)**: 向所有連接的客戶端廣播 JSON 消息，帶有驗證和格式化功能
-- **發送文件 (Send File)**: 向所有連接的客戶端推送任何文件
-- **發送圖片 (Send Image)**: 向客戶端廣播圖片，可選擇圖片類型（流程圖/地圖）。客戶端將透過 `ActionOnServerImage(index, ShowPictureType, Image)` 事件接收
+- **發送文件 (Send File)**: 向所有連接的客戶端推送任何文件（透過 gRPC 發送文件位元組資料）
+- **發送圖片 (Send Image)**: 向客戶端廣播圖片，可選擇圖片類型（流程圖/地圖）。圖片會載入並轉換為 base64 後發送。客戶端接收實際圖片資料並透過 `ActionOnServerImage(index, ShowPictureType, Image)` 事件接收
 
 ### 日誌記錄 / Logging
 - **即時日誌顯示**: 實時查看伺服器事件和操作
@@ -76,9 +76,10 @@ TestGrpcServerApp is a .NET 8 Windows Forms test application designed to simplif
    - 選擇圖片類型（流程圖或地圖圖片）/ Select picture type (Flow Chart or Map Image)
    - 瀏覽並選擇圖片文件（PNG, JPG, JPEG, BMP, GIF）/ Browse and select an image file
    - 點擊 **"發送"** 廣播 / Click **"Send"** to broadcast
-4. 圖片將作為類型化的圖片消息廣播到所有連接的客戶端 / The image will be broadcast to all connected clients as a typed image message
-5. 客戶端將透過 `ActionOnServerImage` 事件接收，並帶有指定的圖片類型 / Clients will receive this via `ActionOnServerImage` event with the specified picture type
-6. 在日誌中查看確認信息 / Check the log for confirmation
+4. 圖片檔案會被載入並轉換為 base64，然後廣播到所有連接的客戶端 / The image file is loaded, converted to base64, and broadcast to all connected clients
+5. 客戶端接收實際的圖片資料（不只是路徑），可以解碼並顯示在畫面上 / Clients receive the actual image data (not just a path) and can decode it to display on screen
+6. 客戶端將透過 `ActionOnServerImage` 事件接收，並帶有指定的圖片類型和 Image 物件 / Clients will receive this via `ActionOnServerImage` event with the specified picture type and Image object
+7. 在日誌中查看確認信息 / Check the log for confirmation
 
 ## 配置文件 / Configuration File
 

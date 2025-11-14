@@ -289,7 +289,8 @@ namespace LIB_Define.RPC
 
         /// <summary>
         /// Broadcasts an image to all connected clients by file path.
-        /// Clients will receive this via ActionOnServerImage event.
+        /// The image is loaded from the file, converted to base64, and sent to clients.
+        /// Clients will receive this via ActionOnServerImage event with the actual image data.
         /// </summary>
         /// <param name="pictureType">Type of picture (Flow, Map, etc.)</param>
         /// <param name="imagePath">Full path to the image file.</param>
@@ -311,10 +312,16 @@ namespace LIB_Define.RPC
                     return (false, 0, "Image file not found");
                 }
 
+                // Load image from file and convert to base64
+                using var image = Image.FromFile(imagePath);
+                using var ms = new MemoryStream();
+                image.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                var base64 = Convert.ToBase64String(ms.ToArray());
+
                 var imageMsg = new ImageTransferMessage
                 {
                     PictureType = pictureType,
-                    ImagePath = imagePath,
+                    ImageDataBase64 = base64,  // Send actual image data, not path
                     FileName = Path.GetFileName(imagePath)
                 };
 
@@ -327,14 +334,14 @@ namespace LIB_Define.RPC
                 
                 if (result.Success)
                 {
-                    OnLog?.Invoke($"Broadcast image by path: {Path.GetFileName(imagePath)} (Type: {pictureType})");
+                    OnLog?.Invoke($"Broadcast image: {Path.GetFileName(imagePath)} (Type: {pictureType}, Size: {image.Width}x{image.Height})");
                 }
                 
                 return result;
             }
             catch (Exception ex)
             {
-                var errorMsg = $"Broadcast image by path failed: {ex.Message}";
+                var errorMsg = $"Broadcast image failed: {ex.Message}";
                 OnLog?.Invoke(errorMsg);
                 return (false, 0, errorMsg);
             }
