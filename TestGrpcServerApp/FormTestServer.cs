@@ -456,7 +456,7 @@ namespace TestGrpcServerApp
                 
                 if (result == DialogResult.Yes)
                 {
-                    _serverHelper.StopServerAsync().GetAwaiter().GetResult();
+                    //_serverHelper.StopServerAsync().GetAwaiter().GetResult();
                     _serverHelper.Dispose();
                 }
                 else
