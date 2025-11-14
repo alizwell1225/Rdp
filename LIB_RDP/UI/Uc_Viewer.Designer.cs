@@ -42,6 +42,7 @@
             splitContainer1.Dock = DockStyle.Fill;
             splitContainer1.FixedPanel = FixedPanel.Panel2;
             splitContainer1.Location = new Point(0, 0);
+            splitContainer1.Margin = new Padding(0);
             splitContainer1.Name = "splitContainer1";
             splitContainer1.Orientation = Orientation.Horizontal;
             // 
@@ -95,6 +96,7 @@
             Controls.Add(splitContainer1);
             Name = "Uc_Viewer";
             Size = new Size(674, 543);
+            Load += Uc_Viewer_Load;
             MouseEnter += Uc_Viewer_MouseEnter;
             MouseLeave += Uc_Viewer_MouseLeave;
             splitContainer1.Panel2.ResumeLayout(false);

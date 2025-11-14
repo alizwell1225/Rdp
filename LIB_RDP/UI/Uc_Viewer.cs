@@ -24,10 +24,11 @@ public partial class Uc_Viewer : UserControl, IViewer
 
     public Uc_Viewer()
     {
-       
+
         InitializeComponent();
-        
+
         rdpViewerInit();
+
         // 預設隱藏右側 panel（panel2）—由 hover 顯示
         try
         {
@@ -66,16 +67,21 @@ public partial class Uc_Viewer : UserControl, IViewer
         // rdpViewer
         // 
         InnerViewer = new LIB_RDP.Core.RdpViewer();
-        InnerViewer.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+        InnerViewer.BorderStyle = System.Windows.Forms.BorderStyle.None;
         InnerViewer.Dock = System.Windows.Forms.DockStyle.Fill;
         InnerViewer.Location = new System.Drawing.Point(0, 0);
+        InnerViewer.Margin = new Padding(0, 0, 0, 0);
+        InnerViewer.Padding = new Padding(0, 0, 0, 0);
         InnerViewer.Name = "InnerViewer";
         InnerViewer.Size = new System.Drawing.Size(674, 487);
         InnerViewer.TabIndex = 0;
         // 
         // splitContainer1.Panel1
         // 
+        splitContainer1.Margin = new Padding(0, 0, 0, 0);
+        splitContainer1.Padding = new Padding(0, 0, 0, 0);
         splitContainer1.Panel1.Controls.Add(InnerViewer);
+        splitContainer1.Panel2Collapsed = false;
     }
 
     ~Uc_Viewer()
@@ -307,7 +313,7 @@ public partial class Uc_Viewer : UserControl, IViewer
             existingConnections.TryGetValue(keyLegacy, out conn))
         {
             conn.Configure(new RdpConfig
-                { ScreenWidth = InnerViewer.Width, ScreenHeight = InnerViewer.Height, ColorDepth = 32 });
+            { ScreenWidth = InnerViewer.Width, ScreenHeight = InnerViewer.Height, ColorDepth = 32 });
             InnerViewer.SetConnection(conn);
             InnerViewer.SetScreenSize();
         }
@@ -355,7 +361,7 @@ public partial class Uc_Viewer : UserControl, IViewer
             ActSinkViewer?.Invoke(Index);
             splitContainer1.Panel2Collapsed = true;
             this.GetConnection()?.Disconnect();
-            
+
             //RestoreRequested?.Invoke(viewerIndex);
         }
         catch (Exception ex)
@@ -410,5 +416,12 @@ public partial class Uc_Viewer : UserControl, IViewer
         {
             return false;
         }
+    }
+
+    private void Uc_Viewer_Load(object sender, EventArgs e)
+    {
+        ShowPanel();
+        splitContainer1.Panel2Collapsed = true;
+        Invalidate();
     }
 }
