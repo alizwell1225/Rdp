@@ -338,31 +338,25 @@ namespace TestGrpcServerApp
                     return;
                 }
                 
-                using var ofd = new OpenFileDialog();
-                ofd.Title = "Select image to send";
-                ofd.Filter = "Image files (*.png;*.jpg;*.jpeg;*.bmp;*.gif)|*.png;*.jpg;*.jpeg;*.bmp;*.gif|All files (*.*)|*.*";
-                
-                if (ofd.ShowDialog() == DialogResult.OK)
+                // Show dialog to select image and picture type
+                var imageForm = new ImageSendForm();
+                if (imageForm.ShowDialog() == DialogResult.OK)
                 {
-                    // Validate it's an image
-                    if (!IsImageFile(ofd.FileName))
-                    {
-                        MessageBox.Show("Selected file is not a valid image.", "Error",
-                            MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
-                    }
+                    AppendLog($"Broadcasting image: {Path.GetFileName(imageForm.ImagePath)} (Type: {imageForm.SelectedPictureType})...");
                     
-                    AppendLog($"Pushing image: {Path.GetFileName(ofd.FileName)}...");
-                    
-                    var result = await _serverHelper.PushFileAsync(ofd.FileName, useAckMode: true);
+                    var result = await _serverHelper.BroadcastImageByPathAsync(
+                        imageForm.SelectedPictureType,
+                        imageForm.ImagePath,
+                        useAckMode: true);
                     
                     if (result.Success)
                     {
-                        AppendLog($"Image push succeeded. Clients reached: {result.ClientsReached}");
+                        AppendLog($"Image broadcast succeeded. Clients reached: {result.ClientsReached}");
+                        AppendLog($"  - Clients will receive this via ActionOnServerImage event");
                     }
                     else
                     {
-                        AppendLog($"Image push failed: {result.Error}");
+                        AppendLog($"Image broadcast failed: {result.Error}");
                     }
                 }
             }

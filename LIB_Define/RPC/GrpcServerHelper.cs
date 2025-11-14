@@ -2,7 +2,9 @@ using LIB_RPC;
 using LIB_RPC.Abstractions;
 using LIB_RPC.API;
 using System;
+using System.Drawing;
 using System.IO;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -283,6 +285,114 @@ namespace LIB_Define.RPC
         public void EnsureDirectories()
         {
             Config.EnsureFolders();
+        }
+
+        /// <summary>
+        /// Broadcasts an image to all connected clients by file path.
+        /// Clients will receive this via ActionOnServerImage event.
+        /// </summary>
+        /// <param name="pictureType">Type of picture (Flow, Map, etc.)</param>
+        /// <param name="imagePath">Full path to the image file.</param>
+        /// <param name="useAckMode">Whether to use acknowledgment mode for reliable delivery.</param>
+        /// <param name="retryCount">Number of retries for ACK mode (default: 0).</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Tuple indicating success, number of clients reached, and error message if any.</returns>
+        public async Task<(bool Success, int ClientsReached, string Error)> BroadcastImageByPathAsync(
+            ShowPictureType pictureType,
+            string imagePath,
+            bool useAckMode = true,
+            int retryCount = 0,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (!File.Exists(imagePath))
+                {
+                    return (false, 0, "Image file not found");
+                }
+
+                var imageMsg = new ImageTransferMessage
+                {
+                    PictureType = pictureType,
+                    ImagePath = imagePath,
+                    FileName = Path.GetFileName(imagePath)
+                };
+
+                var json = JsonSerializer.Serialize(imageMsg, new JsonSerializerOptions
+                {
+                    WriteIndented = false
+                });
+
+                var result = await BroadcastJsonAsync("image", json, useAckMode, retryCount, cancellationToken);
+                
+                if (result.Success)
+                {
+                    OnLog?.Invoke($"Broadcast image by path: {Path.GetFileName(imagePath)} (Type: {pictureType})");
+                }
+                
+                return result;
+            }
+            catch (Exception ex)
+            {
+                var errorMsg = $"Broadcast image by path failed: {ex.Message}";
+                OnLog?.Invoke(errorMsg);
+                return (false, 0, errorMsg);
+            }
+        }
+
+        /// <summary>
+        /// Broadcasts an image to all connected clients by Image object.
+        /// Clients will receive this via ActionOnServerImage event.
+        /// </summary>
+        /// <param name="pictureType">Type of picture (Flow, Map, etc.)</param>
+        /// <param name="image">Image object to send.</param>
+        /// <param name="fileName">Optional file name (default: image.png).</param>
+        /// <param name="useAckMode">Whether to use acknowledgment mode for reliable delivery.</param>
+        /// <param name="retryCount">Number of retries for ACK mode (default: 0).</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>Tuple indicating success, number of clients reached, and error message if any.</returns>
+        public async Task<(bool Success, int ClientsReached, string Error)> BroadcastImageAsync(
+            ShowPictureType pictureType,
+            Image image,
+            string fileName = "image.png",
+            bool useAckMode = true,
+            int retryCount = 0,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                // Convert image to base64
+                using var ms = new MemoryStream();
+                image.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                var base64 = Convert.ToBase64String(ms.ToArray());
+
+                var imageMsg = new ImageTransferMessage
+                {
+                    PictureType = pictureType,
+                    ImageDataBase64 = base64,
+                    FileName = fileName
+                };
+
+                var json = JsonSerializer.Serialize(imageMsg, new JsonSerializerOptions
+                {
+                    WriteIndented = false
+                });
+
+                var result = await BroadcastJsonAsync("image", json, useAckMode, retryCount, cancellationToken);
+                
+                if (result.Success)
+                {
+                    OnLog?.Invoke($"Broadcast image: {fileName} (Type: {pictureType}, Size: {image.Width}x{image.Height})");
+                }
+                
+                return result;
+            }
+            catch (Exception ex)
+            {
+                var errorMsg = $"Broadcast image failed: {ex.Message}";
+                OnLog?.Invoke(errorMsg);
+                return (false, 0, errorMsg);
+            }
         }
 
         /// <summary>
