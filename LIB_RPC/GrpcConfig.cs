@@ -45,6 +45,7 @@ namespace LIB_RPC
         /// </summary>
         public string? ServerUploadPath { get; set; } = null;
         public bool CheckStorageRootHaveFile { get; set; } = false;
+        public string UserStoragePath { get; set; }
 
         public static GrpcConfig Load(string? path)
         {

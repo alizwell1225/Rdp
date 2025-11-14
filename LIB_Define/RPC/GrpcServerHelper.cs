@@ -244,11 +244,12 @@ namespace LIB_Define.RPC
         {
             try
             {
+                Config.UserStoragePath = filePath;
                 if (!File.Exists(filePath))
                 {
                     return (false, 0, "File does not exist");
                 }
-
+                
                 if (useAckMode)
                 {
                     return await _serverApi.PushFileWithAckAsync(filePath, retryCount, cancellationToken);
