@@ -162,6 +162,9 @@ namespace LIB_Define.RPC
         {
             try
             {
+                // Ensure directories exist before starting
+                EnsureDirectories();
+                
                 await _serverApi.StartAsync();
                 return true;
             }
