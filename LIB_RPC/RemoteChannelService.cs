@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using RdpGrpc.Proto;
 using LIB_RPC.Abstractions;
@@ -435,6 +436,7 @@ namespace LIB_RPC
         {
             try
             {
+                var sourePath = string.Empty;
                 var clients = GetFilePushClientsSnapshot();
                 if (clients.Count == 0)
                 {
@@ -462,7 +464,9 @@ namespace LIB_RPC
                 }
                 else
                 {
-                    if (!File.Exists(request.FilePath))
+                    var soure = Path.Combine(_config.UserStoragePath);
+                    sourePath = soure;
+                    if (!File.Exists(sourePath))
                     {
                         return new PushFileResponse
                         {
@@ -471,9 +475,9 @@ namespace LIB_RPC
                             Error = $"File not found: {request.FilePath}"
                         };
                     }
-                    fileBytes = await File.ReadAllBytesAsync(request.FilePath);
+                    fileBytes = await File.ReadAllBytesAsync(sourePath);
                 }
-                var fileName = Path.GetFileName(request.FilePath);
+                var fileName = Path.GetFileName(sourePath);
                 var chunkSize = _config.MaxChunkSizeBytes;
                 var totalChunks = (int)Math.Ceiling((double)fileBytes.Length / chunkSize);
 
