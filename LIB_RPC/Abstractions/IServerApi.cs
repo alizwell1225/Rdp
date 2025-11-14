@@ -100,6 +100,8 @@ namespace LIB_RPC.Abstractions
         /// </summary>
         Task StopAsync();
 
+        Task StopAsync(CancellationTokenSource token);
+
         /// <summary>
         /// Broadcasts a JSON message to all connected clients.
         /// </summary>
@@ -133,5 +135,9 @@ namespace LIB_RPC.Abstractions
         /// Gets the list of files in the server storage.
         /// </summary>
         string[] GetFiles();
+
+        void SetCancel();
+        void InitToken();
+        CancellationTokenSource GetTokenSource();
     }
 }

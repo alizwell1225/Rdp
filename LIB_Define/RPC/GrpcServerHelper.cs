@@ -164,7 +164,7 @@ namespace LIB_Define.RPC
             {
                 // Ensure directories exist before starting
                 EnsureDirectories();
-                
+                _serverApi.InitToken();
                 await _serverApi.StartAsync();
                 return true;
             }
@@ -182,7 +182,8 @@ namespace LIB_Define.RPC
         {
             try
             {
-                await _serverApi.StopAsync();
+                _serverApi.SetCancel();
+                await _serverApi.StopAsync(_serverApi.GetTokenSource());
                 return true;
             }
             catch (Exception ex)
@@ -478,7 +479,7 @@ namespace LIB_Define.RPC
             
             if (IsRunning)
             {
-                StopServerAsync().GetAwaiter().GetResult();
+                //StopServerAsync().GetAwaiter().GetResult();
             }
             
             if (_serverApi is IDisposable disposable)

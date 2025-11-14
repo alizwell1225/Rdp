@@ -170,6 +170,7 @@ namespace LIB_RPC.API
             try
             {
                 _host = new ServerHost(_config, _logger!);
+                _cts = new CancellationTokenSource();
                 _host.FileAdded += (s, path) => OnFileAdded?.Invoke(path);
                 _host.FileUploadStarted += (s, path) => OnFileUploadStarted?.Invoke(path);
                 _host.FileUploadCompleted += (s, path) => OnFileUploadCompleted?.Invoke(path);
@@ -182,7 +183,7 @@ namespace LIB_RPC.API
                 _host.ClientConnected += (s, clientId) => OnClientConnected?.Invoke(clientId);
                 _host.ClientDisconnected += (s, clientId) => OnClientDisconnected?.Invoke(clientId);
                 
-                await _host.StartAsync();
+                await _host.StartAsync(_cts.Token);
                 OnServerStarted?.Invoke();
                 OnLog?.Invoke("Server started successfully");
             }
@@ -193,6 +194,22 @@ namespace LIB_RPC.API
                 throw;
             }
         }
+        CancellationTokenSource _cts = new CancellationTokenSource();
+
+        public void SetCancel()
+        {
+            _cts.Cancel();
+        }
+
+        public void InitToken()
+        {
+            _cts = new CancellationTokenSource();
+        }
+
+        public CancellationTokenSource GetTokenSource()
+        {
+            return _cts;
+        }
 
         /// <summary>
         /// Stops the gRPC server asynchronously.
@@ -202,6 +219,15 @@ namespace LIB_RPC.API
         {
             if (_host == null) return;
             await _host.StopAsync();
+            _host = null;
+            OnServerStopped?.Invoke();
+            OnLog?.Invoke("Server stopped");
+        }
+
+        public async Task StopAsync(CancellationTokenSource token)
+        {
+            if (_host == null) return;
+            await _host.StopAsync(token.Token);
             _host = null;
             OnServerStopped?.Invoke();
             OnLog?.Invoke("Server stopped");

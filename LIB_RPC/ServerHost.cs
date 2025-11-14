@@ -58,6 +58,10 @@ namespace LIB_RPC
             if (_host != null) return;
             _config.EnsureFolders();
             _host = Host.CreateDefaultBuilder()
+                .ConfigureHostOptions(o =>
+                {
+                    o.ShutdownTimeout = TimeSpan.FromSeconds(5); // 將等待時間改短
+                })
                 .ConfigureServices(services =>
                 {
                     services.AddSingleton(_config);
@@ -181,6 +185,17 @@ namespace LIB_RPC
             _logger.Info("Stopping gRPC server");
             await _host.StopAsync(cancellationToken);
             await _host.WaitForShutdownAsync(cancellationToken);
+            _host = null;
+        }
+
+        public async Task StopAsync(TimeSpan time,CancellationToken cancellationToken = default)
+        {
+            if (_host == null) return;
+            _logger.Info("Stopping gRPC server");
+            var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(time);
+            await _host.StopAsync(cts.Token);
+            await _host.WaitForShutdownAsync(cts.Token);
             _host = null;
         }
 
