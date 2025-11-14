@@ -46,6 +46,9 @@ namespace LIB_RPC
         // Event raised when a client disconnects
         public event EventHandler<string>? ClientDisconnected;
 
+        // Event raised during byte transfer progress (type, bytesTransferred, totalBytes, percentage)
+        public event EventHandler<(string Type, long BytesTransferred, long TotalBytes, double Percentage)>? ByteTransferProgress;
+
         public ServerHost(GrpcConfig config, GrpcLogger logger, IScreenCapture? screenCapture = null)
         {
             _config = config;
@@ -409,6 +412,7 @@ namespace LIB_RPC
 
         /// <summary>
         /// Sends byte data to a specific client or broadcasts to all clients with acknowledgment.
+        /// Reports progress through ByteTransferProgress event.
         /// </summary>
         public async Task<(bool Success, int ClientsReached, string Error)> SendByteAsync(string type, byte[] data, string? metadata = null, string? clientId = null, CancellationToken ct = default)
         {
@@ -419,11 +423,35 @@ namespace LIB_RPC
 
             try
             {
-                // Use the helper method to push byte data to subscribed clients
-                await svc.PushByteDataToClientsAsync(type, data, metadata);
+                const int chunkSize = 256 * 1024; // 256KB chunks
+                var totalBytes = data.Length;
+                var totalChunks = (int)Math.Ceiling((double)totalBytes / chunkSize);
+                long bytesSent = 0;
+
+                // Send in chunks to report progress
+                for (int i = 0; i < totalChunks; i++)
+                {
+                    var offset = i * chunkSize;
+                    var length = Math.Min(chunkSize, totalBytes - offset);
+                    var chunk = new byte[length];
+                    Array.Copy(data, offset, chunk, 0, length);
+
+                    // Update metadata with chunk info
+                    var chunkMetadata = metadata ?? string.Empty;
+                    if (i == 0 && totalChunks > 1)
+                    {
+                        chunkMetadata += $"|chunks:{totalChunks}|totalBytes:{totalBytes}";
+                    }
+
+                    await svc.PushByteDataToClientsAsync(type, chunk, chunkMetadata);
+                    
+                    bytesSent += length;
+                    var percentage = (double)bytesSent / totalBytes * 100.0;
+                    
+                    // Report progress
+                    ByteTransferProgress?.Invoke(this, (type, bytesSent, totalBytes, percentage));
+                }
                 
-                // Note: PushByteDataToClientsAsync doesn't return individual acks, so we report success
-                // if the push completed without exception
                 var clientCount = svc.GetBytePushClientCount();
                 return (true, clientCount, string.Empty);
             }
@@ -436,6 +464,7 @@ namespace LIB_RPC
 
         /// <summary>
         /// Sends byte data to a specific client or broadcasts to all clients without acknowledgment (fire and forget).
+        /// Reports progress through ByteTransferProgress event.
         /// </summary>
         public async Task SendByteNoAckAsync(string type, byte[] data, string? metadata = null, string? clientId = null, CancellationToken ct = default)
         {
@@ -446,8 +475,27 @@ namespace LIB_RPC
 
             try
             {
-                // Use the helper method to push byte data to subscribed clients (fire and forget)
-                await svc.PushByteDataToClientsAsync(type, data, metadata);
+                const int chunkSize = 256 * 1024; // 256KB chunks
+                var totalBytes = data.Length;
+                var totalChunks = (int)Math.Ceiling((double)totalBytes / chunkSize);
+                long bytesSent = 0;
+
+                // Send in chunks to report progress
+                for (int i = 0; i < totalChunks; i++)
+                {
+                    var offset = i * chunkSize;
+                    var length = Math.Min(chunkSize, totalBytes - offset);
+                    var chunk = new byte[length];
+                    Array.Copy(data, offset, chunk, 0, length);
+
+                    await svc.PushByteDataToClientsAsync(type, chunk, metadata);
+                    
+                    bytesSent += length;
+                    var percentage = (double)bytesSent / totalBytes * 100.0;
+                    
+                    // Report progress
+                    ByteTransferProgress?.Invoke(this, (type, bytesSent, totalBytes, percentage));
+                }
             }
             catch (Exception ex)
             {

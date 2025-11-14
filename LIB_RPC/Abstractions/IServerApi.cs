@@ -86,6 +86,11 @@ namespace LIB_RPC.Abstractions
         event Action<string, string>? OnBroadcastFailed;
 
         /// <summary>
+        /// Event raised during byte transfer progress (type, bytesTransferred, totalBytes, percentage).
+        /// </summary>
+        event Action<string, long, long, double>? OnByteTransferProgress;
+
+        /// <summary>
         /// Updates the server configuration with new host and port.
         /// </summary>
         void UpdateConfig(string? host, int? port);

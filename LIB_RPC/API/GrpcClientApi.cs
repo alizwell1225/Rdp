@@ -57,6 +57,11 @@ namespace LIB_RPC.API
         public event Action<string, byte[], string?>? OnServerByteData;
 
         /// <summary>
+        /// Event raised during byte transfer progress (type, bytesTransferred, totalBytes, percentage).
+        /// </summary>
+        public event Action<string, long, long, double>? OnByteTransferProgress;
+
+        /// <summary>
         /// Event raised when connection to server is established successfully.
         /// </summary>
         public event Action? OnConnected;

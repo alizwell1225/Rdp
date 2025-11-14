@@ -107,6 +107,9 @@ message ByteData {
   bytes data = 2;             // Raw byte data
   string metadata = 3;        // Optional JSON metadata
   string id = 4;              // Correlation ID
+  int32 chunkIndex = 5;       // Current chunk index (for progress tracking)
+  int32 totalChunks = 6;      // Total number of chunks (for progress tracking)
+  int64 totalBytes = 7;       // Total size in bytes (for progress tracking)
 }
 
 message ByteAck {
