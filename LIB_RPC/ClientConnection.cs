@@ -166,7 +166,11 @@ namespace LIB_RPC
             {
                 while (await _jsonDuplex.ResponseStream.MoveNext(CancellationToken.None))
                 {
-                    var msg = _jsonDuplex.ResponseStream.Current;
+                    var msg = _jsonDuplex?.ResponseStream.Current;
+                    if (msg==null)
+                    {
+                        new Exception("msg = null");
+                    }
                     OnServerJson?.Invoke(msg);
                 }
             }
