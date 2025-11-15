@@ -43,9 +43,8 @@ namespace LIB_RPC
                     
                     // OPTIMIZED: Use RecyclableMemoryStream instead of MemoryStream
                     // Reduces memory allocations and GC pressure
-                    // PNG compression varies, so use a reasonable initial capacity (e.g., 1MB)
-                    using var ms = new RecyclableMemoryStream(1024 * 1024);
-                    bmp.Save(ms, ImageFormat.Png);
+                    using var ms = new RecyclableMemoryStream(1024 * 1024);// 1MB ªì©l®e¶q
+                    //bmp.Save(ms.ToString(), ImageFormat.Png);
                     return ms.ToArray();
                 }
                 catch (Exception ex) when (ex is not PlatformNotSupportedException)
