@@ -10,7 +10,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace LIB_Define.RPC
+namespace LIB_Define.RPC.Client
 {
     /// <summary>
     /// Optimized manager for multiple RPC clients with shared resources and efficient image transmission.
@@ -221,7 +221,7 @@ namespace LIB_Define.RPC
         /// <summary>
         /// Sends a JSON message to multiple clients concurrently
         /// </summary>
-        public async Task<Dictionary<int, bool>> BroadcastJsonAsync<T>(string type, T obj, params int[] targetIndices)
+        public async Task<Dictionary<int, bool>> SendJsonAsync<T>(string type, T obj, params int[] targetIndices)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(OptimizedMultiClientManager));

@@ -5,8 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Threading.Tasks;
+using LIB_Define.RPC.Client;
 
-namespace LIB_Define.Examples
+namespace LIB_Define.RPC.Examples
 {
     /// <summary>
     /// Example demonstrating the performance improvements of OptimizedMultiClientManager
@@ -121,12 +122,12 @@ namespace LIB_Define.Examples
             
             var elapsedTime = (DateTime.Now - startTime).TotalSeconds;
             Console.WriteLine($"Connected {connected} clients in {elapsedTime:F2} seconds");
-            Console.WriteLine($"Speedup: {(12.0 / elapsedTime):F1}x faster than sequential");
+            Console.WriteLine($"Speedup: {12.0 / elapsedTime:F1}x faster than sequential");
 
             // Broadcast to all clients EFFICIENTLY - SINGLE CALL
             Console.WriteLine("\nBroadcasting JSON to all clients...");
             var data = new { Message = "Hello from optimized manager", Timestamp = DateTime.Now };
-            var results = await manager.BroadcastJsonAsync("test", data);
+            var results = await manager.SendJsonAsync("test", data);
             
             int successCount = 0;
             foreach (var result in results)
@@ -142,13 +143,6 @@ namespace LIB_Define.Examples
             Console.WriteLine($"  Connected: {stats.ConnectedClients}");
             Console.WriteLine($"  Shared Channels: {stats.UseSharedChannels}");
             Console.WriteLine($"  Cache Size: {stats.CacheSizeMB}");
-
-            // BENEFITS:
-            // ✅ Shared channels = 50% less memory
-            // ✅ Concurrent connections = 3-4x faster
-            // ✅ Batch operations = Simpler code
-            // ✅ Image caching = Less bandwidth
-            // ✅ Unified events = Easier management
         }
 
         /// <summary>
@@ -173,7 +167,7 @@ namespace LIB_Define.Examples
 
             // Broadcast only to connected clients
             Console.WriteLine("\nBroadcasting to clients 0 and 2:");
-            var results = await manager.BroadcastJsonAsync(
+            var results = await manager.SendJsonAsync(
                 "selective",
                 new { Target = "Specific clients" },
                 0, 2  // Only these clients

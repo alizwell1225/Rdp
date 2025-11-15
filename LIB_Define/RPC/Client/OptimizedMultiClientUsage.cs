@@ -3,7 +3,7 @@ using LIB_RPC;
 using System;
 using System.Threading.Tasks;
 
-namespace LIB_Define.RPC
+namespace LIB_Define.RPC.Client
 {
     /// <summary>
     /// 簡單使用範例：OptimizedMultiClientManager
@@ -12,17 +12,17 @@ namespace LIB_Define.RPC
     public class OptimizedMultiClientUsage
     {
         /// <summary>
-        /// 基本使用範例 / Basic usage example
+        /// 基本使用
         /// </summary>
         public static async Task BasicUsageExample()
         {
-            // 1. 創建優化的多客戶端管理器 / Create optimized multi-client manager
+            // 1.  Create optimized multi-client manager
             using var manager = new OptimizedMultiClientManager(
                 useSharedChannels: true,    // 啟用通道共享 / Enable channel sharing
                 imageCacheMaxMB: 100        // 100MB 圖片快取 / 100MB image cache
             );
 
-            // 2. 設定事件處理 / Setup event handlers
+            // 2. Setup event handlers
             manager.OnClientLog += (index, message) =>
             {
                 Console.WriteLine($"[Client {index}] {message}");
@@ -38,19 +38,19 @@ namespace LIB_Define.RPC
                 Console.WriteLine($"Client {index} 收到圖片 / received image: {image.Width}x{image.Height}");
             };
 
-            // 3. 從配置文件初始化客戶端 / Initialize clients from config
+            // 3. Initialize clients from config
             var config = MultiClientConfig.Load("./Config/multi_client_config.json");
             int created = manager.InitializeClients(config);
             Console.WriteLine($"已創建 / Created {created} 個客戶端 / clients");
 
-            // 4. 並發連接所有客戶端 / Connect all clients concurrently
+            // 4. Connect all clients concurrently
             Console.WriteLine("正在連接客戶端... / Connecting clients...");
             int connected = await manager.ConnectAllAsync(maxConcurrent: 4);
             Console.WriteLine($"已連接 / Connected {connected} 個客戶端 / clients");
 
-            // 5. 廣播訊息到所有客戶端 / Broadcast message to all clients
+            // 5. Broadcast message to all clients
             var data = new { Message = "Hello", Timestamp = DateTime.Now };
-            var results = await manager.BroadcastJsonAsync("test", data);
+            var results = await manager.SendJsonAsync("test", data);
             Console.WriteLine($"廣播成功 / Broadcast successful: {results.Count} 個客戶端 / clients");
 
             // 6. 獲取統計資訊 / Get statistics
@@ -62,7 +62,7 @@ namespace LIB_Define.RPC
         }
 
         /// <summary>
-        /// 選擇性客戶端操作範例 / Selective client operations example
+        /// 選擇客戶端範例
         /// </summary>
         public static async Task SelectiveClientsExample()
         {
@@ -79,7 +79,7 @@ namespace LIB_Define.RPC
             await manager.ConnectClientsAsync(0, 2, 4, 6);
 
             // 只發送到特定客戶端 / Send to specific clients only
-            var results = await manager.BroadcastJsonAsync(
+            var results = await manager.SendJsonAsync(
                 "selective",
                 new { Target = "特定客戶端 / Specific clients" },
                 0, 2  // 只發送到客戶端 0 和 2 / Only to clients 0 and 2
