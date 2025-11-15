@@ -124,6 +124,11 @@ namespace LIB_RPC
                     if (_pending.TryRemove(ack?.Id, out var tcs)) tcs.TrySetResult(ack);
                     OnJsonAck?.Invoke(ack);
                 }
+                // Stream ended normally
+            }
+            catch (RpcException rpcEx) when (rpcEx.StatusCode == StatusCode.Cancelled || rpcEx.StatusCode == StatusCode.OK)
+            {
+                // Stream cancelled or ended normally, no error
             }
             catch (Exception ex)
             {
@@ -182,6 +187,11 @@ namespace LIB_RPC
                     }
                     OnServerJson?.Invoke(msg);
                 }
+                // Stream ended normally
+            }
+            catch (RpcException rpcEx) when (rpcEx.StatusCode == StatusCode.Cancelled || rpcEx.StatusCode == StatusCode.OK)
+            {
+                // Stream cancelled or ended normally, no error
             }
             catch (Exception ex)
             {
@@ -372,6 +382,11 @@ namespace LIB_RPC
                         currentPath = null;
                     }
                 }
+                // Stream ended normally
+            }
+            catch (RpcException rpcEx) when (rpcEx.StatusCode == StatusCode.Cancelled || rpcEx.StatusCode == StatusCode.OK)
+            {
+                // Stream cancelled or ended normally, no error
             }
             catch (Exception ex)
             {
@@ -393,6 +408,11 @@ namespace LIB_RPC
                         OnServerByteData?.Invoke(byteData.Type, byteData.Data.ToByteArray(), byteData.Metadata);
                     }
                 }
+                // Stream ended normally
+            }
+            catch (RpcException rpcEx) when (rpcEx.StatusCode == StatusCode.Cancelled || rpcEx.StatusCode == StatusCode.OK)
+            {
+                // Stream cancelled or ended normally, no error
             }
             catch (Exception ex)
             {
