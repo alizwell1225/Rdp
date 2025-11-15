@@ -13,8 +13,8 @@ using System.Threading.Tasks;
 namespace LIB_Define.RPC.Client
 {
     /// <summary>
-    /// Optimized manager for multiple RPC clients with shared resources and efficient image transmission.
-    /// This class addresses performance issues when using Dictionary with many RpcClient instances.
+    /// 優化的多客戶端管理器 - 提供連接池和圖片快取功能
+    /// Optimized manager for multiple RPC clients with connection pooling and image caching
     /// </summary>
     public class OptimizedMultiClientManager : IDisposable
     {
@@ -24,28 +24,87 @@ namespace LIB_Define.RPC.Client
         private readonly int _imageCacheMaxSize;
         private bool _disposed = false;
 
-        /// <summary>
-        /// Event raised when any client logs a message
-        /// </summary>
-        public event Action<int, string>? OnClientLog;
+        #region 事件 / Events (所有 RpcClient 事件 / All RpcClient Events)
 
         /// <summary>
-        /// Event raised when any client connection state changes
+        /// 當客戶端記錄訊息時觸發 / Triggered when client logs a message
         /// </summary>
-        public event Action<int, bool>? OnClientConnectionStateChanged;
+        public event Action<int, string>? OnLog;
 
         /// <summary>
-        /// Event raised when image is received by any client
+        /// 當客戶端連接狀態改變時觸發 / Triggered when client connection state changes
         /// </summary>
-        public event Action<int, ShowPictureType, Image>? OnClientImageReceived;
-        public event Action<int,  Image>? OnImageReceived;
-        public event Action<int, string, byte[],string>? OnServerByteData;
+        public event Action<int, bool>? OnConnected;
 
         /// <summary>
-        /// Creates a new optimized multi-client manager
+        /// 當客戶端連接錯誤時觸發 / Triggered when client connection error occurs
         /// </summary>
-        /// <param name="useSharedChannels">Enable channel pooling for better resource utilization</param>
-        /// <param name="imageCacheMaxMB">Maximum size of image cache in MB (0 to disable)</param>
+        public event Action<int, string>? OnConnectionError;
+
+        /// <summary>
+        /// 當收到伺服器檔案時觸發 / Triggered when server file is received
+        /// </summary>
+        public event Action<int, string>? OnServerFileReceived;
+
+        /// <summary>
+        /// 當收到伺服器 JSON 訊息時觸發 / Triggered when server JSON message is received
+        /// </summary>
+        public event Action<int, JsonMessage>? OnServerJsonReceived;
+
+        /// <summary>
+        /// 當收到伺服器圖片時觸發 / Triggered when server image is received
+        /// </summary>
+        public event Action<int, ShowPictureType, Image>? OnServerImageReceived;
+
+        /// <summary>
+        /// 當收到伺服器圖片路徑時觸發 / Triggered when server image path is received
+        /// </summary>
+        public event Action<int, ShowPictureType, string>? OnServerImagePathReceived;
+
+        /// <summary>
+        /// 當收到伺服器位元組資料時觸發 / Triggered when server byte data is received
+        /// </summary>
+        public event Action<int, string, byte[], string>? OnServerByteDataReceived;
+
+        /// <summary>
+        /// 當上傳進度更新時觸發 / Triggered when upload progress updates
+        /// </summary>
+        public event Action<int, string, double>? OnUploadProgress;
+
+        /// <summary>
+        /// 當下載進度更新時觸發 / Triggered when download progress updates
+        /// </summary>
+        public event Action<int, string, double>? OnDownloadProgress;
+
+        /// <summary>
+        /// 當截圖完成時觸發 / Triggered when screenshot is completed
+        /// </summary>
+        public event Action<int, Image>? OnScreenshotReceived;
+
+        /// <summary>
+        /// 當截圖進度更新時觸發 / Triggered when screenshot progress updates
+        /// </summary>
+        public event Action<int, double>? OnScreenshotProgress;
+
+        /// <summary>
+        /// 當收到圖片時觸發 / Triggered when image is received
+        /// </summary>
+        public event Action<int, Image>? OnImageReceived;
+
+        /// <summary>
+        /// 當壓力測試統計更新時觸發 / Triggered when stress test stats update
+        /// </summary>
+        public event Action<int, string>? OnStressTestStats;
+
+        #endregion
+
+        #region 建構與屬性 / Constructor and Properties
+
+        /// <summary>
+        /// 建立新的優化多客戶端管理器 / Creates a new optimized multi-client manager
+        /// </summary>
+        /// <param name="useSharedChannels">啟用連接池以節省資源 / Enable connection pooling to save resources</param>
+        /// <param name="imageCacheMaxMB">圖片快取最大容量(MB)，0 為停用 / Max image cache size in MB, 0 to disable</param>
         public OptimizedMultiClientManager(bool useSharedChannels = true, int imageCacheMaxMB = 100)
         {
             _useSharedChannels = useSharedChannels;
@@ -53,17 +112,17 @@ namespace LIB_Define.RPC.Client
         }
 
         /// <summary>
-        /// Gets the number of active clients
+        /// 客戶端總數 / Total number of clients
         /// </summary>
         public int ClientCount => _clients.Count;
 
         /// <summary>
-        /// Gets the number of connected clients
+        /// 已連接的客戶端數量 / Number of connected clients
         /// </summary>
-        public int ConnectedClientCount => _clients.Values.Count(c => c.IsConnected);
+        public int ConnectedCount => _clients.Values.Count(c => c.IsConnected);
 
         /// <summary>
-        /// Gets a specific client by index
+        /// 取得指定索引的客戶端 / Get client by index
         /// </summary>
         public RpcClient? GetClient(int index)
         {
@@ -71,19 +130,23 @@ namespace LIB_Define.RPC.Client
         }
 
         /// <summary>
-        /// Gets all client indices
+        /// 取得所有客戶端索引 / Get all client indices
         /// </summary>
-        public IEnumerable<int> GetClientIndices()
+        public IEnumerable<int> GetAllIndices()
         {
             return _clients.Keys;
         }
 
+        #endregion
+
+        #region 初始化與管理 / Initialization and Management
+
         /// <summary>
-        /// Creates and initializes multiple clients from configuration
+        /// 從配置檔初始化多個客戶端 / Initialize multiple clients from configuration
         /// </summary>
-        /// <param name="config">Multi-client configuration</param>
-        /// <returns>Number of clients created</returns>
-        public int InitializeClients(MultiClientConfig config)
+        /// <param name="config">多客戶端配置 / Multi-client configuration</param>
+        /// <returns>成功建立的客戶端數量 / Number of clients created</returns>
+        public int Initialize(MultiClientConfig config)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(OptimizedMultiClientManager));
@@ -98,19 +161,15 @@ namespace LIB_Define.RPC.Client
                     {
                         var client = new RpcClient(clientRef.ConfigPath, clientRef.Index);
                         
-                        // Wire up events
-                        client.ActionOnLog += (idx, msg) => OnClientLog?.Invoke(idx, msg);
-                        client.ActionConnectedState += (idx, connected) => OnClientConnectionStateChanged?.Invoke(idx, connected);
-                        client.ActionOnServerImage += (idx, type, img) => OnClientImageReceived?.Invoke(idx, type, img);
-                        client.ActionImage += (idx, image) => OnImageReceived?.Invoke(idx, image);
-                        client.ActionOnServerByteData += (idx, type, byteData, metaData) =>
-                            OnServerByteData?.Invoke(idx, type, byteData, metaData);
+                        // 綁定所有事件 / Wire up all events
+                        WireClientEvents(client);
+
                         _clients[clientRef.Index] = client;
                         created++;
                     }
                     catch (Exception ex)
                     {
-                        OnClientLog?.Invoke(clientRef.Index, $"Failed to create client: {ex.Message}");
+                        OnLog?.Invoke(clientRef.Index, $"Failed to create client: {ex.Message}");
                     }
                 }
             }
@@ -119,7 +178,7 @@ namespace LIB_Define.RPC.Client
         }
 
         /// <summary>
-        /// Adds a single client to the manager
+        /// 新增單一客戶端 / Add a single client
         /// </summary>
         public void AddClient(int index, RpcClient client)
         {
@@ -129,16 +188,14 @@ namespace LIB_Define.RPC.Client
             if (_clients.ContainsKey(index))
                 throw new InvalidOperationException($"Client with index {index} already exists");
 
-            // Wire up events
-            client.ActionOnLog += (idx, msg) => OnClientLog?.Invoke(idx, msg);
-            client.ActionConnectedState += (idx, connected) => OnClientConnectionStateChanged?.Invoke(idx, connected);
-            client.ActionOnServerImage += (idx, type, img) => OnClientImageReceived?.Invoke(idx, type, img);
+            // 綁定所有事件 / Wire up all events
+            WireClientEvents(client);
 
             _clients[index] = client;
         }
 
         /// <summary>
-        /// Removes a client from the manager
+        /// 移除客戶端 / Remove a client
         /// </summary>
         public bool RemoveClient(int index)
         {
@@ -146,10 +203,35 @@ namespace LIB_Define.RPC.Client
         }
 
         /// <summary>
-        /// Connects all clients concurrently for faster startup
+        /// 綁定客戶端所有事件 / Wire up all client events
         /// </summary>
-        /// <param name="maxConcurrent">Maximum number of concurrent connections (0 for unlimited)</param>
-        /// <returns>Number of successfully connected clients</returns>
+        private void WireClientEvents(RpcClient client)
+        {
+            client.ActionOnLog += (idx, msg) => OnLog?.Invoke(idx, msg);
+            client.ActionConnectedState += (idx, connected) => OnConnected?.Invoke(idx, connected);
+            client.ActionOnConnectionError += (idx, error) => OnConnectionError?.Invoke(idx, error);
+            client.ActionOnServerFileCompleted += (idx, path) => OnServerFileReceived?.Invoke(idx, path);
+            client.ActionOnServerJson += (idx, json) => OnServerJsonReceived?.Invoke(idx, json);
+            client.ActionOnServerImage += (idx, type, img) => OnServerImageReceived?.Invoke(idx, type, img);
+            client.ActionOnServerImagePath += (idx, type, path) => OnServerImagePathReceived?.Invoke(idx, type, path);
+            client.ActionOnServerByteData += (idx, type, data, metadata) => OnServerByteDataReceived?.Invoke(idx, type, data, metadata);
+            client.ActionOnUploadProgress += (idx, path, progress) => OnUploadProgress?.Invoke(idx, path, progress);
+            client.ActionOnDownloadProgress += (idx, path, progress) => OnDownloadProgress?.Invoke(idx, path, progress);
+            client.ActionScreenshot += (idx, img) => OnScreenshotReceived?.Invoke(idx, img);
+            client.ActionScreenshotProgress += (idx, progress) => OnScreenshotProgress?.Invoke(idx, progress);
+            client.ActionImage += (idx, img) => OnImageReceived?.Invoke(idx, img);
+            client.ActionOnLogStressStats += (idx, stats) => OnStressTestStats?.Invoke(idx, stats);
+        }
+
+        #endregion
+
+        #region 連接管理 / Connection Management
+
+        /// <summary>
+        /// 連接所有客戶端（並發執行，速度快）/ Connect all clients concurrently (fast)
+        /// </summary>
+        /// <param name="maxConcurrent">最大同時連接數，0 為不限制 / Max concurrent connections, 0 for unlimited</param>
+        /// <returns>成功連接的客戶端數量 / Number of successfully connected clients</returns>
         public async Task<int> ConnectAllAsync(int maxConcurrent = 4)
         {
             if (_disposed)
@@ -193,9 +275,9 @@ namespace LIB_Define.RPC.Client
         }
 
         /// <summary>
-        /// Connects specific clients by index
+        /// 連接指定的客戶端 / Connect specific clients
         /// </summary>
-        public async Task<int> ConnectClientsAsync(params int[] indices)
+        public async Task<int> ConnectAsync(params int[] indices)
         {
             var tasks = new List<Task<bool>>();
 
@@ -222,10 +304,14 @@ namespace LIB_Define.RPC.Client
             return results.Count(r => r);
         }
 
+        #endregion
+
+        #region 廣播與批次操作 / Broadcasting and Batch Operations
+
         /// <summary>
-        /// Sends a JSON message to multiple clients concurrently
+        /// 廣播 JSON 訊息到多個客戶端 / Broadcast JSON message to multiple clients
         /// </summary>
-        public async Task<Dictionary<int, bool>> SendJsonAsync<T>(string type, T obj, params int[] targetIndices)
+        public async Task<Dictionary<int, bool>> BroadcastAsync<T>(string type, T obj, params int[] targetIndices)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(OptimizedMultiClientManager));
@@ -296,8 +382,12 @@ namespace LIB_Define.RPC.Client
             return new Dictionary<int, Image?>(results);
         }
 
+        #endregion
+
+        #region 快取與統計 / Cache and Statistics
+
         /// <summary>
-        /// Caches an image for potential reuse
+        /// 快取圖片以供重複使用 / Cache an image for reuse
         /// </summary>
         public void CacheImage(string key, byte[] imageData)
         {
@@ -305,8 +395,8 @@ namespace LIB_Define.RPC.Client
             {
                 _imageCache[key] = imageData;
                 
-                // Simple cache size management - remove oldest if over size
-                if (_imageCache.Count > 3) // Max 3 cached images
+                // 簡單的快取大小管理 - 如果超過大小則移除最舊的 / Simple cache size management
+                if (_imageCache.Count > 100) // 最多 100 張快取圖片 / Max 100 cached images
                 {
                     var firstKey = _imageCache.Keys.First();
                     _imageCache.TryRemove(firstKey, out _);
@@ -315,19 +405,19 @@ namespace LIB_Define.RPC.Client
         }
 
         /// <summary>
-        /// Clears the image cache
+        /// 清除圖片快取 / Clear image cache
         /// </summary>
-        public void ClearImageCache()
+        public void ClearCache()
         {
             _imageCache.Clear();
         }
 
         /// <summary>
-        /// Gets statistics about the manager
+        /// 取得統計資訊 / Get statistics
         /// </summary>
-        public ManagerStatistics GetStatistics()
+        public Statistics GetStats()
         {
-            return new ManagerStatistics
+            return new Statistics
             {
                 TotalClients = _clients.Count,
                 ConnectedClients = _clients.Values.Count(c => c.IsConnected),
@@ -337,10 +427,12 @@ namespace LIB_Define.RPC.Client
             };
         }
 
+        #endregion
+
         /// <summary>
-        /// Performs an action on all clients
+        /// 對所有客戶端執行操作 / Execute action on all clients
         /// </summary>
-        public void ForEachClient(Action<RpcClient> action)
+        public void ForEach(Action<RpcClient> action)
         {
             foreach (var client in _clients.Values)
             {
@@ -356,9 +448,9 @@ namespace LIB_Define.RPC.Client
         }
 
         /// <summary>
-        /// Performs an async action on all clients concurrently
+        /// 對所有客戶端執行非同步操作 / Execute async action on all clients
         /// </summary>
-        public async Task ForEachClientAsync(Func<RpcClient, Task> action, int maxConcurrent = 4)
+        public async Task ForEachAsync(Func<RpcClient, Task> action, int maxConcurrent = 4)
         {
             var semaphore = maxConcurrent > 0 ? new SemaphoreSlim(maxConcurrent) : null;
 
@@ -387,6 +479,10 @@ namespace LIB_Define.RPC.Client
             }
         }
 
+        #endregion
+
+        #region 資源釋放 / Resource Disposal
+
         public void Dispose()
         {
             if (_disposed) return;
@@ -395,13 +491,15 @@ namespace LIB_Define.RPC.Client
             _imageCache.Clear();
             _clients.Clear();
 
-            // If using shared channels, they'll be cleaned up by the pool
+            // 如果使用共享通道，它們會由連接池清理 / Shared channels will be cleaned up by the pool
         }
 
+        #endregion
+
         /// <summary>
-        /// Statistics about the manager's operation
+        /// 統計資訊 / Statistics information
         /// </summary>
-        public class ManagerStatistics
+        public class Statistics
         {
             public int TotalClients { get; set; }
             public int ConnectedClients { get; set; }
