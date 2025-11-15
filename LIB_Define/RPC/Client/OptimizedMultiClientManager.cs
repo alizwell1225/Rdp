@@ -396,7 +396,7 @@ namespace LIB_Define.RPC.Client
                 _imageCache[key] = imageData;
                 
                 // 簡單的快取大小管理 - 如果超過大小則移除最舊的 / Simple cache size management
-                if (_imageCache.Count > 100) // 最多 100 張快取圖片 / Max 100 cached images
+                if (_imageCache.Count > 3) // 最多 3 張快取圖片 / Max 3 cached images
                 {
                     var firstKey = _imageCache.Keys.First();
                     _imageCache.TryRemove(firstKey, out _);
@@ -478,8 +478,6 @@ namespace LIB_Define.RPC.Client
                 semaphore?.Dispose();
             }
         }
-
-        #endregion
 
         #region 資源釋放 / Resource Disposal
 
