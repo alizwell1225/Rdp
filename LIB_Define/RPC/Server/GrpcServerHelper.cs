@@ -10,7 +10,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace LIB_Define.RPC
+namespace LIB_Define.RPC.Server
 {
     /// <summary>
     /// Helper class that wraps gRPC server API for easy integration in WinForms applications.
@@ -357,7 +357,7 @@ namespace LIB_Define.RPC
                     var resized = new Bitmap(newWidth, newHeight);
                     using (var graphics = Graphics.FromImage(resized))
                     {
-                        graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                        graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
                         graphics.DrawImage(originalImage, 0, 0, newWidth, newHeight);
                     }
                     
@@ -498,9 +498,9 @@ namespace LIB_Define.RPC
                 var fileBytes = await File.ReadAllBytesAsync(filePath, cancellationToken);
                 var fileName = Path.GetFileName(filePath);
                 
-                var metadata = System.Text.Json.JsonSerializer.Serialize(new
+                var metadata = JsonSerializer.Serialize(new
                 {
-                    fileName = fileName,
+                    fileName,
                     fileSize = fileBytes.Length,
                     timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
                 });
@@ -570,7 +570,7 @@ namespace LIB_Define.RPC
                     var resizedImage = new Bitmap(newWidth, newHeight);
                     using (var graphics = Graphics.FromImage(resizedImage))
                     {
-                        graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                        graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
                         graphics.DrawImage(originalImage, 0, 0, newWidth, newHeight);
                     }
                     
@@ -616,9 +616,9 @@ namespace LIB_Define.RPC
                 }
                 
                 var fileName = Path.GetFileName(imagePath);
-                var metadata = System.Text.Json.JsonSerializer.Serialize(new
+                var metadata = JsonSerializer.Serialize(new
                 {
-                    fileName = fileName,
+                    fileName,
                     pictureType = (int)pictureType,
                     width = imageToSend.Width,
                     height = imageToSend.Height,
@@ -691,7 +691,7 @@ namespace LIB_Define.RPC
                     var resizedImage = new Bitmap(newWidth, newHeight);
                     using (var graphics = Graphics.FromImage(resizedImage))
                     {
-                        graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                        graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
                         graphics.DrawImage(originalImage, 0, 0, newWidth, newHeight);
                     }
 
@@ -737,7 +737,7 @@ namespace LIB_Define.RPC
                 }
 
 
-                var metadata = System.Text.Json.JsonSerializer.Serialize(new
+                var metadata = JsonSerializer.Serialize(new
                 {
                     pictureType = (int)pictureType,
                     width = imageToSend.Width,

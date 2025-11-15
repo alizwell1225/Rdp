@@ -1,3 +1,5 @@
+using LIB_Define.RPC.Client_org;
+
 namespace LIB_Define.RPC
 {
     /// <summary>

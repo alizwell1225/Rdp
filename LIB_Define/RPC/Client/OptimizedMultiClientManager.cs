@@ -1,4 +1,5 @@
 using LIB_Define.RDP;
+using LIB_Define.RPC.Client_org;
 using LIB_RPC;
 using LIB_RPC.Abstractions;
 using System;
