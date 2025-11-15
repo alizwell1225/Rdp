@@ -13,6 +13,7 @@ namespace LIB_Define.RPC.Client
     /// </summary>
     public static class MultiClientManager
     {
+        public static event Action<int,bool> EvConfigurationSaved;
         /// <summary>
         /// Show multi-client configuration dialog
         /// </summary>
@@ -34,6 +35,7 @@ namespace LIB_Define.RPC.Client
 
                 using (var form = new MultiClientConfigForm(configPath))
                 {
+                    form.EvConfigurationSaved += EvConfigurationSaved;
                     return form.ShowDialog() == DialogResult.OK;
                 }
             }
