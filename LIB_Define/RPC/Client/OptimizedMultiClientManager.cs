@@ -38,6 +38,8 @@ namespace LIB_Define.RPC.Client
         /// Event raised when image is received by any client
         /// </summary>
         public event Action<int, ShowPictureType, Image>? OnClientImageReceived;
+        public event Action<int,  Image>? OnImageReceived;
+        public event Action<int, string, byte[],string>? OnServerByteData;
 
         /// <summary>
         /// Creates a new optimized multi-client manager
@@ -100,7 +102,9 @@ namespace LIB_Define.RPC.Client
                         client.ActionOnLog += (idx, msg) => OnClientLog?.Invoke(idx, msg);
                         client.ActionConnectedState += (idx, connected) => OnClientConnectionStateChanged?.Invoke(idx, connected);
                         client.ActionOnServerImage += (idx, type, img) => OnClientImageReceived?.Invoke(idx, type, img);
-
+                        client.ActionImage += (idx, image) => OnImageReceived?.Invoke(idx, image);
+                        client.ActionOnServerByteData += (idx, type, byteData, metaData) =>
+                            OnServerByteData?.Invoke(idx, type, byteData, metaData);
                         _clients[clientRef.Index] = client;
                         created++;
                     }
@@ -302,7 +306,7 @@ namespace LIB_Define.RPC.Client
                 _imageCache[key] = imageData;
                 
                 // Simple cache size management - remove oldest if over size
-                if (_imageCache.Count > 100) // Max 100 cached images
+                if (_imageCache.Count > 3) // Max 3 cached images
                 {
                     var firstKey = _imageCache.Keys.First();
                     _imageCache.TryRemove(firstKey, out _);
