@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -147,7 +148,82 @@ namespace LIB_Define.RPC.Client
         /// </summary>
         /// <param name="config">多客戶端配置 / Multi-client configuration</param>
         /// <returns>成功建立的客戶端數量 / Number of clients created</returns>
-        public int Initialize(MultiClientConfig config)
+        //public int Initialize(MultiClientConfig config,bool modifyFLag=false)
+        //{
+        //    if (_disposed)
+        //        throw new ObjectDisposedException(nameof(OptimizedMultiClientManager));
+
+        //    int created = 0;
+
+        //    foreach (var clientRef in config.Clients)
+        //    {
+        //        if (clientRef.Enabled && !_clients.ContainsKey(clientRef.Index))
+        //        {
+        //            try
+        //            {
+        //                var client = new RpcClient(clientRef.ConfigPath, clientRef.Index);
+
+        //                // 綁定所有事件 / Wire up all events
+        //                WireClientEvents(client);
+
+        //                _clients[clientRef.Index] = client;
+        //                created++;
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                OnLog?.Invoke(clientRef.Index, $"Failed to create client: {ex.Message}");
+        //            }
+        //        }
+        //        else if (!clientRef.Enabled)
+        //        {
+        //            try
+        //            {
+        //                if (modifyFLag == true)
+        //                {
+        //                    if (_clients.ContainsKey(clientRef.Index))
+        //                    {
+        //                        try
+        //                        {
+        //                            var client = _clients[clientRef.Index];
+        //                            UnWireClientEvents(client);
+        //                            _clients.Remove(clientRef.Index);
+        //                            created--;
+        //                        }
+        //                        catch (Exception e)
+        //                        {
+        //                            Console.WriteLine(e);
+        //                        }
+
+        //                    }
+        //                    else
+        //                    {
+        //                        try
+        //                        {
+        //                            var client = new RpcClient(clientRef.ConfigPath, clientRef.Index);
+
+        //                            // 綁定所有事件 / Wire up all events
+        //                            WireClientEvents(client);
+
+        //                            _clients[clientRef.Index] = client;
+        //                            created++;
+        //                        }
+        //                        catch (Exception ex)
+        //                        {
+        //                            OnLog?.Invoke(clientRef.Index, $"Failed to create client: {ex.Message}");
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //            catch (Exception e)
+        //            {
+        //            }
+        //        }
+        //    }
+
+        //    return created;
+        //}
+
+        public int Initialize(MultiClientConfig config, bool modifyFlag = false)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(OptimizedMultiClientManager));
@@ -156,27 +232,79 @@ namespace LIB_Define.RPC.Client
 
             foreach (var clientRef in config.Clients)
             {
-                if (clientRef.Enabled && !_clients.ContainsKey(clientRef.Index))
-                {
-                    try
-                    {
-                        var client = new RpcClient(clientRef.ConfigPath, clientRef.Index);
-                        
-                        // 綁定所有事件 / Wire up all events
-                        WireClientEvents(client);
+                bool shouldHaveClient = clientRef.Enabled;
+                bool alreadyHasClient = _clients.ContainsKey(clientRef.Index);
 
-                        _clients[clientRef.Index] = client;
-                        created++;
-                    }
-                    catch (Exception ex)
+                if (!modifyFlag)
+                {
+                    // === 一般初始化模式 ===
+                    if (shouldHaveClient && !alreadyHasClient)
                     {
-                        OnLog?.Invoke(clientRef.Index, $"Failed to create client: {ex.Message}");
+                        created += CreateClient(clientRef);
+                    }
+                    continue;
+                }
+
+                // === modifyFlag = true ===
+                // 依照 Enabled 決定保留或刪除
+
+                if (shouldHaveClient)
+                {
+                    // Enabled==true → 應該保留
+                    if (!alreadyHasClient)
+                    {
+                        created += CreateClient(clientRef);
+                    }
+                }
+                else
+                {
+                    // Enabled==false → 應該刪除
+                    if (alreadyHasClient)
+                    {
+                        RemoveClientDic(clientRef.Index);
+                        // 注意：刪除不算 created++
                     }
                 }
             }
 
             return created;
         }
+
+
+        private int CreateClient(ClientInstanceReference clientRef)
+        {
+            try
+            {
+                var client = new RpcClient(clientRef.ConfigPath, clientRef.Index);
+                WireClientEvents(client);
+                _clients[clientRef.Index] = client;
+                return 1;
+            }
+            catch (Exception ex)
+            {
+                OnLog?.Invoke(clientRef.Index, $"Failed to create client: {ex.Message}");
+                return 0;
+            }
+        }
+
+        private async void RemoveClientDic(int index)
+        {
+            try
+            {
+                if (_clients.TryGetValue(index, out var client))
+                {
+                    UnWireClientEvents(client);
+                    client.SetAutoConnectFlag(false);
+                    await client.StopConnect();
+                    _clients.Remove(index);
+                }
+            }
+            catch (Exception ex)
+            {
+                OnLog?.Invoke(index, $"Failed to remove client: {ex.Message}");
+            }
+        }
+
 
         /// <summary>
         /// 新增單一客戶端 / Add a single client
@@ -224,6 +352,24 @@ namespace LIB_Define.RPC.Client
             client.ActionOnLogStressStats += (idx, stats) => OnStressTestStats?.Invoke(idx, stats);
         }
 
+        private void UnWireClientEvents(RpcClient client)
+        {
+            client.ActionOnLog -= OnLog;
+            client.ActionConnectedState -=  OnConnected;
+            client.ActionOnConnectionError -= OnConnectionError;
+            client.ActionOnServerFileCompleted -= OnServerFileReceived;
+            client.ActionOnServerJson -= OnServerJsonReceived;
+            client.ActionOnServerImage -= OnServerImageReceived;
+            client.ActionOnServerImagePath -= OnServerImagePathReceived;
+            client.ActionOnServerByteData -= OnServerByteDataReceived;
+            client.ActionOnUploadProgress -= OnUploadProgress;
+            client.ActionOnDownloadProgress -= OnDownloadProgress;
+            client.ActionScreenshot -= OnScreenshotReceived;
+            client.ActionScreenshotProgress -= OnScreenshotProgress;
+            client.ActionImage -= OnImageReceived;
+            client.ActionOnLogStressStats -= OnStressTestStats;
+        }
+
         #endregion
 
         #region 連接管理 / Connection Management
@@ -233,7 +379,7 @@ namespace LIB_Define.RPC.Client
         /// </summary>
         /// <param name="maxConcurrent">最大同時連接數，0 為不限制 / Max concurrent connections, 0 for unlimited</param>
         /// <returns>成功連接的客戶端數量 / Number of successfully connected clients</returns>
-        public async Task<int> ConnectAllAsync(int maxConcurrent = 4)
+        public async Task<int> ConnectAllAsync(MultiClientConfig config, int maxConcurrent = 0)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(OptimizedMultiClientManager));
@@ -252,7 +398,8 @@ namespace LIB_Define.RPC.Client
                     {
                         try
                         {
-                            await client.StartConnect();
+                            var c = config.Clients.Find(r => r.Index == client.Index);
+                            await client.StartConnect(c.Enabled);
                             return client.IsConnected;
                         }
                         catch
@@ -508,5 +655,6 @@ namespace LIB_Define.RPC.Client
 
             public string CacheSizeMB => $"{CacheSizeBytes / (1024.0 * 1024.0):F2} MB";
         }
+
     }
 }

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Grpc.Core;
 
 namespace LIB_Define.RPC.Client
 {
@@ -14,6 +15,7 @@ namespace LIB_Define.RPC.Client
     public static class MultiClientManager
     {
         public static event Action<int,bool> EvConfigurationSaved;
+        private static string _configPath;
         /// <summary>
         /// Show multi-client configuration dialog
         /// </summary>
@@ -23,6 +25,7 @@ namespace LIB_Define.RPC.Client
         {
             try
             {
+                
                 // Normalize path
                 configPath = NormalizePath(configPath);
                 
@@ -35,8 +38,10 @@ namespace LIB_Define.RPC.Client
 
                 using (var form = new MultiClientConfigForm(configPath))
                 {
-                    form.EvConfigurationSaved += EvConfigurationSaved;
-                    return form.ShowDialog() == DialogResult.OK;
+                    var rtn = form.ShowDialog() == DialogResult.OK;
+                    if (rtn)
+                        form.EvConfigurationSaved += EvConfigurationSaved;
+                    return rtn;
                 }
             }
             catch (Exception ex)
@@ -57,7 +62,7 @@ namespace LIB_Define.RPC.Client
         public static MultiClientConfig LoadMultiClientConfig(string configPath = "./Config/multi_client_config.json")
         {
             configPath = NormalizePath(configPath);
-            
+            _configPath = configPath;
             if (File.Exists(configPath))
             {
                 return MultiClientConfig.Load(configPath);
@@ -156,5 +161,7 @@ namespace LIB_Define.RPC.Client
                 return path;
             return path.Replace('\\', '/');
         }
+
+        
     }
 }

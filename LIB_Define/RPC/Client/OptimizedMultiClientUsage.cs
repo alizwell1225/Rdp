@@ -101,7 +101,7 @@ namespace LIB_Define.RPC.Client
 
             // 4. 連接所有客戶端 / Connect all clients
             Console.WriteLine("Connecting clients...");
-            int connected = await manager.ConnectAllAsync(maxConcurrent: 4);
+            int connected = await manager.ConnectAllAsync(config,maxConcurrent: 4);
             Console.WriteLine($"Connected {connected} clients");
 
             // 5. 廣播訊息 / Broadcast message
@@ -142,7 +142,7 @@ namespace LIB_Define.RPC.Client
 
             var config = MultiClientConfig.Load("./Config/multi_client_config.json");
             manager.Initialize(config);
-            await manager.ConnectAllAsync(maxConcurrent: 4);
+            await manager.ConnectAllAsync(config, maxConcurrent: 4);
 
             // 對所有客戶端執行操作 / Execute on all clients
             await manager.ForEachAsync(async client =>
@@ -164,7 +164,7 @@ namespace LIB_Define.RPC.Client
 
             var config = MultiClientConfig.Load("./Config/multi_client_config.json");
             manager.Initialize(config);
-            await manager.ConnectAllAsync(maxConcurrent: 4);
+            await manager.ConnectAllAsync(config, maxConcurrent: 4);
 
             // 取得特定客戶端 / Get specific client
             var client5 = manager.GetClient(5);

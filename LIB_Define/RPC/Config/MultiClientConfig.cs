@@ -110,6 +110,19 @@ namespace LIB_Define.RPC.Client_org
                 return path;
             return path.Replace('\\', '/');
         }
+
+        public ClientInstanceReference GetConfigIndex(int i)
+        {
+            try
+            {
+                return Clients.Find(c => c.Index == i);
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
+            return null;
+        }
     }
 
     /// <summary>

@@ -57,12 +57,13 @@ public class RpcClient
     }
 
     public bool IsConnected { get; private set; }
-    private bool autoReStart { get; } = true;
+    private bool autoReStart { get; set; } = true;
     public bool IsEnableConnect { get; private set; }
 
     public async void LoadConfig(string path)
     {
         bool runflag = IsConnected && IsEnableConnect;
+
         if (IsConnected)
         {
             await DisconnectAsync();
@@ -124,7 +125,7 @@ public class RpcClient
             //}
         }
         await Task.Delay(10);
-        await _api.ConnectAsync(retry);
+        await _api?.ConnectAsync(retry);
     }
 
     public Action<int, string, byte[], string> ActionOnServerByteData;
@@ -305,8 +306,9 @@ public class RpcClient
         AppendTextSafe("Screenshot 顯示\r\n");
     }
 
-    public async Task StartConnect()
+    public async Task StartConnect(bool autoFlag=true)
     {
+        SetAutoConnectFlag(autoFlag);
         await Connect();
     }
 
@@ -322,6 +324,14 @@ public class RpcClient
         }
         catch (Exception e)
         {
+        }
+    }
+
+    public void SetAutoConnectFlag(bool flag)
+    {
+        lock (_connectionLock)
+        {
+            autoReStart = flag;
         }
     }
 
