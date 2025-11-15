@@ -20,6 +20,7 @@ namespace LIB_Define.RPC.Client_org
                 {
                     Index = i,
                     Enabled = true,
+                    DisplayName = $"Client {i}",
                     ConfigPath = NormalizePath($"./Config/client_{i}_config.json")
                 });
             }
@@ -82,6 +83,7 @@ namespace LIB_Define.RPC.Client_org
                 {
                     Index = Clients.Count,
                     Enabled = true,
+                    DisplayName = $"Client {Clients.Count}",
                     ConfigPath = NormalizePath($"./Config/client_{Clients.Count}_config.json")
                 });
             }
@@ -118,6 +120,7 @@ namespace LIB_Define.RPC.Client_org
     {
         public int Index { get; set; }
         public bool Enabled { get; set; }
+        public string DisplayName { get; set; } = string.Empty;
         public string ConfigPath { get; set; } = string.Empty;
 
         /// <summary>

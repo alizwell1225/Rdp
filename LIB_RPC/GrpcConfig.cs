@@ -1,5 +1,6 @@
 using System.Drawing.Drawing2D;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace LIB_RPC
 {
@@ -8,6 +9,7 @@ namespace LIB_RPC
         public string Host { get;  set; } = "localhost";
         public int Port { get;  set; } = 50051;
         public string BaseAddress => $"{Host}:{Port}";
+        [JsonIgnore]
         public string Password { get; private set; } = "changeme"; // simple shared secret metadata
         public int MaxChunkSizeBytes { get;  set; } = 100 * 1024 * 1024; // 64KB default
         public string StorageRoot { get;  set; } = Path.Combine(AppContext.BaseDirectory, "Storage");

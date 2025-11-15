@@ -63,7 +63,9 @@ namespace LIB_Define.RPC
                 
                 row.Cells["colIndex"].Value = clientRef.Index;
                 row.Cells["colEnabled"].Value = clientRef.Enabled;
-                row.Cells["colDisplayName"].Value = $"Client {clientRef.Index}";
+                row.Cells["colDisplayName"].Value = string.IsNullOrEmpty(clientRef.DisplayName) 
+                    ? $"Client {clientRef.Index}" 
+                    : clientRef.DisplayName;
                 row.Cells["colHost"].Value = config.Host;
                 row.Cells["colPort"].Value = config.Port;
                 row.Cells["colLogPath"].Value = config.LogFilePath;
@@ -91,6 +93,7 @@ namespace LIB_Define.RPC
 
                     // Update enabled state and config path in the reference
                     clientRef.Enabled = row.Cells["colEnabled"].Value is bool enabled && enabled;
+                    clientRef.DisplayName = row.Cells["colDisplayName"].Value?.ToString() ?? $"Client {i}";
                     var configPath = row.Cells["colConfigPath"].Value?.ToString() ?? $"./Config/client_{i}_config.json";
                     clientRef.ConfigPath = NormalizePath(configPath);
                     
