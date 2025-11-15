@@ -310,6 +310,21 @@ public class RpcClient
         await Connect();
     }
 
+    public async Task StopConnect()
+    {
+        try
+        {
+            if (IsConnected)
+            {
+                _sendCts.Cancel();
+            }
+            await DisconnectAsync();
+        }
+        catch (Exception e)
+        {
+        }
+    }
+
     public async Task Connect(bool force=false)
     {
         IsEnableConnect = false;

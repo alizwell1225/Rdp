@@ -9,6 +9,7 @@ namespace LIB_Define.RPC
     {
         private MultiClientConfig _config;
         private readonly string _configFilePath;
+        public event Action<int,bool>? EvConfigurationSaved;
 
         public MultiClientConfigForm(string configFilePath)
         {
@@ -111,6 +112,7 @@ namespace LIB_Define.RPC
                     if (clientRef.Enabled)
                     {
                         clientRef.SaveConfig(config);
+                        EvConfigurationSaved?.Invoke(i,true);
                     }
                 }
 
