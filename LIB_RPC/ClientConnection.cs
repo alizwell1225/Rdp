@@ -3,11 +3,13 @@ using System.Text;
 using Grpc.Core;
 using Grpc.Net.Client;
 using RdpGrpc.Proto;
+using LIB_RPC.Optimizations;
 
 namespace LIB_RPC
 {
     /// <summary>
     /// Low-level client connection handling gRPC communication with the remote channel service.
+    /// OPTIMIZED: Uses BufferPool and RecyclableMemoryStream for better performance.
     /// </summary>
     public sealed class ClientConnection : IAsyncDisposable
     {
@@ -281,13 +283,18 @@ namespace LIB_RPC
             try
             {
                 var call = _client.Screenshot(new ScreenshotRequest { MonitorIndex = -1 }, headers: BuildAuth(), cancellationToken: ct);
-                using var ms = new MemoryStream();
+                
+                // OPTIMIZED: Use RecyclableMemoryStream instead of MemoryStream
+                using var ms = new RecyclableMemoryStream(1024 * 1024); // 1MB initial capacity
                 int total = -1; int received = 0;
                 while (await call.ResponseStream.MoveNext(ct))
                 {
                     var chunk = call.ResponseStream.Current;
                     if (!string.IsNullOrEmpty(chunk.Error)) throw new IOException(chunk.Error);
-                    if (chunk.Data.Length > 0) await ms.WriteAsync(chunk.Data.Memory, ct);
+                    if (chunk.Data.Length > 0) 
+                    {
+                        ms.Write(chunk.Data.Span);
+                    }
                     total = total < 0 ? chunk.TotalChunks : total;
                     received++;
                     if (total > 0)
@@ -343,7 +350,7 @@ namespace LIB_RPC
             try
             {
                 string? currentPath = null;
-                MemoryStream? ms = null;
+                RecyclableMemoryStream? ms = null; // OPTIMIZED: Use RecyclableMemoryStream
                 int total = -1; int received = 0;
                 while (await _filePushStream.ResponseStream.MoveNext(CancellationToken.None))
                 {
@@ -359,12 +366,14 @@ namespace LIB_RPC
                     if (currentPath == null)
                     {
                         currentPath = chunk.Path;
-                        ms = new MemoryStream();
+                        ms = new RecyclableMemoryStream(1024 * 1024); // 1MB initial capacity
                         total = chunk.TotalChunks;
                         received = 0;
                     }
                     if (chunk.Data.Length > 0)
-                        await ms!.WriteAsync(chunk.Data.Memory);
+                    {
+                        ms!.Write(chunk.Data.Span);
+                    }
                     received++;
                     if (total > 0)
                         OnServerFileProgress?.Invoke(currentPath, Math.Min(100.0, received * 100.0 / total));
@@ -374,8 +383,7 @@ namespace LIB_RPC
                         var saveDir = _config.StorageRoot;
                         Directory.CreateDirectory(saveDir);
                         var savePath = Path.Combine(saveDir, currentPath);
-                        ms!.Seek(0, SeekOrigin.Begin);
-                        await File.WriteAllBytesAsync(savePath, ms.ToArray());
+                        await File.WriteAllBytesAsync(savePath, ms!.ToArray());
                         OnServerFileCompleted?.Invoke(savePath);
                         ms.Dispose();
                         ms = null;
