@@ -3,9 +3,13 @@ using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using RdpGrpc.Proto;
 using LIB_RPC.Abstractions;
+using LIB_RPC.Optimizations;
 
 namespace LIB_RPC
 {
+    /// <summary>
+    /// OPTIMIZED: Uses BufferPool and CompressionHelper for better performance
+    /// </summary>
     public sealed class RemoteChannelService : RemoteChannel.RemoteChannelBase
     {
         private readonly GrpcConfig _config;

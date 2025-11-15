@@ -3,7 +3,7 @@ using System.IO;
 using System.Windows.Forms;
 using LIB_RPC;
 
-namespace LIB_Define.RPC
+namespace LIB_Define.RPC.ALL
 {
     /// <summary>
     /// Helper class for showing GrpcConfig dialog for RpcClient and RpcServer

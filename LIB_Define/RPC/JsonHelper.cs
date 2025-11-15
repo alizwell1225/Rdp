@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace LIB_Define.RPC.Client;
+namespace LIB_Define.RPC;
 
 public class JsonHelper
 {

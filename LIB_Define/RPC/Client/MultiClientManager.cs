@@ -1,16 +1,17 @@
 using LIB_Define.RDP;
+using LIB_Define.RPC.Client_org;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace LIB_Define.RPC
+namespace LIB_Define.RPC.Client
 {
     /// <summary>
     /// Helper class for managing multiple RpcClient instances
     /// </summary>
-    public static class MultiClientHelper
+    public static class MultiClientManager
     {
         /// <summary>
         /// Show multi-client configuration dialog

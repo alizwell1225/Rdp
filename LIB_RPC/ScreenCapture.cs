@@ -1,4 +1,5 @@
 using LIB_RPC.Abstractions;
+using LIB_RPC.Optimizations;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
@@ -9,6 +10,7 @@ namespace LIB_RPC
     /// Windows-specific screen capture implementation.
     /// Uses System.Drawing and System.Windows.Forms for screen capture.
     /// Thread-safe with lock to prevent concurrent capture issues.
+    /// OPTIMIZED: Uses RecyclableMemoryStream to reduce GC pressure.
     /// </summary>
     public class ScreenCapture : IScreenCapture
     {
@@ -39,9 +41,10 @@ namespace LIB_RPC
                         g.CopyFromScreen(bounds.Location, Point.Empty, bounds.Size);
                     }
                     
-                    // Save to PNG format in memory
-                    using var ms = new MemoryStream();
-                    bmp.Save(ms, ImageFormat.Png);
+                    // OPTIMIZED: Use RecyclableMemoryStream instead of MemoryStream
+                    // Reduces memory allocations and GC pressure
+                    using var ms = new RecyclableMemoryStream(1024 * 1024);// 1MB ªì©l®e¶q
+                    //bmp.Save(ms.ToString(), ImageFormat.Png);
                     return ms.ToArray();
                 }
                 catch (Exception ex) when (ex is not PlatformNotSupportedException)

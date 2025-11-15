@@ -17,4 +17,10 @@
 	  <ProjectReference Include="..\LIB_RDP\LIB_RDP.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Compile Update="RDP\FormMultiRdpSettings.cs">
+	    <SubType>Form</SubType>
+	  </Compile>
+	</ItemGroup>
+
 </Project>
