@@ -37,6 +37,7 @@ namespace LIB_Define.RDP
             btnCancel = new Button();
             btnApply = new Button();
             btnApplyTemplate = new Button();
+            btnImportClientConfigIPs = new Button();
             ((System.ComponentModel.ISupportInitialize)dgvSettings).BeginInit();
             SuspendLayout();
             // 
@@ -118,11 +119,22 @@ namespace LIB_Define.RDP
             btnApplyTemplate.UseVisualStyleBackColor = true;
             btnApplyTemplate.Click += btnApplyTemplate_Click;
             // 
+            // btnImportClientConfigIPs
+            // 
+            btnImportClientConfigIPs.Location = new Point(146, 442);
+            btnImportClientConfigIPs.Name = "btnImportClientConfigIPs";
+            btnImportClientConfigIPs.Size = new Size(160, 30);
+            btnImportClientConfigIPs.TabIndex = 6;
+            btnImportClientConfigIPs.Text = "匯入 Client Config IPs";
+            btnImportClientConfigIPs.UseVisualStyleBackColor = true;
+            btnImportClientConfigIPs.Click += btnImportClientConfigIPs_Click;
+            // 
             // FormProxySettings
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 482);
+            Controls.Add(btnImportClientConfigIPs);
             Controls.Add(btnApplyTemplate);
             Controls.Add(btnCancel);
             Controls.Add(btnApply);
@@ -148,5 +160,6 @@ namespace LIB_Define.RDP
         private DataGridViewTextBoxColumn Password;
         private Button btnApply;
         private Button btnApplyTemplate;
+        private Button btnImportClientConfigIPs;
     }
 }

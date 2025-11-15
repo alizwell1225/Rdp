@@ -439,6 +439,60 @@ namespace LIB_Define.RPC
             }
         }
 
+        private void btnImportRdpIPs_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Load RDP connections configuration
+                string rdpConfigPath = Path.Combine(AppContext.BaseDirectory, "Config", "Rdp_Connections.json");
+                
+                if (!File.Exists(rdpConfigPath))
+                {
+                    MessageBox.Show("未找到 RDP 連線配置檔案 (Rdp_Connections.json)\nRDP connection configuration file not found.",
+                        "配置檔案不存在 / File Not Found",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Read and deserialize RDP configuration
+                var json = File.ReadAllText(rdpConfigPath);
+                var rdpProfiles = System.Text.Json.JsonSerializer.Deserialize<List<LIB_RDP.Models.RdpConnectionProfile>>(json);
+
+                if (rdpProfiles == null || rdpProfiles.Count == 0)
+                {
+                    MessageBox.Show("RDP 配置檔案中沒有連線資訊\nNo RDP connection information found.",
+                        "無資料 / No Data",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                    return;
+                }
+
+                // Import IP addresses to grid
+                int importedCount = 0;
+                for (int i = 0; i < rdpProfiles.Count && i < dgvClients.Rows.Count; i++)
+                {
+                    if (!string.IsNullOrWhiteSpace(rdpProfiles[i].HostName))
+                    {
+                        dgvClients.Rows[i].Cells["colHost"].Value = rdpProfiles[i].HostName;
+                        importedCount++;
+                    }
+                }
+
+                MessageBox.Show($"已從 RDP 配置匯入 {importedCount} 個 IP 位址\nImported {importedCount} IP addresses from RDP configuration.",
+                    "匯入成功 / Import Successful",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"匯入 RDP IP 位址失敗 / Failed to import RDP IP addresses:\n{ex.Message}",
+                    "錯誤 / Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
         /// <summary>
         /// Normalize path to use forward slashes
         /// </summary>

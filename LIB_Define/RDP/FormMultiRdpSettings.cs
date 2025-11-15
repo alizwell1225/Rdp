@@ -208,6 +208,73 @@ namespace LIB_Define.RDP
         {
             
         }
+
+        private void btnImportClientConfigIPs_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Load Multi-Client configuration
+                string multiClientConfigPath = Path.Combine(AppContext.BaseDirectory, "Config", "multi_client_config.json");
+                
+                if (!File.Exists(multiClientConfigPath))
+                {
+                    MessageBox.Show("未找到多客戶端配置檔案 (multi_client_config.json)\nMulti-client configuration file not found.",
+                        "配置檔案不存在 / File Not Found",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Read and deserialize multi-client configuration
+                var json = File.ReadAllText(multiClientConfigPath);
+                var multiClientConfig = System.Text.Json.JsonSerializer.Deserialize<LIB_Define.RPC.Client_org.MultiClientConfig>(json);
+
+                if (multiClientConfig == null || multiClientConfig.Clients == null || multiClientConfig.Clients.Count == 0)
+                {
+                    MessageBox.Show("多客戶端配置檔案中沒有客戶端資訊\nNo client information found in multi-client configuration.",
+                        "無資料 / No Data",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                    return;
+                }
+
+                // Import IP addresses from individual client configs
+                int importedCount = 0;
+                for (int i = 0; i < multiClientConfig.Clients.Count && i < dgvSettings.Rows.Count; i++)
+                {
+                    var clientRef = multiClientConfig.Clients[i];
+                    if (clientRef.Enabled)
+                    {
+                        try
+                        {
+                            var clientConfig = clientRef.LoadConfig();
+                            if (!string.IsNullOrWhiteSpace(clientConfig.Host))
+                            {
+                                dgvSettings.Rows[i].Cells["HostName"].Value = clientConfig.Host;
+                                importedCount++;
+                            }
+                        }
+                        catch
+                        {
+                            // Skip if individual config cannot be loaded
+                            continue;
+                        }
+                    }
+                }
+
+                MessageBox.Show($"已從客戶端配置匯入 {importedCount} 個 IP 位址\nImported {importedCount} IP addresses from client configuration.",
+                    "匯入成功 / Import Successful",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"匯入客戶端 IP 位址失敗 / Failed to import client IP addresses:\n{ex.Message}",
+                    "錯誤 / Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
     }
 
     /*

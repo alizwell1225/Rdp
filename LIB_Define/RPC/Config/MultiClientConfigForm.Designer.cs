@@ -46,6 +46,7 @@ namespace LIB_Define.RPC
             btnEditSelected = new Button();
             btnEnableAll = new Button();
             btnDisableAll = new Button();
+            btnImportRdpIPs = new Button();
             ((System.ComponentModel.ISupportInitialize)numClientCount).BeginInit();
             ((System.ComponentModel.ISupportInitialize)dgvClients).BeginInit();
             SuspendLayout();
@@ -216,12 +217,24 @@ namespace LIB_Define.RPC
             btnDisableAll.UseVisualStyleBackColor = true;
             btnDisableAll.Click += btnDisableAll_Click;
             // 
+            // btnImportRdpIPs
+            // 
+            btnImportRdpIPs.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            btnImportRdpIPs.Location = new Point(563, 410);
+            btnImportRdpIPs.Name = "btnImportRdpIPs";
+            btnImportRdpIPs.Size = new Size(120, 30);
+            btnImportRdpIPs.TabIndex = 10;
+            btnImportRdpIPs.Text = "Import RDP IPs";
+            btnImportRdpIPs.UseVisualStyleBackColor = true;
+            btnImportRdpIPs.Click += btnImportRdpIPs_Click;
+            // 
             // MultiClientConfigForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1154, 452);
             ControlBox = false;
+            Controls.Add(btnImportRdpIPs);
             Controls.Add(numClientCount);
             Controls.Add(btnDisableAll);
             Controls.Add(lblClientCount);
@@ -253,6 +266,7 @@ namespace LIB_Define.RPC
         private System.Windows.Forms.Button btnEditSelected;
         private System.Windows.Forms.Button btnEnableAll;
         private System.Windows.Forms.Button btnDisableAll;
+        private System.Windows.Forms.Button btnImportRdpIPs;
         private System.Windows.Forms.DataGridViewTextBoxColumn colIndex;
         private System.Windows.Forms.DataGridViewCheckBoxColumn colEnabled;
         private System.Windows.Forms.DataGridViewTextBoxColumn colDisplayName;
