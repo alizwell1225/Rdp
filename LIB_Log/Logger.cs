@@ -32,6 +32,7 @@ public class Logger : LoggerBase
         {
             if (Directory.Exists(logPath) == false)
                 Directory.CreateDirectory(logPath);
+            directory = logPath;
         }
         else 
             directory = Path.GetDirectoryName(logPath);

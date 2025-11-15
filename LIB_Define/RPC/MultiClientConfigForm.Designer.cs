@@ -88,6 +88,7 @@ namespace LIB_Define.RPC
             dgvClients.TabIndex = 2;
             dgvClients.CellValueChanged += dgvClients_CellValueChanged;
             dgvClients.CurrentCellDirtyStateChanged += dgvClients_CurrentCellDirtyStateChanged;
+            dgvClients.CellDoubleClick += dgvClients_CellDoubleClick;
             // 
             // colIndex
             // 

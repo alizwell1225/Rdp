@@ -86,6 +86,11 @@ namespace LIB_RPC.Abstractions
         event Action<string, string>? OnBroadcastFailed;
 
         /// <summary>
+        /// Event raised during byte transfer progress (type, bytesTransferred, totalBytes, percentage).
+        /// </summary>
+        event Action<string, long, long, double>? OnByteTransferProgress;
+
+        /// <summary>
         /// Updates the server configuration with new host and port.
         /// </summary>
         void UpdateConfig(string? host, int? port);
@@ -99,6 +104,8 @@ namespace LIB_RPC.Abstractions
         /// Stops the gRPC server.
         /// </summary>
         Task StopAsync();
+
+        Task StopAsync(CancellationTokenSource token);
 
         /// <summary>
         /// Broadcasts a JSON message to all connected clients.
@@ -133,5 +140,30 @@ namespace LIB_RPC.Abstractions
         /// Gets the list of files in the server storage.
         /// </summary>
         string[] GetFiles();
+
+        /// <summary>
+        /// Sends byte data to a specific client or broadcasts to all clients with acknowledgment.
+        /// </summary>
+        /// <param name="type">Data type identifier (e.g., "image", "file")</param>
+        /// <param name="data">Raw byte data to send</param>
+        /// <param name="metadata">Optional JSON metadata</param>
+        /// <param name="clientId">Target client ID, or null to broadcast to all clients</param>
+        /// <param name="ct">Cancellation token</param>
+        /// <returns>Tuple with success status, number of clients reached, and error message</returns>
+        Task<(bool Success, int ClientsReached, string Error)> SendByteAsync(string type, byte[] data, string? metadata = null, string? clientId = null, CancellationToken ct = default);
+
+        /// <summary>
+        /// Sends byte data to a specific client or broadcasts to all clients without acknowledgment (fire and forget).
+        /// </summary>
+        /// <param name="type">Data type identifier (e.g., "image", "file")</param>
+        /// <param name="data">Raw byte data to send</param>
+        /// <param name="metadata">Optional JSON metadata</param>
+        /// <param name="clientId">Target client ID, or null to broadcast to all clients</param>
+        /// <param name="ct">Cancellation token</param>
+        Task SendByteNoAckAsync(string type, byte[] data, string? metadata = null, string? clientId = null, CancellationToken ct = default);
+
+        void SetCancel();
+        void InitToken();
+        CancellationTokenSource GetTokenSource();
     }
 }

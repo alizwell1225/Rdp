@@ -1,10 +1,11 @@
-﻿using System.Diagnostics;
-using System.Text.Json;
-using LIB_Log;
+﻿using LIB_Log;
 using LIB_RPC;
 using LIB_RPC.Abstractions;
 using LIB_RPC.API;
 using Microsoft.VisualBasic;
+using System.Diagnostics;
+using System.IO;
+using System.Text.Json;
 
 namespace LIB_Define.RDP;
 
@@ -114,6 +115,7 @@ public class RpcClient
                 _api.OnConnected += api_OnConnected;
                 _api.OnDisconnected += apiOnDisconnected;
                 _api.OnConnectionError += apiOnConnectionError;
+                _api.OnServerByteData += apiOnServerByteData;
             }
             //else
             //{
@@ -123,6 +125,12 @@ public class RpcClient
         }
         await Task.Delay(10);
         await _api.ConnectAsync(retry);
+    }
+
+    public Action<int, string, byte[], string> ActionOnServerByteData;
+    private void apiOnServerByteData(string type, byte[] data, string? metadata)
+    {
+        ActionOnServerByteData?.Invoke(Index, type, data, metadata);
     }
 
     private async void AutoReStartWork()
@@ -555,12 +563,31 @@ public class RpcClient
             }
             else if (!string.IsNullOrEmpty(imageMsg.ImageDataBase64))
             {
-                // Base64 image data
-                var imageBytes = Convert.FromBase64String(imageMsg.ImageDataBase64);
-                using var ms = new MemoryStream(imageBytes);
-                var image = Image.FromStream(ms);
-                ActionOnServerImage?.Invoke(Index, imageMsg.PictureType, image);
-                AppendTextSafe($"Received image data: {imageBytes.Length} bytes (Type: {imageMsg.PictureType})\r\n");
+                // Base64 image data - wrap in try-catch to prevent crashes on corrupt/large data
+                try
+                {
+                    var imageBytes = Convert.FromBase64String(imageMsg.ImageDataBase64);
+                    
+                    // Validate size before attempting to load
+                    if (imageBytes.Length > 50 * 1024 * 1024) // 50MB limit
+                    {
+                        AppendTextSafe($"Image too large: {imageBytes.Length / (1024 * 1024)}MB (max 50MB)\r\n");
+                        return;
+                    }
+                    
+                    using var ms = new MemoryStream(imageBytes);
+                    var image = Image.FromStream(ms);
+                    ActionOnServerImage?.Invoke(Index, imageMsg.PictureType, image);
+                    AppendTextSafe($"Received image: {image.Width}x{image.Height}, {imageBytes.Length / 1024}KB (Type: {imageMsg.PictureType})\r\n");
+                }
+                catch (OutOfMemoryException)
+                {
+                    AppendTextSafe($"Out of memory loading image - image too large\r\n");
+                }
+                catch (ArgumentException ex)
+                {
+                    AppendTextSafe($"Invalid image data: {ex.Message}\r\n");
+                }
             }
         }
         catch (Exception ex)

@@ -199,7 +199,7 @@ namespace LIB_RDP.UI
             button.FlatStyle = FlatStyle.Flat;
             button.FlatAppearance.BorderSize = 1;
             button.Cursor = Cursors.Hand;
-            button.Padding = new Padding(12, 6, 12, 6);
+            button.Padding = new Padding(0); ;// new Padding(12, 6, 12, 6);
 
             if (isPrimary)
             {

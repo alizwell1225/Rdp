@@ -35,6 +35,7 @@
             // 
             uc.Dock = DockStyle.Fill;
             uc.Location = new Point(0, 0);
+            uc.Margin = new Padding(0, 0, 0, 0);
             uc.Name = "uc";
             uc.Size = new Size(800, 450);
             uc.TabIndex = 0;

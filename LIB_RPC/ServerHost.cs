@@ -46,6 +46,9 @@ namespace LIB_RPC
         // Event raised when a client disconnects
         public event EventHandler<string>? ClientDisconnected;
 
+        // Event raised during byte transfer progress (type, bytesTransferred, totalBytes, percentage)
+        public event EventHandler<(string Type, long BytesTransferred, long TotalBytes, double Percentage)>? ByteTransferProgress;
+
         public ServerHost(GrpcConfig config, GrpcLogger logger, IScreenCapture? screenCapture = null)
         {
             _config = config;
@@ -58,6 +61,10 @@ namespace LIB_RPC
             if (_host != null) return;
             _config.EnsureFolders();
             _host = Host.CreateDefaultBuilder()
+                .ConfigureHostOptions(o =>
+                {
+                    o.ShutdownTimeout = TimeSpan.FromSeconds(5); // �N���ݮɶ���u
+                })
                 .ConfigureServices(services =>
                 {
                     services.AddSingleton(_config);
@@ -181,6 +188,17 @@ namespace LIB_RPC
             _logger.Info("Stopping gRPC server");
             await _host.StopAsync(cancellationToken);
             await _host.WaitForShutdownAsync(cancellationToken);
+            _host = null;
+        }
+
+        public async Task StopAsync(TimeSpan time,CancellationToken cancellationToken = default)
+        {
+            if (_host == null) return;
+            _logger.Info("Stopping gRPC server");
+            var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(time);
+            await _host.StopAsync(cts.Token);
+            await _host.WaitForShutdownAsync(cts.Token);
             _host = null;
         }
 
@@ -390,6 +408,99 @@ namespace LIB_RPC
             }
 
             return (false, 0, "[Server SentWithAck] File Maximum retry attempts exceeded");
+        }
+
+        /// <summary>
+        /// Sends byte data to a specific client or broadcasts to all clients with acknowledgment.
+        /// Reports progress through ByteTransferProgress event.
+        /// </summary>
+        public async Task<(bool Success, int ClientsReached, string Error)> SendByteAsync(string type, byte[] data, string? metadata = null, string? clientId = null, CancellationToken ct = default)
+        {
+            if (_host == null) throw new InvalidOperationException("Server not started");
+            
+            var svc = _host.Services.GetService(typeof(RemoteChannelService)) as RemoteChannelService;
+            if (svc == null) throw new InvalidOperationException("RemoteChannelService not found");
+
+            try
+            {
+                const int chunkSize = 256 * 1024; // 256KB chunks
+                var totalBytes = data.Length;
+                var totalChunks = (int)Math.Ceiling((double)totalBytes / chunkSize);
+                long bytesSent = 0;
+
+                // Send in chunks to report progress
+                for (int i = 0; i < totalChunks; i++)
+                {
+                    var offset = i * chunkSize;
+                    var length = Math.Min(chunkSize, totalBytes - offset);
+                    var chunk = new byte[length];
+                    Array.Copy(data, offset, chunk, 0, length);
+
+                    // Update metadata with chunk info
+                    var chunkMetadata = metadata ?? string.Empty;
+                    if (i == 0 && totalChunks > 1)
+                    {
+                        chunkMetadata += $"|chunks:{totalChunks}|totalBytes:{totalBytes}";
+                    }
+
+                    await svc.PushByteDataToClientsAsync(type, chunk, chunkMetadata);
+                    
+                    bytesSent += length;
+                    var percentage = (double)bytesSent / totalBytes * 100.0;
+                    
+                    // Report progress
+                    ByteTransferProgress?.Invoke(this, (type, bytesSent, totalBytes, percentage));
+                }
+                
+                var clientCount = svc.GetBytePushClientCount();
+                return (true, clientCount, string.Empty);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"[SendByte] Error: {ex.Message}");
+                return (false, 0, ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Sends byte data to a specific client or broadcasts to all clients without acknowledgment (fire and forget).
+        /// Reports progress through ByteTransferProgress event.
+        /// </summary>
+        public async Task SendByteNoAckAsync(string type, byte[] data, string? metadata = null, string? clientId = null, CancellationToken ct = default)
+        {
+            if (_host == null) throw new InvalidOperationException("Server not started");
+            
+            var svc = _host.Services.GetService(typeof(RemoteChannelService)) as RemoteChannelService;
+            if (svc == null) throw new InvalidOperationException("RemoteChannelService not found");
+
+            try
+            {
+                const int chunkSize = 256 * 1024; // 256KB chunks
+                var totalBytes = data.Length;
+                var totalChunks = (int)Math.Ceiling((double)totalBytes / chunkSize);
+                long bytesSent = 0;
+
+                // Send in chunks to report progress
+                for (int i = 0; i < totalChunks; i++)
+                {
+                    var offset = i * chunkSize;
+                    var length = Math.Min(chunkSize, totalBytes - offset);
+                    var chunk = new byte[length];
+                    Array.Copy(data, offset, chunk, 0, length);
+
+                    await svc.PushByteDataToClientsAsync(type, chunk, metadata);
+                    
+                    bytesSent += length;
+                    var percentage = (double)bytesSent / totalBytes * 100.0;
+                    
+                    // Report progress
+                    ByteTransferProgress?.Invoke(this, (type, bytesSent, totalBytes, percentage));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"[SendByteNoAck] Error: {ex.Message}");
+            }
         }
 
         public async ValueTask DisposeAsync()

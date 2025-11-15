@@ -79,6 +79,51 @@ message PushFileResponse {
   string error = 3;
 }
 
+// Image transfer messages for efficient streaming
+message ImageChunk {
+  string fileName = 1;        // Image file name
+  bytes data = 2;             // Raw image bytes
+  int32 index = 3;            // Chunk index starting 0
+  int32 totalChunks = 4;      // Total chunk count
+  bool isLast = 5;            // Convenience flag
+  int32 pictureType = 6;      // ShowPictureType enum (0=None, 1=Flow, 2=Map)
+  string error = 7;           // Error message if any
+}
+
+message ImageTransferRequest {
+  string fileName = 1;        // Image file name
+  int32 pictureType = 2;      // ShowPictureType enum
+}
+
+message ImageTransferStatus {
+  bool success = 1;
+  string error = 2;
+  int32 clientsReached = 3;   // For broadcast operations
+}
+
+// Generic byte transfer messages for efficient data transmission
+message ByteData {
+  string type = 1;            // Data type (e.g., "image", "file", "custom")
+  bytes data = 2;             // Raw byte data
+  string metadata = 3;        // Optional JSON metadata
+  string id = 4;              // Correlation ID
+  int32 chunkIndex = 5;       // Current chunk index (for progress tracking)
+  int32 totalChunks = 6;      // Total number of chunks (for progress tracking)
+  int64 totalBytes = 7;       // Total size in bytes (for progress tracking)
+}
+
+message ByteAck {
+  string id = 1;              // Correlation ID from request
+  bool success = 2;
+  string error = 3;           // Optional error message
+}
+
+message ByteBroadcastResponse {
+  bool success = 1;
+  int32 clientsReached = 2;   // Number of clients that received the data
+  string error = 3;
+}
+
 service RemoteChannel {
   // Bidirectional JSON messaging
   rpc JsonStream(stream JsonEnvelope) returns (stream JsonAck);
@@ -106,4 +151,25 @@ service RemoteChannel {
   
   // NEW: Unary file push with acknowledgment (for guaranteed delivery)
   rpc PushFileWithAck(PushFileRequest) returns (PushFileResponse);
+  
+  // NEW: Server broadcasts image to clients via streaming (efficient for large images)
+  rpc BroadcastImage(stream ImageChunk) returns (ImageTransferStatus);
+  
+  // NEW: Server-initiated image push subscription: client subscribes and receives pushed ImageChunk streams
+  rpc ImagePush(google.protobuf.Empty) returns (stream ImageChunk);
+  
+  // NEW: Efficient byte transfer with acknowledgment (server → client or client → server)
+  rpc SendByte(ByteData) returns (ByteAck);
+  
+  // NEW: Efficient byte transfer without acknowledgment (fire and forget)
+  rpc SendByteNoAck(ByteData) returns (google.protobuf.Empty);
+  
+  // NEW: Server broadcasts byte data to all clients with acknowledgment
+  rpc BroadcastByte(ByteData) returns (ByteBroadcastResponse);
+  
+  // NEW: Server broadcasts byte data to all clients without acknowledgment
+  rpc BroadcastByteNoAck(ByteData) returns (google.protobuf.Empty);
+  
+  // NEW: Server-initiated byte push subscription: client subscribes and receives pushed byte data
+  rpc BytePush(google.protobuf.Empty) returns (stream ByteData);
 }

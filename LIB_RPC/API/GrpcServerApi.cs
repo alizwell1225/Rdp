@@ -87,6 +87,11 @@ namespace LIB_RPC.API
         /// </summary>
         public event Action<string, string>? OnBroadcastFailed;
 
+        /// <summary>
+        /// Event raised during byte transfer progress (type, bytesTransferred, totalBytes, percentage).
+        /// </summary>
+        public event Action<string, long, long, double>? OnByteTransferProgress;
+
         private string configPath = Path.Combine(AppContext.BaseDirectory, "Config", "Config.json");
         /// <summary>
         /// Initializes a new instance of the <see cref="GrpcServerApi"/> class with default configuration.
@@ -170,6 +175,7 @@ namespace LIB_RPC.API
             try
             {
                 _host = new ServerHost(_config, _logger!);
+                _cts = new CancellationTokenSource();
                 _host.FileAdded += (s, path) => OnFileAdded?.Invoke(path);
                 _host.FileUploadStarted += (s, path) => OnFileUploadStarted?.Invoke(path);
                 _host.FileUploadCompleted += (s, path) => OnFileUploadCompleted?.Invoke(path);
@@ -181,8 +187,9 @@ namespace LIB_RPC.API
                 _host.BroadcastFailed += (s, args) => OnBroadcastFailed?.Invoke(args.Item1, args.Item2);
                 _host.ClientConnected += (s, clientId) => OnClientConnected?.Invoke(clientId);
                 _host.ClientDisconnected += (s, clientId) => OnClientDisconnected?.Invoke(clientId);
+                _host.ByteTransferProgress += (s, args) => OnByteTransferProgress?.Invoke(args.Item1, args.Item2, args.Item3, args.Item4);
                 
-                await _host.StartAsync();
+                await _host.StartAsync(_cts.Token);
                 OnServerStarted?.Invoke();
                 OnLog?.Invoke("Server started successfully");
             }
@@ -193,6 +200,22 @@ namespace LIB_RPC.API
                 throw;
             }
         }
+        CancellationTokenSource _cts = new CancellationTokenSource();
+
+        public void SetCancel()
+        {
+            _cts.Cancel();
+        }
+
+        public void InitToken()
+        {
+            _cts = new CancellationTokenSource();
+        }
+
+        public CancellationTokenSource GetTokenSource()
+        {
+            return _cts;
+        }
 
         /// <summary>
         /// Stops the gRPC server asynchronously.
@@ -202,6 +225,15 @@ namespace LIB_RPC.API
         {
             if (_host == null) return;
             await _host.StopAsync();
+            _host = null;
+            OnServerStopped?.Invoke();
+            OnLog?.Invoke("Server stopped");
+        }
+
+        public async Task StopAsync(CancellationTokenSource token)
+        {
+            if (_host == null) return;
+            await _host.StopAsync(token.Token);
             _host = null;
             OnServerStopped?.Invoke();
             OnLog?.Invoke("Server stopped");
@@ -266,6 +298,24 @@ namespace LIB_RPC.API
             Directory.CreateDirectory(_config.StorageRoot);
             return Directory.EnumerateFiles(_config.StorageRoot).Select(Path.GetFileName).Where(n => n != null)
                 .ToArray()!;
+        }
+
+        /// <summary>
+        /// Sends byte data to a specific client or broadcasts to all clients with acknowledgment.
+        /// </summary>
+        public async Task<(bool Success, int ClientsReached, string Error)> SendByteAsync(string type, byte[] data, string? metadata = null, string? clientId = null, CancellationToken ct = default)
+        {
+            if (_host == null) throw new InvalidOperationException("Host not started");
+            return await _host.SendByteAsync(type, data, metadata, clientId, ct);
+        }
+
+        /// <summary>
+        /// Sends byte data to a specific client or broadcasts to all clients without acknowledgment (fire and forget).
+        /// </summary>
+        public async Task SendByteNoAckAsync(string type, byte[] data, string? metadata = null, string? clientId = null, CancellationToken ct = default)
+        {
+            if (_host == null) throw new InvalidOperationException("Host not started");
+            await _host.SendByteNoAckAsync(type, data, metadata, clientId, ct);
         }
 
         /// <summary>

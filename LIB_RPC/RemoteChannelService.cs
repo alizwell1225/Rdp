@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using RdpGrpc.Proto;
 using LIB_RPC.Abstractions;
@@ -59,7 +60,7 @@ namespace LIB_RPC
             }
         }
 
-        //串流方式
+        //嚙踝蕭y嚙質式
         // New duplex JSON channel allowing server to push messages back at any time
         public override async Task JsonDuplex(IAsyncStreamReader<JsonEnvelope> requestStream, IServerStreamWriter<JsonEnvelope> responseStream, ServerCallContext context)
         {
@@ -130,7 +131,7 @@ namespace LIB_RPC
             return successCount;
         }
 
-        //這方式是串流方式
+        //嚙緻嚙質式嚙瞌嚙踝蕭y嚙質式
         // FilePush subscription: client opens a stream and we keep its writer for future pushes
         public override async Task FilePush(Google.Protobuf.WellKnownTypes.Empty request, IServerStreamWriter<FileChunk> responseStream, ServerCallContext context)
         {
@@ -435,6 +436,7 @@ namespace LIB_RPC
         {
             try
             {
+                var sourePath = string.Empty;
                 var clients = GetFilePushClientsSnapshot();
                 if (clients.Count == 0)
                 {
@@ -462,7 +464,9 @@ namespace LIB_RPC
                 }
                 else
                 {
-                    if (!File.Exists(request.FilePath))
+                    var soure = Path.Combine(_config.UserStoragePath);
+                    sourePath = soure;
+                    if (!File.Exists(sourePath))
                     {
                         return new PushFileResponse
                         {
@@ -471,9 +475,9 @@ namespace LIB_RPC
                             Error = $"File not found: {request.FilePath}"
                         };
                     }
-                    fileBytes = await File.ReadAllBytesAsync(request.FilePath);
+                    fileBytes = await File.ReadAllBytesAsync(sourePath);
                 }
-                var fileName = Path.GetFileName(request.FilePath);
+                var fileName = Path.GetFileName(sourePath);
                 var chunkSize = _config.MaxChunkSizeBytes;
                 var totalChunks = (int)Math.Ceiling((double)fileBytes.Length / chunkSize);
 
@@ -530,6 +534,257 @@ namespace LIB_RPC
                     Error = ex.Message
                 };
             }
+        }
+
+        // NEW: Send byte data with acknowledgment
+        public override async Task<ByteAck> SendByte(ByteData request, ServerCallContext context)
+        {
+            try
+            {
+                _logger.Info($"[SendByte] Received {request.Data.Length} bytes, type={request.Type}, id={request.Id}");
+                
+                // Process the byte data (for now, just acknowledge receipt)
+                // In a real implementation, you might want to trigger events or store the data
+                
+                return new ByteAck
+                {
+                    Id = request.Id,
+                    Success = true,
+                    Error = string.Empty
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"[SendByte] Error: {ex.Message}");
+                return new ByteAck
+                {
+                    Id = request.Id,
+                    Success = false,
+                    Error = ex.Message
+                };
+            }
+        }
+
+        // NEW: Send byte data without acknowledgment
+        public override async Task<Empty> SendByteNoAck(ByteData request, ServerCallContext context)
+        {
+            try
+            {
+                _logger.Info($"[SendByteNoAck] Received {request.Data.Length} bytes, type={request.Type}");
+                
+                // Process the byte data without acknowledgment
+                
+                return new Empty();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"[SendByteNoAck] Error: {ex.Message}");
+                return new Empty();
+            }
+        }
+
+        // NEW: Broadcast byte data to all clients with acknowledgment
+        public override async Task<ByteBroadcastResponse> BroadcastByte(ByteData request, ServerCallContext context)
+        {
+            try
+            {
+                var clients = GetDuplexClientsSnapshot();
+                
+                if (clients.Count == 0)
+                {
+                    return new ByteBroadcastResponse
+                    {
+                        Success = false,
+                        ClientsReached = 0,
+                        Error = "No clients connected"
+                    };
+                }
+
+                _logger.Info($"[BroadcastByte] Broadcasting {request.Data.Length} bytes to {clients.Count} clients, type={request.Type}");
+                
+                int successCount = 0;
+                var tasks = new List<Task>();
+
+                foreach (var kvp in clients)
+                {
+                    tasks.Add(Task.Run(async () =>
+                    {
+                        try
+                        {
+                            // Create a JSON envelope to send the byte data notification
+                            var envelope = new JsonEnvelope
+                            {
+                                Id = request.Id ?? Guid.NewGuid().ToString("N"),
+                                Type = "byte_data",
+                                Json = System.Text.Json.JsonSerializer.Serialize(new
+                                {
+                                    type = request.Type,
+                                    dataLength = request.Data.Length,
+                                    metadata = request.Metadata
+                                }),
+                                Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                            };
+
+                            lock (kvp.Value.WriteLock)
+                            {
+                                kvp.Value.Writer.WriteAsync(envelope).Wait();
+                            }
+                            Interlocked.Increment(ref successCount);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Warn($"[BroadcastByte] Failed to send to client {kvp.Key}: {ex.Message}");
+                        }
+                    }));
+                }
+
+                await Task.WhenAll(tasks);
+
+                _logger.Info($"[BroadcastByte] Broadcast complete: {successCount}/{clients.Count} clients reached");
+
+                return new ByteBroadcastResponse
+                {
+                    Success = successCount > 0,
+                    ClientsReached = successCount,
+                    Error = successCount == 0 ? "All clients failed to receive data" : string.Empty
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"[BroadcastByte] Error: {ex.Message}");
+                return new ByteBroadcastResponse
+                {
+                    Success = false,
+                    ClientsReached = 0,
+                    Error = ex.Message
+                };
+            }
+        }
+
+        // NEW: Broadcast byte data to all clients without acknowledgment
+        public override async Task<Empty> BroadcastByteNoAck(ByteData request, ServerCallContext context)
+        {
+            try
+            {
+                var clients = GetDuplexClientsSnapshot();
+                
+                _logger.Info($"[BroadcastByteNoAck] Broadcasting {request.Data.Length} bytes to {clients.Count} clients, type={request.Type}");
+                
+                var tasks = new List<Task>();
+
+                foreach (var kvp in clients)
+                {
+                    tasks.Add(Task.Run(async () =>
+                    {
+                        try
+                        {
+                            var envelope = new JsonEnvelope
+                            {
+                                Id = request.Id ?? Guid.NewGuid().ToString("N"),
+                                Type = "byte_data",
+                                Json = System.Text.Json.JsonSerializer.Serialize(new
+                                {
+                                    type = request.Type,
+                                    dataLength = request.Data.Length,
+                                    metadata = request.Metadata
+                                }),
+                                Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                            };
+
+                            lock (kvp.Value.WriteLock)
+                            {
+                                kvp.Value.Writer.WriteAsync(envelope).Wait();
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Warn($"[BroadcastByteNoAck] Failed to send to client {kvp.Key}: {ex.Message}");
+                        }
+                    }));
+                }
+
+                // Fire and forget - don't wait for completion
+                _ = Task.WhenAll(tasks);
+
+                return new Empty();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"[BroadcastByteNoAck] Error: {ex.Message}");
+                return new Empty();
+            }
+        }
+
+        // NEW: Byte push subscription (server -> client streaming)
+        private readonly ConcurrentDictionary<string, IServerStreamWriter<ByteData>> _bytePushClients = new();
+
+        public override async Task BytePush(Empty request, IServerStreamWriter<ByteData> responseStream, ServerCallContext context)
+        {
+            var id = Guid.NewGuid().ToString("N");
+            _bytePushClients[id] = responseStream;
+            _logger.Info($"BytePush client subscribed {id}, total={_bytePushClients.Count}");
+            ClientConnected?.Invoke(this, id);
+
+            try
+            {
+                // Keep the stream open until client disconnects
+                await Task.Delay(Timeout.Infinite, context.CancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.Info($"BytePush client {id} disconnected gracefully");
+            }
+            catch (Exception ex)
+            {
+                _logger.Warn($"BytePush client {id} error: {ex.Message}");
+            }
+            finally
+            {
+                _bytePushClients.TryRemove(id, out _);
+                _logger.Info($"BytePush client {id} removed, remaining={_bytePushClients.Count}");
+                ClientDisconnected?.Invoke(this, id);
+            }
+        }
+
+        // Helper method to push byte data to all subscribed clients
+        public async Task PushByteDataToClientsAsync(string type, byte[] data, string? metadata = null)
+        {
+            var clients = _bytePushClients.ToArray();
+            if (clients.Length == 0)
+            {
+                _logger.Info($"[PushByteData] No clients subscribed");
+                return;
+            }
+
+            _logger.Info($"[PushByteData] Pushing {data.Length} bytes to {clients.Length} clients, type={type}");
+
+            var byteData = new ByteData
+            {
+                Type = type,
+                Data = Google.Protobuf.ByteString.CopyFrom(data),
+                Metadata = metadata ?? string.Empty,
+                Id = Guid.NewGuid().ToString("N")
+            };
+
+            var tasks = clients.Select(async kvp =>
+            {
+                try
+                {
+                    await kvp.Value.WriteAsync(byteData);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Warn($"[PushByteData] Failed to push to client {kvp.Key}: {ex.Message}");
+                }
+            });
+
+            await Task.WhenAll(tasks);
+        }
+
+        // Helper method to get byte push client count
+        public int GetBytePushClientCount()
+        {
+            return _bytePushClients.Count;
         }
 
         // Helper method to get duplex clients snapshot

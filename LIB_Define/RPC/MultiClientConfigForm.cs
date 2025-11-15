@@ -192,19 +192,19 @@ namespace LIB_Define.RPC
             using (var templateForm = new Form())
             {
                 templateForm.Text = "Apply Template Settings";
-                templateForm.Size = new Size(400, 250);
+                templateForm.Size = new Size(500, 300);
                 templateForm.StartPosition = FormStartPosition.CenterParent;
                 templateForm.FormBorderStyle = FormBorderStyle.FixedDialog;
                 templateForm.MaximizeBox = false;
                 templateForm.MinimizeBox = false;
 
                 var lblHost = new Label { Text = "Host:", Location = new Point(20, 20), AutoSize = true };
-                var txtHost = new TextBox { Location = new Point(120, 17), Width = 250, Text = "localhost" };
+                var txtHost = new TextBox { Location = new Point(150, 17), Width = 310, Text = "localhost" };
 
                 var lblPort = new Label { Text = "Base Port:", Location = new Point(20, 50), AutoSize = true };
                 var numPort = new NumericUpDown 
                 { 
-                    Location = new Point(120, 47), 
+                    Location = new Point(150, 47), 
                     Width = 100, 
                     Minimum = 1, 
                     Maximum = 65535, 
@@ -214,19 +214,62 @@ namespace LIB_Define.RPC
                 var chkIncrementPort = new CheckBox 
                 { 
                     Text = "Increment port for each client (+1)", 
-                    Location = new Point(120, 75), 
-                    Width = 250,
+                    Location = new Point(150, 75), 
+                    Width = 310,
                     Checked = true
                 };
 
-                var lblLogPath = new Label { Text = "Log Path:", Location = new Point(20, 110), AutoSize = true };
-                var txtLogPath = new TextBox { Location = new Point(120, 107), Width = 250, Text = "./Logs" };
+                var lblLogPath = new Label { Text = "Log Base Path:", Location = new Point(20, 110), AutoSize = true };
+                var txtLogPath = new TextBox { Location = new Point(150, 107), Width = 260, Text = "./Logs" };
+                var btnBrowseLog = new Button { Text = "...", Location = new Point(420, 106), Width = 40 };
 
-                var lblStoragePath = new Label { Text = "Storage Path:", Location = new Point(20, 140), AutoSize = true };
-                var txtStoragePath = new TextBox { Location = new Point(120, 137), Width = 250, Text = "./Storage" };
+                var lblStoragePath = new Label { Text = "Storage Base Path:", Location = new Point(20, 145), AutoSize = true };
+                var txtStoragePath = new TextBox { Location = new Point(150, 142), Width = 260, Text = "./Storage" };
+                var btnBrowseStorage = new Button { Text = "...", Location = new Point(420, 141), Width = 40 };
 
-                var btnOK = new Button { Text = "Apply", Location = new Point(220, 175), Width = 75 };
-                var btnCancelTemplate = new Button { Text = "Cancel", Location = new Point(305, 175), Width = 75 };
+                var lblInfo = new Label 
+                { 
+                    Text = "Each client will have a subfolder: client_0, client_1, etc.", 
+                    Location = new Point(20, 180), 
+                    AutoSize = false,
+                    Width = 440,
+                    Height = 30
+                };
+
+                var btnOK = new Button { Text = "Apply", Location = new Point(305, 225), Width = 75 };
+                var btnCancelTemplate = new Button { Text = "Cancel", Location = new Point(390, 225), Width = 75 };
+
+                btnBrowseLog.Click += (s, ev) =>
+                {
+                    using (var fbd = new FolderBrowserDialog())
+                    {
+                        fbd.Description = "Select Log Base Directory";
+                        fbd.ShowNewFolderButton = true;
+                        if (!string.IsNullOrEmpty(txtLogPath.Text))
+                            fbd.SelectedPath = Path.GetFullPath(txtLogPath.Text);
+                        
+                        if (fbd.ShowDialog() == DialogResult.OK)
+                        {
+                            txtLogPath.Text = fbd.SelectedPath;
+                        }
+                    }
+                };
+
+                btnBrowseStorage.Click += (s, ev) =>
+                {
+                    using (var fbd = new FolderBrowserDialog())
+                    {
+                        fbd.Description = "Select Storage Base Directory";
+                        fbd.ShowNewFolderButton = true;
+                        if (!string.IsNullOrEmpty(txtStoragePath.Text))
+                            fbd.SelectedPath = Path.GetFullPath(txtStoragePath.Text);
+                        
+                        if (fbd.ShowDialog() == DialogResult.OK)
+                        {
+                            txtStoragePath.Text = fbd.SelectedPath;
+                        }
+                    }
+                };
 
                 btnOK.Click += (s, ev) =>
                 {
@@ -260,8 +303,9 @@ namespace LIB_Define.RPC
                 { 
                     lblHost, txtHost, 
                     lblPort, numPort, chkIncrementPort,
-                    lblLogPath, txtLogPath, 
-                    lblStoragePath, txtStoragePath, 
+                    lblLogPath, txtLogPath, btnBrowseLog,
+                    lblStoragePath, txtStoragePath, btnBrowseStorage,
+                    lblInfo,
                     btnOK, btnCancelTemplate 
                 });
 
@@ -349,6 +393,47 @@ namespace LIB_Define.RPC
                 dgvClients.CurrentCell.ColumnIndex == dgvClients.Columns["colEnabled"].Index)
             {
                 dgvClients.CommitEdit(DataGridViewDataErrorContexts.Commit);
+            }
+        }
+
+        private void dgvClients_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0) return;
+
+            // Handle double-click on LogPath column
+            if (e.ColumnIndex == dgvClients.Columns["colLogPath"].Index)
+            {
+                using (var sfd = new SaveFileDialog())
+                {
+                    sfd.Title = "Select Log File Path";
+                    sfd.Filter = "Log Files (*.log)|*.log|All Files (*.*)|*.*";
+                    sfd.FileName = dgvClients.Rows[e.RowIndex].Cells["colLogPath"].Value?.ToString() ?? "grpc.log";
+                    
+                    if (sfd.ShowDialog() == DialogResult.OK)
+                    {
+                        dgvClients.Rows[e.RowIndex].Cells["colLogPath"].Value = NormalizePath(sfd.FileName);
+                    }
+                }
+            }
+            // Handle double-click on StoragePath column
+            else if (e.ColumnIndex == dgvClients.Columns["colStoragePath"].Index)
+            {
+                using (var fbd = new FolderBrowserDialog())
+                {
+                    fbd.Description = "Select Storage Directory";
+                    fbd.ShowNewFolderButton = true;
+                    
+                    var currentPath = dgvClients.Rows[e.RowIndex].Cells["colStoragePath"].Value?.ToString();
+                    if (!string.IsNullOrEmpty(currentPath) && Directory.Exists(currentPath))
+                    {
+                        fbd.SelectedPath = Path.GetFullPath(currentPath);
+                    }
+                    
+                    if (fbd.ShowDialog() == DialogResult.OK)
+                    {
+                        dgvClients.Rows[e.RowIndex].Cells["colStoragePath"].Value = NormalizePath(fbd.SelectedPath);
+                    }
+                }
             }
         }
 

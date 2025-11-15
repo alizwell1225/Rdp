@@ -46,6 +46,16 @@ namespace LIB_RPC.Abstractions
         event Action<JsonMessage>? OnServerJson;
 
         /// <summary>
+        /// Event raised when server pushes byte data.
+        /// </summary>
+        event Action<string, byte[], string?>? OnServerByteData;
+
+        /// <summary>
+        /// Event raised during byte transfer progress (type, bytesTransferred, totalBytes, percentage).
+        /// </summary>
+        event Action<string, long, long, double>? OnByteTransferProgress;
+
+        /// <summary>
         /// Event raised when connection to server is established successfully.
         /// </summary>
         event Action? OnConnected;
@@ -149,5 +159,24 @@ namespace LIB_RPC.Abstractions
         /// Gets a screenshot from the server as PNG bytes.
         /// </summary>
         Task<byte[]> GetScreenshotAsync(CancellationToken ct = default);
+
+        /// <summary>
+        /// Sends byte data to the server with acknowledgment.
+        /// </summary>
+        /// <param name="type">Data type identifier (e.g., "image", "file")</param>
+        /// <param name="data">Raw byte data to send</param>
+        /// <param name="metadata">Optional JSON metadata</param>
+        /// <param name="ct">Cancellation token</param>
+        /// <returns>True if successful, false otherwise</returns>
+        Task<bool> SendByteAsync(string type, byte[] data, string? metadata = null, CancellationToken ct = default);
+
+        /// <summary>
+        /// Sends byte data to the server without acknowledgment (fire and forget).
+        /// </summary>
+        /// <param name="type">Data type identifier (e.g., "image", "file")</param>
+        /// <param name="data">Raw byte data to send</param>
+        /// <param name="metadata">Optional JSON metadata</param>
+        /// <param name="ct">Cancellation token</param>
+        Task SendByteNoAckAsync(string type, byte[] data, string? metadata = null, CancellationToken ct = default);
     }
 }
