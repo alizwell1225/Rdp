@@ -310,7 +310,7 @@ namespace LIB_Define.RPC.Client
         #region 廣播與批次操作 / Broadcasting and Batch Operations
 
         /// <summary>
-        /// 廣播 JSON 訊息到多個客戶端 / Broadcast JSON message to multiple clients
+        ///廣播 JSON 訊息到客戶端 / Broadcast JSON message
         /// </summary>
         public async Task<Dictionary<int, bool>> BroadcastAsync<T>(string type, T obj, params int[] targetIndices)
         {
