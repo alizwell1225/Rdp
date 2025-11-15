@@ -52,7 +52,7 @@ namespace LIB_Define.RPC
             // 
             // numClientCount
             // 
-            numClientCount.Location = new Point(735, 413);
+            numClientCount.Location = new Point(835, 413);
             numClientCount.Maximum = new decimal(new int[] { 50, 0, 0, 0 });
             numClientCount.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
             numClientCount.Name = "numClientCount";
@@ -65,7 +65,7 @@ namespace LIB_Define.RPC
             // lblClientCount
             // 
             lblClientCount.AutoSize = true;
-            lblClientCount.Location = new Point(617, 418);
+            lblClientCount.Location = new Point(717, 418);
             lblClientCount.Name = "lblClientCount";
             lblClientCount.Size = new Size(112, 15);
             lblClientCount.TabIndex = 0;
@@ -86,9 +86,9 @@ namespace LIB_Define.RPC
             dgvClients.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dgvClients.Size = new Size(1119, 392);
             dgvClients.TabIndex = 2;
+            dgvClients.CellDoubleClick += dgvClients_CellDoubleClick;
             dgvClients.CellValueChanged += dgvClients_CellValueChanged;
             dgvClients.CurrentCellDirtyStateChanged += dgvClients_CurrentCellDirtyStateChanged;
-            dgvClients.CellDoubleClick += dgvClients_CellDoubleClick;
             // 
             // colIndex
             // 
