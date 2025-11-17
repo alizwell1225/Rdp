@@ -49,7 +49,7 @@ namespace LIB_Define.RDP
             ClientSize = new Size(800, 450);
             Controls.Add(uc);
             Name = "FormShow_Rdp";
-            StartPosition = FormStartPosition.Manual;
+            StartPosition = FormStartPosition.CenterScreen;
             Text = "FormShowRdp";
             FormClosing += FormShowRdp_FormClosing;
             Load += FormShowRdp_Load;

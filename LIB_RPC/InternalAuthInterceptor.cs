@@ -22,7 +22,7 @@ namespace LIB_RPC
         {
             var provided = headers.FirstOrDefault(h => h.Key.Equals(MetadataKey, StringComparison.OrdinalIgnoreCase))?.Value;
             if (string.IsNullOrEmpty(provided)) throw new RpcException(new Status(StatusCode.Unauthenticated, "Missing auth metadata"));
-            var expected = Convert.ToBase64String(Encoding.UTF8.GetBytes(_config.Password));
+            var expected = Convert.ToBase64String(Encoding.UTF8.GetBytes(_config.GetSecureCredentials().GetPassword()));
             if (!CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(provided), Encoding.UTF8.GetBytes(expected)))
             {
                 _logger.Warn($"Auth failed: {provided}");
