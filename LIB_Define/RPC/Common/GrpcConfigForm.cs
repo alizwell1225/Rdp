@@ -1,6 +1,6 @@
 using LIB_RPC;
 
-namespace LIB_Define.RPC
+namespace LIB_Define.RPC.Common
 {
     /// <summary>
     /// Configuration form for GrpcConfig - supports both Server and Client modes

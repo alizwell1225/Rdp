@@ -1,6 +1,6 @@
-using LIB_Define.RPC.Client_org;
+using LIB_Define.RPC.Common;
 
-namespace LIB_Define.RPC
+namespace LIB_Define.RPC.Config
 {
     /// <summary>
     /// Form for configuring multiple RpcClient instances on a single machine

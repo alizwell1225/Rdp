@@ -1,8 +1,7 @@
 using System.Text.Json;
-using LIB_Define.RPC.Server;
 using LIB_Log;
 
-namespace LIB_Define.RPC.Client
+namespace LIB_Define.RPC.Server
 {
     public partial class FormTestServer : Form
     {

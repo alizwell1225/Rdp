@@ -1,9 +1,6 @@
-using System;
-using System.IO;
-using System.Windows.Forms;
 using LIB_RPC;
 
-namespace LIB_Define.RPC.ALL
+namespace LIB_Define.RPC.Common
 {
     /// <summary>
     /// Helper class for showing GrpcConfig dialog for RpcClient and RpcServer

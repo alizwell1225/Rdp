@@ -1,6 +1,6 @@
 using LIB_RPC;
 
-namespace LIB_Define.RPC.Client_org
+namespace LIB_Define.RPC.Config
 {
     /// <summary>
     /// Multi-client configuration manager for running multiple RpcClients on one machine

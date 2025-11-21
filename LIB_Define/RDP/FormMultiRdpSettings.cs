@@ -1,3 +1,4 @@
+using LIB_Define.RPC.Config;
 using LIB_RDP.Core;
 
 namespace LIB_Define.RDP
@@ -227,7 +228,7 @@ namespace LIB_Define.RDP
 
                 // Read and deserialize multi-client configuration
                 var json = File.ReadAllText(multiClientConfigPath);
-                var multiClientConfig = System.Text.Json.JsonSerializer.Deserialize<LIB_Define.RPC.Client_org.MultiClientConfig>(json);
+                var multiClientConfig = System.Text.Json.JsonSerializer.Deserialize<MultiClientConfig>(json);
 
                 if (multiClientConfig == null || multiClientConfig.Clients == null || multiClientConfig.Clients.Count == 0)
                 {

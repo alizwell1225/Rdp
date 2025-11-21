@@ -1,5 +1,4 @@
 using LIB_Define.RDP;
-using LIB_Define.RPC.Client_org;
 using LIB_RPC;
 using LIB_RPC.Abstractions;
 using System;
@@ -11,11 +10,12 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using LIB_Define.RPC.Config;
 
 namespace LIB_Define.RPC.Client
 {
     /// <summary>
-    /// 優化的多客戶端管理器 - 提供連接池和圖片快取功能
+    /// 多客戶端管理器
     /// Optimized manager for multiple RPC clients with connection pooling and image caching
     /// </summary>
     public class OptimizedMultiClientManager : IDisposable

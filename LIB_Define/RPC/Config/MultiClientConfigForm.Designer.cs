@@ -1,4 +1,4 @@
-namespace LIB_Define.RPC
+namespace LIB_Define.RPC.Config
 {
     partial class MultiClientConfigForm
     {
