@@ -41,7 +41,7 @@ namespace LIB_RPC
         
         // Allow multiple clients concurrently for duplex and file-push subscriptions
 
-        private sealed record DuplexClient(string Id, IServerStreamWriter<JsonEnvelope> Writer, object WriteLock);
+        private sealed record DuplexClient(string Id, IServerStreamWriter<JsonEnvelope> Writer, SemaphoreSlim WriteLock);
         private bool UseStoragePathFile => _config.CheckStorageRootHaveFile;
         public RemoteChannelService(GrpcConfig config, GrpcLogger logger, IScreenCapture screenCapture)
         {
@@ -72,7 +72,7 @@ namespace LIB_RPC
         public override async Task JsonDuplex(IAsyncStreamReader<JsonEnvelope> requestStream, IServerStreamWriter<JsonEnvelope> responseStream, ServerCallContext context)
         {
             var id = Guid.NewGuid().ToString("N");
-            var client = new DuplexClient(id, responseStream, new object());
+            var client = new DuplexClient(id, responseStream, new SemaphoreSlim(1, 1));
             // Multiple duplex clients are allowed concurrently
             _duplexClients[id] = client;
             _logger.Info($"Duplex client connected {id}, totalDuplex={_duplexClients.Count}");
@@ -99,9 +99,14 @@ namespace LIB_RPC
                                 Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
                             };
                             
-                            lock (client.WriteLock)
+                            await client.WriteLock.WaitAsync(context.CancellationToken);
+                            try
                             {
                                 await responseStream.WriteAsync(response);
+                            }
+                            finally
+                            {
+                                client.WriteLock.Release();
                             }
                             
                             _logger.Info($"[Duplex OUT] Sent device info response");
@@ -120,6 +125,7 @@ namespace LIB_RPC
             finally
             {
                 _duplexClients.TryRemove(id, out _);
+                client.WriteLock.Dispose();
                 _logger.Info($"Duplex client disconnected {id}, totalDuplex={_duplexClients.Count}");
                 ClientDisconnected?.Invoke(this, id);
             }
@@ -143,16 +149,17 @@ namespace LIB_RPC
                 var dc = kvp.Value;
                 try
                 {
-                    // Use proper async lock to prevent deadlocks
-                    await Task.Run(() =>
+                    // Use async-safe semaphore for locking
+                    await dc.WriteLock.WaitAsync(ct);
+                    try
                     {
-                        lock (dc.WriteLock)
-                        {
-                            // Perform the actual write inside the lock but use Task.Run to avoid blocking
-                            dc.Writer.WriteAsync(envelope).GetAwaiter().GetResult();
-                        }
-                    }, ct);
-                    successCount++;
+                        await dc.Writer.WriteAsync(envelope);
+                        successCount++;
+                    }
+                    finally
+                    {
+                        dc.WriteLock.Release();
+                    }
                 }
                 catch (Exception ex)
                 {
