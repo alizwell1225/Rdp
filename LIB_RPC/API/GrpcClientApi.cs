@@ -3,6 +3,7 @@ using System;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
+using RdpGrpc.Proto;
 
 namespace LIB_RPC.API
 {
@@ -39,7 +40,8 @@ namespace LIB_RPC.API
         /// Event raised during screenshot capture progress.
         /// </summary>
         public event Action<double>? OnScreenshotProgress;
-        
+
+
         /// <summary>
         /// 從伺服器接收檔案完成事件
         /// Event raised when receiving file from server is completed.
@@ -166,10 +168,11 @@ namespace LIB_RPC.API
         /// <returns>A task representing the asynchronous operation.</returns>
         public async Task ConnectAsync(bool re = false, CancellationToken ct = default)
         {
-            if (_conn != null && re == false) { 
-                return; 
+            if (_conn != null && re == false)
+            {
+                return;
             }
-            
+
             try
             {
                 _conn = new ClientConnection(_config, _logger);
@@ -188,7 +191,9 @@ namespace LIB_RPC.API
                     Timestamp = env.Timestamp
                 });
                 _conn.OnServerByteData += (type, data, metadata) => OnReceivedByteDataFromServer?.Invoke(type, data, metadata);
-                _conn.OnConnected+= ConnOnConnected;
+                _conn.OnConnected += ConnOnConnected;
+
+
                 await _conn.ConnectAsync();
                 _logger.Info("Client connected successfully");
             }
@@ -200,6 +205,7 @@ namespace LIB_RPC.API
                 throw;
             }
         }
+
         bool IsConnected = false;
         private void ConnOnConnected(bool flag)
         {

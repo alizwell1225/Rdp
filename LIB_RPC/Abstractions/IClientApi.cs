@@ -33,22 +33,22 @@ namespace LIB_RPC.Abstractions
         /// <summary>
         /// Event raised when server completes pushing a file.
         /// </summary>
-        event Action<string>? OnServerFileCompleted;
+        event Action<string>? OnReceivedFileFromServer;
 
         /// <summary>
         /// Event raised when server file push encounters an error.
         /// </summary>
-        event Action<string, string>? OnServerFileError;
+        event Action<string, string>? OnReceivedFileErrorFromServer;
 
         /// <summary>
         /// Event raised when server pushes a JSON message.
         /// </summary>
-        event Action<JsonMessage>? OnServerJson;
+        event Action<JsonMessage>? OnReceivedJsonMessageFromServer;
 
         /// <summary>
         /// Event raised when server pushes byte data.
         /// </summary>
-        event Action<string, byte[], string?>? OnServerByteData;
+        event Action<string, byte[], string?>? OnReceivedByteDataFromServer;
 
         /// <summary>
         /// Event raised during byte transfer progress (type, bytesTransferred, totalBytes, percentage).

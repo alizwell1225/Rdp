@@ -59,7 +59,8 @@ public class RpcServer
         _controller.OnServerStartFailed += ControllerOnServerStartFailed;
         _controller.OnReceivedByteDataFromClient += ControllerOnReceivedByteDataFromClient;
         _controller.OnReceivedJsonMessageFromClient += ControllerOnReceivedJsonMessageFromClient;
-        
+
+
         if (!string.IsNullOrEmpty(logPath))
         {
             _logger = new Logger(logPath, "rpcserver");
