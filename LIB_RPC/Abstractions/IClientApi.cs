@@ -31,22 +31,26 @@ namespace LIB_RPC.Abstractions
         event Action<double>? OnScreenshotProgress;
 
         /// <summary>
-        /// Event raised when server completes pushing a file.
+        /// 從伺服器接收檔案完成事件
+        /// Event raised when receiving file from server is completed.
         /// </summary>
         event Action<string>? OnReceivedFileFromServer;
 
         /// <summary>
-        /// Event raised when server file push encounters an error.
+        /// 從伺服器接收檔案錯誤事件
+        /// Event raised when receiving file from server encounters an error.
         /// </summary>
         event Action<string, string>? OnReceivedFileErrorFromServer;
 
         /// <summary>
-        /// Event raised when server pushes a JSON message.
+        /// 從伺服器接收 JSON 訊息事件
+        /// Event raised when receiving JSON message from server.
         /// </summary>
         event Action<JsonMessage>? OnReceivedJsonMessageFromServer;
 
         /// <summary>
-        /// Event raised when server pushes byte data.
+        /// 從伺服器接收位元組資料事件（圖片、檔案等）
+        /// Event raised when receiving byte data from server (images, files, etc.).
         /// </summary>
         event Action<string, byte[], string?>? OnReceivedByteDataFromServer;
 
