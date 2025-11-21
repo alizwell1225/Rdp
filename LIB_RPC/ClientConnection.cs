@@ -81,7 +81,7 @@ namespace LIB_RPC
             _logger = logger;
         }
 
-        private Metadata BuildAuth() => new() { { InternalAuthInterceptor.MetadataKey, Convert.ToBase64String(Encoding.UTF8.GetBytes(_config.Password)) } };
+        private Metadata BuildAuth() => new() { { InternalAuthInterceptor.MetadataKey, Convert.ToBase64String(Encoding.UTF8.GetBytes(_config.GetSecureCredentials().GetPassword())) } };
 
         public async Task ConnectAsync()
         {

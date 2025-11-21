@@ -10,5 +10,11 @@ namespace LIB_RDP.Models
         public string Domain { get; set; } = string.Empty;
         public bool EnableCompression { get; set; } = true;
         public bool EnableBitmapPersistence { get; set; } = true;
+
+        /// <summary>
+        /// true=>自動調整對應大小
+        /// false=>SmartSizing（智慧縮放）會讓遠端畫面被縮放以套入視窗
+        /// </summary>
+        public bool SmartSize { get; set; } = true;
     }
 } 

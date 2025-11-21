@@ -113,7 +113,7 @@ namespace LIB_RPC
                 {
                     _host = config.Host;
                     _port = config.Port;
-                    _password = config.Password;
+                    _password = config.EncryptedString;
                     _maxChunkSizeBytes = config.MaxChunkSizeBytes;
                     _storageRoot = config.StorageRoot;
                     _enableConsoleLog = config.EnableConsoleLog;

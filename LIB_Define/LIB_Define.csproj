@@ -16,6 +16,9 @@
 	  <Compile Update="RDP\FormMultiRdpSettings.cs">
 	    <SubType>Form</SubType>
 	  </Compile>
+	  <Compile Update="RDP\Uc_Viewer.cs">
+	    <SubType>UserControl</SubType>
+	  </Compile>
 	</ItemGroup>
 
 </Project>
