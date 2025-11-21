@@ -36,9 +36,15 @@ namespace LIB_RPC
         // Event raised when client disconnects
         public event EventHandler<string>? ClientDisconnected;
         
+        // Event raised when client sends byte data to server (type, data, metadata)
+        public event EventHandler<(string Type, byte[] Data, string? Metadata)>? ClientByteDataReceived;
+        
+        // Event raised when client sends JSON message to server (id, type, json, timestamp)
+        public event EventHandler<(string Id, string Type, string Json, long Timestamp)>? ClientJsonReceived;
+        
         // Allow multiple clients concurrently for duplex and file-push subscriptions
 
-        private sealed record DuplexClient(string Id, IServerStreamWriter<JsonEnvelope> Writer, object WriteLock);
+        private sealed record DuplexClient(string Id, IServerStreamWriter<JsonEnvelope> Writer, SemaphoreSlim WriteLock);
         private bool UseStoragePathFile => _config.CheckStorageRootHaveFile;
         public RemoteChannelService(GrpcConfig config, GrpcLogger logger, IScreenCapture screenCapture)
         {
@@ -69,7 +75,7 @@ namespace LIB_RPC
         public override async Task JsonDuplex(IAsyncStreamReader<JsonEnvelope> requestStream, IServerStreamWriter<JsonEnvelope> responseStream, ServerCallContext context)
         {
             var id = Guid.NewGuid().ToString("N");
-            var client = new DuplexClient(id, responseStream, new object());
+            var client = new DuplexClient(id, responseStream, new SemaphoreSlim(1, 1));
             // Multiple duplex clients are allowed concurrently
             _duplexClients[id] = client;
             _logger.Info($"Duplex client connected {id}, totalDuplex={_duplexClients.Count}");
@@ -80,8 +86,42 @@ namespace LIB_RPC
                 await foreach (var msg in requestStream.ReadAllAsync(context.CancellationToken))
                 {
                     _logger.Info($"[Duplex IN] id={msg.Id} type={msg.Type} bytes={msg.Json?.Length}");
-                    // (Optional) echo back acknowledgement style message
-                    // Here we just log; user code can query later if needed.
+                    
+                    // Trigger event for all JSON messages received
+                    ClientJsonReceived?.Invoke(this, (msg.Id, msg.Type, msg.Json, msg.Timestamp));
+                    
+                    // Handle device info requests
+                    if (msg.Type == "device_info_request")
+                    {
+                        try
+                        {
+                            var deviceInfo = GetDeviceInformation();
+                            var responseJson = System.Text.Json.JsonSerializer.Serialize(deviceInfo);
+                            var response = new JsonEnvelope
+                            {
+                                Id = Guid.NewGuid().ToString("N"),
+                                Type = "device_info_response",
+                                Json = responseJson,
+                                Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                            };
+                            
+                            await client.WriteLock.WaitAsync(context.CancellationToken);
+                            try
+                            {
+                                await responseStream.WriteAsync(response);
+                            }
+                            finally
+                            {
+                                client.WriteLock.Release();
+                            }
+                            
+                            _logger.Info($"[Duplex OUT] Sent device info response");
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Error($"Failed to handle device_info_request: {ex.Message}");
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -91,6 +131,7 @@ namespace LIB_RPC
             finally
             {
                 _duplexClients.TryRemove(id, out _);
+                client.WriteLock.Dispose();
                 _logger.Info($"Duplex client disconnected {id}, totalDuplex={_duplexClients.Count}");
                 ClientDisconnected?.Invoke(this, id);
             }
@@ -114,16 +155,17 @@ namespace LIB_RPC
                 var dc = kvp.Value;
                 try
                 {
-                    // Use proper async lock to prevent deadlocks
-                    await Task.Run(() =>
+                    // Use async-safe semaphore for locking
+                    await dc.WriteLock.WaitAsync(ct);
+                    try
                     {
-                        lock (dc.WriteLock)
-                        {
-                            // Perform the actual write inside the lock but use Task.Run to avoid blocking
-                            dc.Writer.WriteAsync(envelope).GetAwaiter().GetResult();
-                        }
-                    }, ct);
-                    successCount++;
+                        await dc.Writer.WriteAsync(envelope);
+                        successCount++;
+                    }
+                    finally
+                    {
+                        dc.WriteLock.Release();
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -547,8 +589,8 @@ namespace LIB_RPC
             {
                 _logger.Info($"[SendByte] Received {request.Data.Length} bytes, type={request.Type}, id={request.Id}");
                 
-                // Process the byte data (for now, just acknowledge receipt)
-                // In a real implementation, you might want to trigger events or store the data
+                // Trigger event for byte data reception
+                ClientByteDataReceived?.Invoke(this, (request.Type, request.Data.ToByteArray(), request.Metadata));
                 
                 return new ByteAck
                 {
@@ -576,7 +618,8 @@ namespace LIB_RPC
             {
                 _logger.Info($"[SendByteNoAck] Received {request.Data.Length} bytes, type={request.Type}");
                 
-                // Process the byte data without acknowledgment
+                // Trigger event for byte data reception
+                ClientByteDataReceived?.Invoke(this, (request.Type, request.Data.ToByteArray(), request.Metadata));
                 
                 return new Empty();
             }
@@ -801,6 +844,51 @@ namespace LIB_RPC
         private Dictionary<string, IServerStreamWriter<FileChunk>> GetFilePushClientsSnapshot()
         {
             return _filePushClients.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+        }
+        
+        // Helper method to get device information (MAC addresses and StationIndex)
+        private object GetDeviceInformation()
+        {
+            var macAddresses = new List<string>();
+            
+            try
+            {
+                // Get all network interfaces
+                var interfaces = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces();
+                
+                foreach (var nic in interfaces)
+                {
+                    // Only include operational interfaces with valid MAC addresses
+                    if (nic.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up &&
+                        nic.NetworkInterfaceType != System.Net.NetworkInformation.NetworkInterfaceType.Loopback)
+                    {
+                        var mac = nic.GetPhysicalAddress().ToString();
+                        if (!string.IsNullOrEmpty(mac) && mac != "000000000000")
+                        {
+                            // Format MAC address with colons (e.g., AA:BB:CC:DD:EE:FF)
+                            var formattedMac = string.Join(":", 
+                                Enumerable.Range(0, mac.Length / 2)
+                                    .Select(i => mac.Substring(i * 2, 2)));
+                            macAddresses.Add(formattedMac);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"Failed to get MAC addresses: {ex.Message}");
+            }
+            
+            // Get StationIndex from config
+            var stationIndex = _config.StationIndex ?? "0";
+            
+            return new
+            {
+                MacAddresses = macAddresses,
+                StationIndex = stationIndex,
+                Success = true,
+                Error = string.Empty
+            };
         }
     }
 }

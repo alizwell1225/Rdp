@@ -124,6 +124,19 @@ message ByteBroadcastResponse {
   string error = 3;
 }
 
+// Device information messages
+message DeviceInfoRequest {
+  string requestId = 1;       // Correlation ID for request
+}
+
+message DeviceInfoResponse {
+  string requestId = 1;       // Correlation ID from request
+  repeated string macAddresses = 2;  // List of MAC addresses
+  string stationIndex = 3;    // Station index (machine number)
+  bool success = 4;
+  string error = 5;
+}
+
 service RemoteChannel {
   // Bidirectional JSON messaging
   rpc JsonStream(stream JsonEnvelope) returns (stream JsonAck);
@@ -172,4 +185,7 @@ service RemoteChannel {
   
   // NEW: Server-initiated byte push subscription: client subscribes and receives pushed byte data
   rpc BytePush(google.protobuf.Empty) returns (stream ByteData);
+  
+  // NEW: Client requests device information from server
+  rpc GetDeviceInfo(DeviceInfoRequest) returns (DeviceInfoResponse);
 }

@@ -88,9 +88,22 @@ namespace LIB_RPC.API
         public event Action<string, string>? OnBroadcastFailed;
 
         /// <summary>
+        /// 位元組傳輸進度事件 (type, bytesTransferred, totalBytes, percentage)
         /// Event raised during byte transfer progress (type, bytesTransferred, totalBytes, percentage).
         /// </summary>
         public event Action<string, long, long, double>? OnByteTransferProgress;
+        
+        /// <summary>
+        /// 從客戶端接收位元組資料事件 (type, data, metadata) - 用於接收圖片、檔案等二進位資料
+        /// Event raised when receiving byte data from client (type, data, metadata) - for receiving images, files, etc.
+        /// </summary>
+        public event Action<string, byte[], string?>? OnReceivedByteDataFromClient;
+        
+        /// <summary>
+        /// 從客戶端接收 JSON 訊息事件 (id, type, json, timestamp) - 用於接收 JSON 格式的資料
+        /// Event raised when receiving JSON message from client (id, type, json, timestamp) - for receiving JSON data
+        /// </summary>
+        public event Action<string, string, string, long>? OnReceivedJsonMessageFromClient;
 
         private string configPath = Path.Combine(AppContext.BaseDirectory, "Config", "Config.json");
         /// <summary>
@@ -188,6 +201,8 @@ namespace LIB_RPC.API
                 _host.ClientConnected += (s, clientId) => OnClientConnected?.Invoke(clientId);
                 _host.ClientDisconnected += (s, clientId) => OnClientDisconnected?.Invoke(clientId);
                 _host.ByteTransferProgress += (s, args) => OnByteTransferProgress?.Invoke(args.Item1, args.Item2, args.Item3, args.Item4);
+                _host.ClientByteDataReceived += (s, args) => OnReceivedByteDataFromClient?.Invoke(args.Type, args.Data, args.Metadata);
+                _host.ClientJsonReceived += (s, args) => OnReceivedJsonMessageFromClient?.Invoke(args.Id, args.Type, args.Json, args.Timestamp);
                 
                 await _host.StartAsync(_cts.Token);
                 OnServerStarted?.Invoke();

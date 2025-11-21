@@ -67,4 +67,20 @@ namespace LIB_RPC.Abstractions
         /// </summary>
         public string Error { get; init; } = string.Empty;
     }
+    
+    /// <summary>
+    /// Data transfer object for device information.
+    /// </summary>
+    public sealed record DeviceInfo
+    {
+        /// <summary>
+        /// Gets or initializes the list of MAC addresses on this device.
+        /// </summary>
+        public List<string> MacAddresses { get; init; } = new List<string>();
+        
+        /// <summary>
+        /// Gets or initializes the station index (machine number).
+        /// </summary>
+        public string StationIndex { get; init; } = string.Empty;
+    }
 }
