@@ -39,6 +39,9 @@ namespace LIB_RPC
         // Event raised when client sends byte data to server (type, data, metadata)
         public event EventHandler<(string Type, byte[] Data, string? Metadata)>? ClientByteDataReceived;
         
+        // Event raised when client sends JSON message to server (id, type, json, timestamp)
+        public event EventHandler<(string Id, string Type, string Json, long Timestamp)>? ClientJsonReceived;
+        
         // Allow multiple clients concurrently for duplex and file-push subscriptions
 
         private sealed record DuplexClient(string Id, IServerStreamWriter<JsonEnvelope> Writer, SemaphoreSlim WriteLock);
@@ -83,6 +86,9 @@ namespace LIB_RPC
                 await foreach (var msg in requestStream.ReadAllAsync(context.CancellationToken))
                 {
                     _logger.Info($"[Duplex IN] id={msg.Id} type={msg.Type} bytes={msg.Json?.Length}");
+                    
+                    // Trigger event for all JSON messages received
+                    ClientJsonReceived?.Invoke(this, (msg.Id, msg.Type, msg.Json, msg.Timestamp));
                     
                     // Handle device info requests
                     if (msg.Type == "device_info_request")

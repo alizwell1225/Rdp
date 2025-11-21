@@ -28,6 +28,7 @@ public class RpcServer
     public Action<int>? ActionOnServerStopped;
     public Action<int, string>? ActionOnServerError;
     public Action<int, string, byte[], string?>? ActionOnClientByteDataReceived;
+    public Action<int, string, string, string, long>? ActionOnClientJsonReceived;
     
     public int Index { get; private set; }
     public bool IsRunning { get; private set; }
@@ -49,6 +50,7 @@ public class RpcServer
         _controller.OnServerStopped += ControllerOnServerStopped;
         _controller.OnServerStartFailed += ControllerOnServerStartFailed;
         _controller.OnClientByteDataReceived += ControllerOnClientByteDataReceived;
+        _controller.OnClientJsonReceived += ControllerOnClientJsonReceived;
         
         if (!string.IsNullOrEmpty(logPath))
         {
@@ -356,6 +358,12 @@ public class RpcServer
     {
         _logger?.Info($"Client byte data received: type={type}, size={data.Length} bytes");
         ActionOnClientByteDataReceived?.Invoke(Index, type, data, metadata);
+    }
+    
+    private void ControllerOnClientJsonReceived(string id, string type, string json, long timestamp)
+    {
+        _logger?.Info($"Client JSON received: id={id}, type={type}, size={json?.Length ?? 0} bytes");
+        ActionOnClientJsonReceived?.Invoke(Index, id, type, json, timestamp);
     }
     
     #endregion
