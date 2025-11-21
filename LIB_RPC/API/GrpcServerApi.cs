@@ -91,6 +91,11 @@ namespace LIB_RPC.API
         /// Event raised during byte transfer progress (type, bytesTransferred, totalBytes, percentage).
         /// </summary>
         public event Action<string, long, long, double>? OnByteTransferProgress;
+        
+        /// <summary>
+        /// Event raised when client sends byte data to server (type, data, metadata).
+        /// </summary>
+        public event Action<string, byte[], string?>? OnClientByteDataReceived;
 
         private string configPath = Path.Combine(AppContext.BaseDirectory, "Config", "Config.json");
         /// <summary>
@@ -188,6 +193,7 @@ namespace LIB_RPC.API
                 _host.ClientConnected += (s, clientId) => OnClientConnected?.Invoke(clientId);
                 _host.ClientDisconnected += (s, clientId) => OnClientDisconnected?.Invoke(clientId);
                 _host.ByteTransferProgress += (s, args) => OnByteTransferProgress?.Invoke(args.Item1, args.Item2, args.Item3, args.Item4);
+                _host.ClientByteDataReceived += (s, args) => OnClientByteDataReceived?.Invoke(args.Type, args.Data, args.Metadata);
                 
                 await _host.StartAsync(_cts.Token);
                 OnServerStarted?.Invoke();

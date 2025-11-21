@@ -50,6 +50,11 @@ namespace LIB_RPC
         public string? ServerUploadPath { get; set; } = null;
         public bool CheckStorageRootHaveFile { get; set; } = false;
         public string UserStoragePath { get; set; }
+        
+        /// <summary>
+        /// Station index (machine number) for device identification
+        /// </summary>
+        public string StationIndex { get; set; } = "0";
 
         
         public static GrpcConfig Load(string? path)
@@ -64,7 +69,7 @@ namespace LIB_RPC
 
 
         /// <summary>
-        /// ±q¥[±K¾ÌÃÒ«Ø¥ßSecureCredentials
+        /// ï¿½qï¿½[ï¿½Kï¿½ï¿½ï¿½Ò«Ø¥ï¿½SecureCredentials
         /// </summary>
         public RpcSecureCredentials GetSecureCredentials()
         {
@@ -75,7 +80,7 @@ namespace LIB_RPC
 
 
         /// <summary>
-        /// ³]©w¦w¥þ¾ÌÃÒ
+        /// ï¿½]ï¿½wï¿½wï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         /// </summary>
         public void SetPassword(string password)
         {

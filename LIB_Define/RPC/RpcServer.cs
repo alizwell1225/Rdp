@@ -27,6 +27,7 @@ public class RpcServer
     public Action<int, string>? ActionOnServerStarted;
     public Action<int>? ActionOnServerStopped;
     public Action<int, string>? ActionOnServerError;
+    public Action<int, string, byte[], string?>? ActionOnClientByteDataReceived;
     
     public int Index { get; private set; }
     public bool IsRunning { get; private set; }
@@ -47,6 +48,7 @@ public class RpcServer
         _controller.OnServerStarted += ControllerOnServerStarted;
         _controller.OnServerStopped += ControllerOnServerStopped;
         _controller.OnServerStartFailed += ControllerOnServerStartFailed;
+        _controller.OnClientByteDataReceived += ControllerOnClientByteDataReceived;
         
         if (!string.IsNullOrEmpty(logPath))
         {
@@ -348,6 +350,12 @@ public class RpcServer
     {
         _logger?.Error($"Server start failed: {error}");
         ActionOnServerError?.Invoke(Index, error);
+    }
+    
+    private void ControllerOnClientByteDataReceived(string type, byte[] data, string? metadata)
+    {
+        _logger?.Info($"Client byte data received: type={type}, size={data.Length} bytes");
+        ActionOnClientByteDataReceived?.Invoke(Index, type, data, metadata);
     }
     
     #endregion

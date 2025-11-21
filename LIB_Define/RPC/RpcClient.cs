@@ -430,8 +430,13 @@ public class RpcClient
     {
         AppendTextSafe($"[Recive] type={env.Type} id={env.Id} bytes={env.Json?.Length}\r\n");
         
+        // Handle device info response
+        if (env.Type == "device_info_response")
+        {
+            HandleDeviceInfoResponse(env);
+        }
         // Handle image messages specially
-        if (env.Type == "image")
+        else if (env.Type == "image")
         {
             HandleServerImageMessage(env);
         }
@@ -614,6 +619,42 @@ public class RpcClient
         catch (Exception ex)
         {
             AppendTextSafe($"Error handling server image: {ex.Message}\r\n");
+        }
+    }
+    
+    /// <summary>
+    /// Handle device info response from server
+    /// </summary>
+    private void HandleDeviceInfoResponse(JsonMessage message)
+    {
+        try
+        {
+            var deviceInfo = JsonSerializer.Deserialize<DeviceInfo>(message.Json, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            if (deviceInfo == null)
+            {
+                AppendTextSafe("Failed to deserialize device info response\r\n");
+                return;
+            }
+
+            AppendTextSafe($"Device Information Received:\r\n");
+            AppendTextSafe($"  Station Index: {deviceInfo.StationIndex}\r\n");
+            AppendTextSafe($"  MAC Addresses ({deviceInfo.MacAddresses?.Count ?? 0}):\r\n");
+            
+            if (deviceInfo.MacAddresses != null)
+            {
+                foreach (var mac in deviceInfo.MacAddresses)
+                {
+                    AppendTextSafe($"    - {mac}\r\n");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            AppendTextSafe($"Error handling device info response: {ex.Message}\r\n");
         }
     }
 
@@ -852,5 +893,45 @@ public class RpcClient
         AppendTextSafe($"總時間: {_stressTestStopwatch.Elapsed:hh\\:mm\\:ss}\r\n\r\n");
     }
 
+    #endregion
+
+    #region Device Information Methods
+    
+    /// <summary>
+    /// Request device information from the server (MAC addresses and StationIndex)
+    /// </summary>
+    public async Task<DeviceInfo?> RequestDeviceInfoAsync(CancellationToken ct = default)
+    {
+        if (_api == null)
+        {
+            AppendTextSafe("Cannot request device info: Not connected\r\n");
+            return null;
+        }
+
+        try
+        {
+            var requestId = Guid.NewGuid().ToString("N");
+            var requestJson = $"{{\"requestId\":\"{requestId}\"}}";
+            
+            AppendTextSafe("Requesting device information from server...\r\n");
+            
+            var ack = await _api.SendJsonAsync("device_info_request", requestJson, ct);
+            
+            if (!ack.Success)
+            {
+                AppendTextSafe($"Device info request failed: {ack.Error}\r\n");
+                return null;
+            }
+            
+            AppendTextSafe("Device info request sent successfully\r\n");
+            return null; // Response will come via OnServerJson event
+        }
+        catch (Exception ex)
+        {
+            AppendTextSafe($"Exception requesting device info: {ex.Message}\r\n");
+            return null;
+        }
+    }
+    
     #endregion
 }

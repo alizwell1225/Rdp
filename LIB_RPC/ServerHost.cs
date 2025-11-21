@@ -48,6 +48,9 @@ namespace LIB_RPC
 
         // Event raised during byte transfer progress (type, bytesTransferred, totalBytes, percentage)
         public event EventHandler<(string Type, long BytesTransferred, long TotalBytes, double Percentage)>? ByteTransferProgress;
+        
+        // Event raised when client sends byte data to server (type, data, metadata)
+        public event EventHandler<(string Type, byte[] Data, string? Metadata)>? ClientByteDataReceived;
 
         public ServerHost(GrpcConfig config, GrpcLogger logger, IScreenCapture? screenCapture = null)
         {
@@ -171,6 +174,18 @@ namespace LIB_RPC
                         catch (Exception ex)
                         {
                             _logger.Warn($"ClientDisconnected handler threw: {ex.Message}");
+                        }
+                    };
+                    
+                    svc.ClientByteDataReceived += (s, args) =>
+                    {
+                        try
+                        {
+                            ClientByteDataReceived?.Invoke(this, args);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Warn($"ClientByteDataReceived handler threw: {ex.Message}");
                         }
                     };
                 }
