@@ -1,6 +1,4 @@
-using LIB_Define.RPC.Server;
-
-namespace LIB_Define.RPC.Client
+namespace LIB_Define.RPC.Server
 {
     public partial class FormServerConfig : Form
     {

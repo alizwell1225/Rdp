@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace LIB_Define.RPC.Client
+namespace LIB_Define.RPC.Server
 {
     public partial class FormJsonInput : Form
     {

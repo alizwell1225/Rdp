@@ -1,4 +1,4 @@
-namespace LIB_Define.RPC
+namespace LIB_Define.RPC.Common
 {
     partial class GrpcConfigForm
     {

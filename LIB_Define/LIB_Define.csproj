@@ -13,13 +13,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\LIB_RPC\LIB_RPC.csproj" />
-	  <ProjectReference Include="..\LIB_RDP\LIB_RDP.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
 	  <Compile Update="RDP\FormMultiRdpSettings.cs">
 	    <SubType>Form</SubType>
+	  </Compile>
+	  <Compile Update="RDP\Uc_Viewer.cs">
+	    <SubType>UserControl</SubType>
 	  </Compile>
 	</ItemGroup>
 

@@ -167,7 +167,8 @@ namespace LIB_RDP.Models
                     Domain = Config.Domain,
                     EnableCompression = Config.EnableCompression,
                     EnableBitmapPersistence = Config.EnableBitmapPersistence,
-                    EnableCredSspSupport = Config.EnableCredSspSupport
+                    EnableCredSspSupport = Config.EnableCredSspSupport,
+                    SmartSize = Config.SmartSize
                 },
                 GroupName = GroupName,
                 Notes = Notes,

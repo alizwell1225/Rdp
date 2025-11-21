@@ -588,7 +588,7 @@ public class RdpViewer : Panel
     }
 
 
-    internal void SetScreenSize()
+    public void SetScreenSize()
     {
         SetMax(_connection.GetRdpConfig().ScreenWidth, _connection.GetRdpConfig().ScreenHeight);
     }

@@ -1,6 +1,7 @@
 ﻿using LIB_RDP.Core;
 using LIB_RDP.Models;
 using LIB_RDP.UI;
+using static System.Windows.Forms.DataFormats;
 
 namespace LIB_Define.RDP
 {
@@ -12,7 +13,51 @@ namespace LIB_Define.RDP
         public FormShow_Rdp()
         {
             InitializeComponent();
-            uc.ActSinkViewer += CloseForm;
+            uc.ActClose += CloseForm;
+        }
+
+        private int Index { get; set; }= -1;
+
+        public FormShow_Rdp(int index)
+        {
+            Index = index;
+            InitializeComponent();
+            uc.ActClose += CloseForm;
+            uc.ActMaxViewer += Uc_ActMaxViewer;
+            uc.ActMidViewer += Uc_ActMidViewer;
+        }
+
+        void Relayout(bool title)
+        {
+            this.SuspendLayout();
+
+            this.FormBorderStyle = (title ? FormBorderStyle.Sizable : FormBorderStyle.None);
+
+            // 將視窗大小重設一次（觸發 Resize）
+            var sz = this.Size;
+            this.Size = new Size(sz.Width + 1, sz.Height + 1);
+            this.Size = sz;
+
+            this.ResumeLayout(true);
+
+        }
+
+        private void Uc_ActMidViewer(int obj, bool title, bool fixSize)
+        {
+            this.WindowState = FormWindowState.Normal;
+            Relayout(title);
+            
+            ToggleViewerSize();
+        }
+
+        private void Uc_ActMaxViewer(int obj,bool title,bool fixSize)
+        {
+            this.WindowState = FormWindowState.Maximized;
+           
+            //uc.SetMax(this.Width, this.Height);
+            Relayout(title);
+            uc.SetSmartSize(fixSize);
+            ToggleViewerSize();
         }
 
         private void CloseForm(int obj)
@@ -26,7 +71,7 @@ namespace LIB_Define.RDP
         {
             try
             {
-                _connection.Disconnect();
+                _connection?.Disconnect();
             }
             catch (Exception e)
             {
@@ -58,8 +103,11 @@ namespace LIB_Define.RDP
         private void ToggleViewerSize()
         {
             if (_connection != null)
+            {
                 _connection.Configure(new RdpConfig
-                { ScreenWidth = uc.InnerViewer.Width, ScreenHeight = uc.InnerViewer.Height, ColorDepth = 64 });
+                { ScreenWidth = uc.InnerViewer.Width, ScreenHeight = uc.InnerViewer.Height, ColorDepth = 64});
+
+            }
 
             if (!uc.IsFullScreen)
             {
@@ -73,7 +121,11 @@ namespace LIB_Define.RDP
         private void FormShowRdp_Load(object sender, EventArgs e)
         {
             this.WindowState = FormWindowState.Maximized;
-            this.FormBorderStyle = FormBorderStyle.None;
+            //this.FormBorderStyle = FormBorderStyle.None;
+            if (Index!=-1)
+            {
+                this.Text = $"ROM PC- {Index + 1:D2}";
+            }
             uc.SetRdpConnection(_connection);
             ToggleViewerSize();
 

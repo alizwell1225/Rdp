@@ -521,7 +521,7 @@ public class RdpConnection : IRdpConnection, IDisposable
             _rdpClient.ColorDepth = config.ColorDepth;
 
             // 進階設定
-            _rdpClient.AdvancedSettings9.SmartSizing = true;
+            _rdpClient.AdvancedSettings9.SmartSizing = config.SmartSize;
             _rdpClient.AdvancedSettings9.BitmapPeristence = config.EnableBitmapPersistence ? 1 : 0;
             _rdpClient.AdvancedSettings9.Compress = config.EnableCompression ? 1 : 0;
             _rdpClient.AdvancedSettings9.EnableCredSspSupport = config.EnableCredSspSupport;
@@ -736,5 +736,10 @@ public class RdpConnection : IRdpConnection, IDisposable
         Configure(data.Config);
         var item = data.GetRdpConnection();
         this.SetConnectionId(item.ConnectionId);
+    }
+
+    public void SetSmartSizing(bool fixSize)
+    {
+        GetRdpClient().AdvancedSettings9.SmartSizing = fixSize;
     }
 }

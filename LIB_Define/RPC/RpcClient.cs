@@ -1,11 +1,10 @@
-﻿using LIB_Log;
-using LIB_RPC;
+﻿using LIB_RPC;
 using LIB_RPC.Abstractions;
 using LIB_RPC.API;
 using Microsoft.VisualBasic;
 using System.Diagnostics;
-using System.IO;
 using System.Text.Json;
+using LIB_Log;
 
 namespace LIB_Define.RDP;
 
@@ -57,12 +56,13 @@ public class RpcClient
     }
 
     public bool IsConnected { get; private set; }
-    private bool autoReStart { get; } = true;
+    private bool autoReStart { get; set; } = true;
     public bool IsEnableConnect { get; private set; }
 
     public async void LoadConfig(string path)
     {
         bool runflag = IsConnected && IsEnableConnect;
+
         if (IsConnected)
         {
             await DisconnectAsync();
@@ -124,7 +124,7 @@ public class RpcClient
             //}
         }
         await Task.Delay(10);
-        await _api.ConnectAsync(retry);
+        await _api?.ConnectAsync(retry);
     }
 
     public Action<int, string, byte[], string> ActionOnServerByteData;
@@ -162,7 +162,6 @@ public class RpcClient
             
             if (shouldAttemptReconnect)
             {
-                // Await these calls to ensure proper cleanup before reconnecting
                 await DisconnectAsync();
                 await ConnectAsync(true);
             }
@@ -246,7 +245,7 @@ public class RpcClient
     private async Task DownloadAsync()
     {
         if (_api == null) return;
-        // Ask server for available files first
+
         string[] files;
         try
         {
@@ -260,13 +259,11 @@ public class RpcClient
         string? input = null;
         if (files.Length == 0)
         {
-            // fallback to input box if server returned nothing
             input = Interaction.InputBox("請輸入伺服端檔名：", "下載檔案");
             if (string.IsNullOrWhiteSpace(input)) return;
         }
         else
         {
-            // show a small modal list selection dialog
             using var dlg = new Form();
             dlg.Text = "Select remote file";
             dlg.StartPosition = FormStartPosition.CenterParent;
@@ -305,8 +302,9 @@ public class RpcClient
         AppendTextSafe("Screenshot 顯示\r\n");
     }
 
-    public async Task StartConnect()
+    public async Task StartConnect(bool autoFlag=true)
     {
+        SetAutoConnectFlag(autoFlag);
         await Connect();
     }
 
@@ -322,6 +320,14 @@ public class RpcClient
         }
         catch (Exception e)
         {
+        }
+    }
+
+    public void SetAutoConnectFlag(bool flag)
+    {
+        lock (_connectionLock)
+        {
+            autoReStart = flag;
         }
     }
 

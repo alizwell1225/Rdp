@@ -1,4 +1,4 @@
-namespace LIB_Define.RPC.Client
+namespace LIB_Define.RPC.Server
 {
     partial class ImageSendForm
     {
