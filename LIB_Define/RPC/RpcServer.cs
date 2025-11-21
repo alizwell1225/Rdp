@@ -5,7 +5,7 @@ using LIB_RPC;
 using LIB_RPC.Abstractions;
 using LIB_RPC.API;
 
-namespace LIB_Define.RDP;
+namespace LIB_Define.RPC;
 
 public class RpcServer
 {

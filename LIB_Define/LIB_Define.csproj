@@ -13,6 +13,12 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\LIB_Log\LIB_Log.csproj" />
+	  <ProjectReference Include="..\LIB_RDP\LIB_RDP.csproj" />
+	  <ProjectReference Include="..\LIB_RPC\LIB_RPC.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
 	  <Compile Update="RDP\FormMultiRdpSettings.cs">
 	    <SubType>Form</SubType>
 	  </Compile>
