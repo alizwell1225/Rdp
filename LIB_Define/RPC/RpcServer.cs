@@ -27,8 +27,16 @@ public class RpcServer
     public Action<int, string>? ActionOnServerStarted;
     public Action<int>? ActionOnServerStopped;
     public Action<int, string>? ActionOnServerError;
-    public Action<int, string, byte[], string?>? ActionOnClientByteDataReceived;
-    public Action<int, string, string, string, long>? ActionOnClientJsonReceived;
+    
+    /// <summary>
+    /// 從客戶端接收位元組資料事件 - 用於接收圖片、檔案等二進位資料
+    /// </summary>
+    public Action<int, string, byte[], string?>? ActionOnReceivedByteDataFromClient;
+    
+    /// <summary>
+    /// 從客戶端接收 JSON 訊息事件 - 用於接收 JSON 格式的資料
+    /// </summary>
+    public Action<int, string, string, string, long>? ActionOnReceivedJsonMessageFromClient;
     
     public int Index { get; private set; }
     public bool IsRunning { get; private set; }
@@ -49,8 +57,8 @@ public class RpcServer
         _controller.OnServerStarted += ControllerOnServerStarted;
         _controller.OnServerStopped += ControllerOnServerStopped;
         _controller.OnServerStartFailed += ControllerOnServerStartFailed;
-        _controller.OnClientByteDataReceived += ControllerOnClientByteDataReceived;
-        _controller.OnClientJsonReceived += ControllerOnClientJsonReceived;
+        _controller.OnReceivedByteDataFromClient += ControllerOnReceivedByteDataFromClient;
+        _controller.OnReceivedJsonMessageFromClient += ControllerOnReceivedJsonMessageFromClient;
         
         if (!string.IsNullOrEmpty(logPath))
         {
@@ -354,16 +362,16 @@ public class RpcServer
         ActionOnServerError?.Invoke(Index, error);
     }
     
-    private void ControllerOnClientByteDataReceived(string type, byte[] data, string? metadata)
+    private void ControllerOnReceivedByteDataFromClient(string type, byte[] data, string? metadata)
     {
-        _logger?.Info($"Client byte data received: type={type}, size={data.Length} bytes");
-        ActionOnClientByteDataReceived?.Invoke(Index, type, data, metadata);
+        _logger?.Info($"從客戶端接收位元組資料: type={type}, size={data.Length} bytes");
+        ActionOnReceivedByteDataFromClient?.Invoke(Index, type, data, metadata);
     }
     
-    private void ControllerOnClientJsonReceived(string id, string type, string json, long timestamp)
+    private void ControllerOnReceivedJsonMessageFromClient(string id, string type, string json, long timestamp)
     {
-        _logger?.Info($"Client JSON received: id={id}, type={type}, size={json?.Length ?? 0} bytes");
-        ActionOnClientJsonReceived?.Invoke(Index, id, type, json, timestamp);
+        _logger?.Info($"從客戶端接收 JSON: id={id}, type={type}, size={json?.Length ?? 0} bytes");
+        ActionOnReceivedJsonMessageFromClient?.Invoke(Index, id, type, json, timestamp);
     }
     
     #endregion

@@ -30,8 +30,16 @@ public class RpcClient
     public Action<int, string> ActionOnLogStressStats;
     public Action<int, string> ActionOnConnectionError;
 
-    public Action<int, string> ActionOnServerFileCompleted;
-    public Action<int, JsonMessage> ActionOnServerJson;
+    /// <summary>
+    /// 從伺服器接收檔案完成事件
+    /// </summary>
+    public Action<int, string> ActionOnReceivedFileFromServer;
+    
+    /// <summary>
+    /// 從伺服器接收 JSON 訊息事件
+    /// </summary>
+    public Action<int, JsonMessage> ActionOnReceivedJsonMessageFromServer;
+    
     public Action<int, string, double> ActionOnUploadProgress;
 
     public Action<int, string, double> ActionOnDownloadProgress;
@@ -110,12 +118,12 @@ public class RpcClient
                 _api.OnUploadProgress += apiOnUploadProgress;
                 _api.OnDownloadProgress += apiOnDownloadProgress;
                 _api.OnScreenshotProgress += apiOnScreenshotProgress;
-                _api.OnServerJson += apiOnServerJson;
-                _api.OnServerFileCompleted += apiOnServerFileCompleted;
+                _api.OnReceivedJsonMessageFromServer += apiOnReceivedJsonMessageFromServer;
+                _api.OnReceivedFileFromServer += apiOnReceivedFileFromServer;
                 _api.OnConnected += api_OnConnected;
                 _api.OnDisconnected += apiOnDisconnected;
                 _api.OnConnectionError += apiOnConnectionError;
-                _api.OnServerByteData += apiOnServerByteData;
+                _api.OnReceivedByteDataFromServer += apiOnReceivedByteDataFromServer;
             }
             //else
             //{
@@ -127,10 +135,14 @@ public class RpcClient
         await _api?.ConnectAsync(retry);
     }
 
-    public Action<int, string, byte[], string> ActionOnServerByteData;
-    private void apiOnServerByteData(string type, byte[] data, string? metadata)
+    /// <summary>
+    /// 從伺服器接收位元組資料事件（圖片、檔案等）
+    /// </summary>
+    public Action<int, string, byte[], string> ActionOnReceivedByteDataFromServer;
+    
+    private void apiOnReceivedByteDataFromServer(string type, byte[] data, string? metadata)
     {
-        ActionOnServerByteData?.Invoke(Index, type, data, metadata);
+        ActionOnReceivedByteDataFromServer?.Invoke(Index, type, data, metadata);
     }
 
     private async void AutoReStartWork()
@@ -420,15 +432,15 @@ public class RpcClient
         }
     }
 
-    private void apiOnServerFileCompleted(string path)
+    private void apiOnReceivedFileFromServer(string path)
     {
-        AppendTextSafe($"[Recive] FIle Path={path}\r\n");
-        ActionOnServerFileCompleted?.Invoke(Index,path);
+        AppendTextSafe($"[接收] 檔案路徑={path}\r\n");
+        ActionOnReceivedFileFromServer?.Invoke(Index,path);
     }
 
-    private void apiOnServerJson(JsonMessage env)
+    private void apiOnReceivedJsonMessageFromServer(JsonMessage env)
     {
-        AppendTextSafe($"[Recive] type={env.Type} id={env.Id} bytes={env.Json?.Length}\r\n");
+        AppendTextSafe($"[接收] type={env.Type} id={env.Id} bytes={env.Json?.Length}\r\n");
         
         // Handle device info response
         if (env.Type == "device_info_response")
@@ -442,7 +454,7 @@ public class RpcClient
         }
         
         // Always invoke the generic handler for application-level processing
-        ActionOnServerJson?.Invoke(Index,env);
+        ActionOnReceivedJsonMessageFromServer?.Invoke(Index,env);
     }
 
     private void apiOnScreenshotProgress(double percent)
