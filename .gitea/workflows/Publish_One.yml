@@ -1,0 +1,57 @@
+name: Publish LIB NuGet
+
+on:
+  push:
+    tags:
+      - "v*.*"
+
+jobs:
+  build-pack-publish:
+    runs-on: windows
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Pack and push MyLibrary project
+        shell: powershell
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          $projPath = (Get-ChildItem -Path . -Recurse -Filter "MyLibrary.csproj").FullName
+          
+          if (-not $projPath) {
+            Write-Host "MyLibrary.csproj not found."
+            exit 0
+          }
+
+          $name = [System.IO.Path]::GetFileNameWithoutExtension((Split-Path $projPath -Leaf))
+          Write-Host "== Process $name ($projPath) =="
+
+          # 建立 nupkgs 資料夾
+          New-Item -ItemType Directory -Force -Path "./nupkgs" | Out-Null
+
+          dotnet restore $projPath
+          dotnet build -c Release --no-restore $projPath
+          dotnet pack -c Release --no-build $projPath -o "./nupkgs"
+
+          $pkg = Get-ChildItem "./nupkgs/$name.*.nupkg" | Select-Object -First 1
+
+          if ($pkg -ne $null) {
+            Write-Host "Push package $($pkg.FullName)"
+            dotnet nuget push $pkg.FullName `
+              --source "https://hm-git.hicpp.com/api/packages/nuget_dll/nuget/index.json" `
+              --api-key "$env:NUGET_API_KEY" `
+              --skip-duplicate
+          }
+          else {
+            Write-Host "No package found for $name"
+            exit 1
+          }
+
+          Write-Host "Successfully published $name"

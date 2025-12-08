@@ -1,0 +1,74 @@
+name: Publish Multiple LIB NuGet
+
+on:
+  push:
+    tags:
+      - "v*.*"
+
+jobs:
+  build-pack-publish:
+    runs-on: windows
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Pack and push multiple projects
+        shell: powershell
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          # 指定要處理的專案陣列
+          $targetProjects = @("LIB_Log.csproj", "LIB_RDP.csproj", "LIB_RPC.csproj")
+          
+          # 建立輸出資料夾
+          New-Item -ItemType Directory -Force -Path "./nupkgs" | Out-Null
+
+          $successCount = 0
+          $totalCount = $targetProjects.Count
+
+          foreach ($projName in $targetProjects) {
+            $projects = Get-ChildItem -Path . -Recurse -Filter $projName
+            
+            if ($projects.Count -eq 0) {
+              Write-Host "WARNING: $projName not found. Skipping..."
+              continue
+            }
+
+            $projPath = $projects[0].FullName
+            $name = [System.IO.Path]::GetFileNameWithoutExtension($projName)
+
+            Write-Host "== Process $name ($projPath) =="
+
+            dotnet restore $projPath
+            dotnet build -c Release --no-restore $projPath
+            dotnet pack -c Release --no-build $projPath -o "./nupkgs"
+
+            $pkg = Get-ChildItem "./nupkgs/$name.*.nupkg" | Select-Object -First 1
+
+            if ($pkg -ne $null) {
+              Write-Host "Pushing package $($pkg.FullName)"
+              dotnet nuget push $pkg.FullName `
+                --source "https://hm-git.hicpp.com/api/packages/nuget_dll/nuget/index.json" `
+                --api-key "$env:NUGET_API_KEY" `
+                --skip-duplicate
+              
+              Write-Host "✓ Successfully published $name"
+              $successCount++
+            }
+            else {
+              Write-Host "✗ No package found for $name"
+            }
+          }
+
+          Write-Host "Summary: $successCount / $totalCount projects published successfully"
+          
+          if ($successCount -eq 0) {
+            Write-Host "ERROR: No projects were published successfully"
+            exit 1
+          }
