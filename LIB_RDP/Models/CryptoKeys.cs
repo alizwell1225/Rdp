@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace LIB_RDP.Models
 {
@@ -14,49 +13,81 @@ namespace LIB_RDP.Models
 
     internal static class CryptoKeys
     {
-        // 你可自行更換此 XOR 金鑰（0~255）
+        // 你想混淆的 XOR Key
         private const byte XorKey = 0x5B;
 
-        // ======== Key ========
-        // 以下是 XOR 過後的字串片段
-        private static string A1 = Xor("sHA", XorKey);
-        private static string A2 = Xor("bcTyH", XorKey);
-        private static string A3 = Xor("9KpIw", XorKey);
-        private static string A4 = Xor("rA==", XorKey);
+        // AES KeySize（可改 128 或 256）
+        public static int KeySizeBits = 256; // 128 or 256
 
-        // ======== IV ========
-        private static string I1 = Xor("Qm9sZ", XorKey);
-        private static string I2 = Xor("GVvbn", XorKey);
-        private static string I3 = Xor("MhY==", XorKey);
+        private static string A1 = Xor("S0x2");
+        private static string A2 = Xor("bk5Z");
+        private static string A3 = Xor("dUtK");
+        private static string A4 = Xor("WnZz");
+        private static string A5 = Xor("aWZB");
+        private static string A6 = Xor("QllV");
+        private static string A7 = Xor("c3RT");
+        private static string A8 = Xor("ZFdB");
 
-        // XOR 加密/解密（同一函式）
-        private static string Xor(string input, byte key)
+        private static string I1 = Xor("QUxH");
+        private static string I2 = Xor("c2Zq");
+        private static string I3 = Xor("T2t6");
+        private static string I4 = Xor("bll3");
+
+        // Base64 片段（這裡你可以填任意字串，系統會自動補齊）
+        private static readonly string[] KeyParts = new[]
         {
-            return new string(input.Select(c => (char)(c ^ key)).ToArray());
+            A1,A2,A3,A4,A5,A6,A7,A8
+        };
+
+        private static readonly string[] IVParts = new[]
+        {
+           I1,I2,I3,I4
+        };
+
+        // XOR
+        private static string Xor(string s)
+        {
+            return new string(s.Select(c => (char)(c ^ XorKey)).ToArray());
+        }
+
+        // 將多個 Base64 片段併起來並 XOR 解回
+        private static string RestoreBase64(string[] parts)
+        {
+            return string.Concat(parts.Select(p => Xor(p))); // XOR 還原
+        }
+
+        // 若不足長度，自動補齊
+        private static byte[] EnsureLength(byte[] input, int requiredLength)
+        {
+            if (input.Length == requiredLength)
+                return input;
+
+            byte[] output = new byte[requiredLength];
+
+            // 循環複製直到補滿
+            for (int i = 0; i < requiredLength; i++)
+                output[i] = input[i % input.Length];
+
+            return output;
         }
 
         public static byte[] GetKey()
         {
-            // 在這裡做 XOR 還原
-            string decoded =
-                Xor(A1, XorKey) +
-                Xor(A2, XorKey) +
-                Xor(A3, XorKey) +
-                Xor(A4, XorKey);
+            // 1. XOR → 還原 Base64 → 解碼
+            byte[] raw = Convert.FromBase64String(RestoreBase64(KeyParts));
 
-            return Convert.FromBase64String(decoded);
+            int required = KeySizeBits / 8; // 16 或 32 bytes
+
+            // 2. 若 bytes 不足，補滿
+            return EnsureLength(raw, required);
         }
 
         public static byte[] GetIV()
         {
-            string decoded =
-                Xor(I1, XorKey) +
-                Xor(I2, XorKey) +
-                Xor(I3, XorKey);
+            byte[] raw = Convert.FromBase64String(RestoreBase64(IVParts));
 
-            return Convert.FromBase64String(decoded);
+            // AES IV **永遠固定為 16 bytes**
+            return EnsureLength(raw, 16);
         }
     }
-
-
 }

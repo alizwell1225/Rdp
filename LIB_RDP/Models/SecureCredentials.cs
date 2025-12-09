@@ -17,7 +17,26 @@ namespace LIB_RDP.Models
         public string UserName { get; private set; }
         public string Domain { get; private set; }
 
-        public CredentialEncryptionMode EncryptionMode { get; }
+        public CredentialEncryptionMode EncryptionMode { get; } = CredentialEncryptionMode.AES;
+
+        private static SecureCredentials Instance
+        {
+            get
+            {
+                if (credentials == null)
+                {
+                    credentials = new SecureCredentials();
+                }
+                return credentials;
+            }
+        }
+        private static SecureCredentials credentials;
+
+
+
+        public SecureCredentials()
+        {
+        }
 
         public SecureCredentials(
             string userName,
@@ -32,8 +51,8 @@ namespace LIB_RDP.Models
             _entropy = new byte[20];
             using (var rng = RandomNumberGenerator.Create())
                 rng.GetBytes(_entropy);
-
             SetPassword(password);
+            credentials = this;
         }
 
         private void SetPassword(string password)
@@ -118,7 +137,7 @@ namespace LIB_RDP.Models
             // AES 則無 "|entropy"
             bool isDpapi = encrypted.Contains("|") && encrypted.Split('|').Length == 2;
 
-            return isDpapi
+            return Instance.EncryptionMode == CredentialEncryptionMode.DPAPI
                 ? FromEncryptedString_DPAPI(encrypted)
                 : FromEncryptedString_AES(encrypted);
         }
