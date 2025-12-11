@@ -48,6 +48,12 @@ namespace LIB_RPC
 
         // Event raised during byte transfer progress (type, bytesTransferred, totalBytes, percentage)
         public event EventHandler<(string Type, long BytesTransferred, long TotalBytes, double Percentage)>? ByteTransferProgress;
+        
+        // Event raised when client sends byte data to server (type, data, metadata)
+        public event EventHandler<(string Type, byte[] Data, string? Metadata)>? ClientByteDataReceived;
+        
+        // Event raised when client sends JSON message to server (id, type, json, timestamp)
+        public event EventHandler<(string Id, string Type, string Json, long Timestamp)>? ClientJsonReceived;
 
         public ServerHost(GrpcConfig config, GrpcLogger logger, IScreenCapture? screenCapture = null)
         {
@@ -171,6 +177,30 @@ namespace LIB_RPC
                         catch (Exception ex)
                         {
                             _logger.Warn($"ClientDisconnected handler threw: {ex.Message}");
+                        }
+                    };
+                    
+                    svc.ClientByteDataReceived += (s, args) =>
+                    {
+                        try
+                        {
+                            ClientByteDataReceived?.Invoke(this, args);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Warn($"ClientByteDataReceived handler threw: {ex.Message}");
+                        }
+                    };
+                    
+                    svc.ClientJsonReceived += (s, args) =>
+                    {
+                        try
+                        {
+                            ClientJsonReceived?.Invoke(this, args);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Warn($"ClientJsonReceived handler threw: {ex.Message}");
                         }
                     };
                 }

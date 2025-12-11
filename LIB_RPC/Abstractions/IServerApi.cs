@@ -86,9 +86,22 @@ namespace LIB_RPC.Abstractions
         event Action<string, string>? OnBroadcastFailed;
 
         /// <summary>
+        /// 位元組傳輸進度事件 (type, bytesTransferred, totalBytes, percentage)
         /// Event raised during byte transfer progress (type, bytesTransferred, totalBytes, percentage).
         /// </summary>
         event Action<string, long, long, double>? OnByteTransferProgress;
+
+        /// <summary>
+        /// 從客戶端接收位元組資料事件 (type, data, metadata) - 用於接收圖片、檔案等二進位資料
+        /// Event raised when receiving byte data from client (type, data, metadata) - for receiving images, files, etc.
+        /// </summary>
+        event Action<string, byte[], string?>? OnReceivedByteDataFromClient;
+
+        /// <summary>
+        /// 從客戶端接收 JSON 訊息事件 (id, type, json, timestamp) - 用於接收 JSON 格式的資料
+        /// Event raised when receiving JSON message from client (id, type, json, timestamp) - for receiving JSON data
+        /// </summary>
+        event Action<string, string, string, long>? OnReceivedJsonMessageFromClient;
 
         /// <summary>
         /// Updates the server configuration with new host and port.

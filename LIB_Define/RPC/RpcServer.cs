@@ -28,6 +28,16 @@ public class RpcServer
     public Action<int>? ActionOnServerStopped;
     public Action<int, string>? ActionOnServerError;
     
+    /// <summary>
+    /// 從客戶端接收位元組資料事件 - 用於接收圖片、檔案等二進位資料
+    /// </summary>
+    public Action<int, string, byte[], string?>? ActionOnReceivedByteDataFromClient;
+    
+    /// <summary>
+    /// 從客戶端接收 JSON 訊息事件 - 用於接收 JSON 格式的資料
+    /// </summary>
+    public Action<int, string, string, string, long>? ActionOnReceivedJsonMessageFromClient;
+    
     public int Index { get; private set; }
     public bool IsRunning { get; private set; }
     public GrpcConfig? Config => _controller?.Config;
@@ -47,7 +57,10 @@ public class RpcServer
         _controller.OnServerStarted += ControllerOnServerStarted;
         _controller.OnServerStopped += ControllerOnServerStopped;
         _controller.OnServerStartFailed += ControllerOnServerStartFailed;
-        
+        _controller.OnReceivedByteDataFromClient += ControllerOnReceivedByteDataFromClient;
+        _controller.OnReceivedJsonMessageFromClient += ControllerOnReceivedJsonMessageFromClient;
+
+
         if (!string.IsNullOrEmpty(logPath))
         {
             _logger = new Logger(logPath, "rpcserver");
@@ -348,6 +361,18 @@ public class RpcServer
     {
         _logger?.Error($"Server start failed: {error}");
         ActionOnServerError?.Invoke(Index, error);
+    }
+    
+    private void ControllerOnReceivedByteDataFromClient(string type, byte[] data, string? metadata)
+    {
+        _logger?.Info($"從客戶端接收位元組資料: type={type}, size={data.Length} bytes");
+        ActionOnReceivedByteDataFromClient?.Invoke(Index, type, data, metadata);
+    }
+    
+    private void ControllerOnReceivedJsonMessageFromClient(string id, string type, string json, long timestamp)
+    {
+        _logger?.Info($"從客戶端接收 JSON: id={id}, type={type}, size={json?.Length ?? 0} bytes");
+        ActionOnReceivedJsonMessageFromClient?.Invoke(Index, id, type, json, timestamp);
     }
     
     #endregion

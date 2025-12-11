@@ -3,6 +3,7 @@ using System;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
+using RdpGrpc.Proto;
 
 namespace LIB_RPC.API
 {
@@ -17,44 +18,53 @@ namespace LIB_RPC.API
         private ClientConnection? _conn;
 
         /// <summary>
+        /// 日誌訊息事件
         /// Event raised when a log line is produced.
         /// </summary>
         public event Action<string>? OnLog;
         
         /// <summary>
-        /// Event raised during file upload progress.
+        /// 檔案上傳進度事件（客戶端上傳到伺服器）
+        /// Event raised during file upload progress (client uploading to server).
         /// </summary>
         public event Action<string, double>? OnUploadProgress;
         
         /// <summary>
-        /// Event raised during file download progress.
+        /// 檔案下載進度事件（從伺服器下載到客戶端）
+        /// Event raised during file download progress (downloading from server to client).
         /// </summary>
         public event Action<string, double>? OnDownloadProgress;
         
         /// <summary>
+        /// 螢幕截圖擷取進度事件
         /// Event raised during screenshot capture progress.
         /// </summary>
         public event Action<double>? OnScreenshotProgress;
-        
-        /// <summary>
-        /// Event raised when server completes pushing a file.
-        /// </summary>
-        public event Action<string>? OnServerFileCompleted;
-        
-        /// <summary>
-        /// Event raised when server file push encounters an error.
-        /// </summary>
-        public event Action<string, string>? OnServerFileError;
-        
-        /// <summary>
-        /// Event raised when server pushes a JSON message.
-        /// </summary>
-        public event Action<JsonMessage>? OnServerJson;
+
 
         /// <summary>
-        /// Event raised when server pushes byte data.
+        /// 從伺服器接收檔案完成事件
+        /// Event raised when receiving file from server is completed.
         /// </summary>
-        public event Action<string, byte[], string?>? OnServerByteData;
+        public event Action<string>? OnReceivedFileFromServer;
+        
+        /// <summary>
+        /// 從伺服器接收檔案錯誤事件
+        /// Event raised when receiving file from server encounters an error.
+        /// </summary>
+        public event Action<string, string>? OnReceivedFileErrorFromServer;
+        
+        /// <summary>
+        /// 從伺服器接收 JSON 訊息事件
+        /// Event raised when receiving JSON message from server.
+        /// </summary>
+        public event Action<JsonMessage>? OnReceivedJsonMessageFromServer;
+
+        /// <summary>
+        /// 從伺服器接收位元組資料事件（圖片、檔案等）
+        /// Event raised when receiving byte data from server (images, files, etc.).
+        /// </summary>
+        public event Action<string, byte[], string?>? OnReceivedByteDataFromServer;
 
         /// <summary>
         /// Event raised during byte transfer progress (type, bytesTransferred, totalBytes, percentage).
@@ -158,10 +168,11 @@ namespace LIB_RPC.API
         /// <returns>A task representing the asynchronous operation.</returns>
         public async Task ConnectAsync(bool re = false, CancellationToken ct = default)
         {
-            if (_conn != null && re == false) { 
-                return; 
+            if (_conn != null && re == false)
+            {
+                return;
             }
-            
+
             try
             {
                 _conn = new ClientConnection(_config, _logger);
@@ -169,18 +180,20 @@ namespace LIB_RPC.API
                 _conn.OnUploadProgress += (p, pct) => OnUploadProgress?.Invoke(p, pct);
                 _conn.OnDownloadProgress += (p, pct) => OnDownloadProgress?.Invoke(p, pct);
                 _conn.OnScreenshotProgress += pct => OnScreenshotProgress?.Invoke(pct);
-                _conn.OnServerFileCompleted += p => OnServerFileCompleted?.Invoke(p);
-                _conn.OnServerFileError += (p, e) => OnServerFileError?.Invoke(p, e);
+                _conn.OnServerFileCompleted += p => OnReceivedFileFromServer?.Invoke(p);
+                _conn.OnServerFileError += (p, e) => OnReceivedFileErrorFromServer?.Invoke(p, e);
                 _conn.OnServerFileProgress += (p, pct) => OnServerFileStarted?.Invoke(p);
-                _conn.OnServerJson += env => OnServerJson?.Invoke(new JsonMessage
+                _conn.OnServerJson += env => OnReceivedJsonMessageFromServer?.Invoke(new JsonMessage
                 {
                     Id = env.Id,
                     Type = env.Type,
                     Json = env.Json,
                     Timestamp = env.Timestamp
                 });
-                _conn.OnServerByteData += (type, data, metadata) => OnServerByteData?.Invoke(type, data, metadata);
-                _conn.OnConnected+= ConnOnConnected;
+                _conn.OnServerByteData += (type, data, metadata) => OnReceivedByteDataFromServer?.Invoke(type, data, metadata);
+                _conn.OnConnected += ConnOnConnected;
+
+
                 await _conn.ConnectAsync();
                 _logger.Info("Client connected successfully");
             }
@@ -192,6 +205,7 @@ namespace LIB_RPC.API
                 throw;
             }
         }
+
         bool IsConnected = false;
         private void ConnOnConnected(bool flag)
         {
