@@ -27,47 +27,47 @@ namespace LIB_RPC
         /// Event raised when a JSON acknowledgment is received.
         /// </summary>
         public event Action<JsonAck>? OnJsonAck;
-        
+
         /// <summary>
         /// Event raised when server pushes a JSON message via duplex stream.
         /// </summary>
         public event Action<JsonEnvelope>? OnServerJson;
-        
+
         /// <summary>
         /// Event raised during file upload progress with path and percentage (0-100).
         /// </summary>
         public event Action<string, double>? OnUploadProgress;
-        
+
         /// <summary>
         /// Event raised during file download progress with path and percentage (0-100).
         /// </summary>
         public event Action<string, double>? OnDownloadProgress;
-        
+
         /// <summary>
         /// Event raised during screenshot capture progress with percentage (0-100).
         /// </summary>
         public event Action<double>? OnScreenshotProgress;
-        
+
         /// <summary>
         /// Event raised during server file push progress with path and percentage.
         /// </summary>
         public event Action<string, double>? OnServerFileProgress;
-        
+
         /// <summary>
         /// Event raised when server completes pushing a file with the saved path.
         /// </summary>
         public event Action<string>? OnServerFileCompleted;
-        
+
         /// <summary>
         /// Event raised when server file push encounters an error with path and error message.
         /// </summary>
         public event Action<string, string>? OnServerFileError;
-        
+
         /// <summary>
         /// Event raised when server sends byte data with type, data bytes, and metadata.
         /// </summary>
         public event Action<string, byte[], string>? OnServerByteData;
-        
+
         public event Action<bool>? OnConnected;
 
         /// <summary>
@@ -183,7 +183,7 @@ namespace LIB_RPC
                 while (await _jsonDuplex.ResponseStream.MoveNext(CancellationToken.None))
                 {
                     var msg = _jsonDuplex?.ResponseStream.Current;
-                    if (msg==null)
+                    if (msg == null)
                     {
                         new Exception("msg = null");
                     }
@@ -283,7 +283,7 @@ namespace LIB_RPC
             try
             {
                 var call = _client.Screenshot(new ScreenshotRequest { MonitorIndex = -1 }, headers: BuildAuth(), cancellationToken: ct);
-                
+
                 // OPTIMIZED: Use RecyclableMemoryStream instead of MemoryStream
                 using var ms = new RecyclableMemoryStream(1024 * 1024); // 1MB initial capacity
                 int total = -1; int received = 0;
@@ -291,7 +291,7 @@ namespace LIB_RPC
                 {
                     var chunk = call.ResponseStream.Current;
                     if (!string.IsNullOrEmpty(chunk.Error)) throw new IOException(chunk.Error);
-                    if (chunk.Data.Length > 0) 
+                    if (chunk.Data.Length > 0)
                     {
                         ms.Write(chunk.Data.Span);
                     }
@@ -383,6 +383,7 @@ namespace LIB_RPC
                         var saveDir = _config.StorageRoot;
                         Directory.CreateDirectory(saveDir);
                         var savePath = Path.Combine(saveDir, currentPath);
+                        savePath = NormalizePath(savePath);
                         await File.WriteAllBytesAsync(savePath, ms!.ToArray());
                         OnServerFileCompleted?.Invoke(savePath);
                         ms.Dispose();
@@ -401,6 +402,16 @@ namespace LIB_RPC
                 _logger.Error($"File push stream error: {ex.Message}");
                 OnConnected?.Invoke(false);
             }
+        }
+
+        /// <summary>
+        /// Normalize path to use forward slashes
+        /// </summary>
+        private static string NormalizePath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return path;
+            return path.Replace('\\', '/');
         }
 
         private async Task ReceiveBytePushAsync()
