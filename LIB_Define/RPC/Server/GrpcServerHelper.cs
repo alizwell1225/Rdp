@@ -251,7 +251,7 @@ namespace LIB_Define.RPC.Server
         {
             try
             {
-                Config.UserStoragePath = filePath;
+                Config.SetUserStoragePath(filePath);
                 if (!File.Exists(filePath))
                 {
                     return (false, 0, "File does not exist");

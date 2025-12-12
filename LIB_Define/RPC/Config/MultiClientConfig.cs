@@ -180,7 +180,7 @@ namespace LIB_Define.RPC.Config
                 LogFilePath = NormalizePath($"./Logs/client_{Index}_grpc.log"),
                 StorageRoot = NormalizePath($"./Storage/client_{Index}")
             };
-            config.ClientDownloadPath = config.StorageRoot;
+            config.SetClientDownloadPath(config.StorageRoot);
             return config;
         }
 

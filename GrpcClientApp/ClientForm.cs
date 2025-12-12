@@ -83,8 +83,8 @@ namespace GrpcClientApp
                 _api.OnUploadProgress += apiOnUploadProgress;
                 _api.OnDownloadProgress += apiOnDownloadProgress;
                 _api.OnScreenshotProgress += apiOnScreenshotProgress;
-                _api.OnServerJson += apiOnServerJson;
-                _api.OnServerFileCompleted += apiOnServerFileCompleted;
+                _api.OnReceivedJsonMessageFromServer += apiOnServerJson;
+                _api.OnReceivedFileFromServer += apiOnServerFileCompleted;
                 _api.OnConnected += _api_OnConnected;
                 _api.OnDisconnected += apiOnDisconnected;
                 _api.OnConnectionError += apiOnConnectionError;

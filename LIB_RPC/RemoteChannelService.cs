@@ -510,7 +510,7 @@ namespace LIB_RPC
                 }
                 else
                 {
-                    var soure = Path.Combine(_config.UserStoragePath);
+                    var soure = Path.Combine(_config.GetUserStoragePath());
                     sourePath = soure;
                     if (!File.Exists(sourePath))
                     {
@@ -880,7 +880,7 @@ namespace LIB_RPC
             }
             
             // Get StationIndex from config
-            var stationIndex = _config.StationIndex ?? "0";
+            var stationIndex = _config.StationIndex ?? "-1";
             
             return new
             {

@@ -124,13 +124,13 @@ namespace LIB_Define.RPC.Common
                 
                 if (_isServerMode)
                 {
-                    _config.ServerUploadPath = txtStorageRoot.Text.Trim();
+                    _config.SetServerUploadPath(txtStorageRoot.Text.Trim());
                     // Keep StorageRoot as fallback
                     _config.StorageRoot = txtStorageRoot.Text.Trim();
                 }
                 else
                 {
-                    _config.ClientDownloadPath = txtStorageRoot.Text.Trim();
+                    _config.SetServerUploadPath(txtStorageRoot.Text.Trim());
                     // Keep StorageRoot as fallback
                     _config.StorageRoot = txtStorageRoot.Text.Trim();
                 }
