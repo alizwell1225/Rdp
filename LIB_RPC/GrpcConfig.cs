@@ -13,7 +13,7 @@ public sealed class GrpcConfig
 
     public int MaxChunkSizeBytes { get; set; } = 100 * 1024 * 1024; // 100MB default
     public bool EnableConsoleLog { get; set; } = true;
-    public string StorageRoot { get; set; } = Path.Combine(AppContext.BaseDirectory, "Storage"); //∞Ú•ªπw≥]¿x¶s™≈∂°
+    public string StorageRoot { get; set; } = Path.Combine(AppContext.BaseDirectory, "Storage"); //Âü∫Êú¨È†êË®≠ÂÑ≤Â≠òÁ©∫Èñì
     public string LogFilePath { get; set; } = Path.Combine(AppContext.BaseDirectory, "Log", "grpc.log");
 
     /// <summary>
@@ -44,18 +44,18 @@ public sealed class GrpcConfig
     /// <summary>
     ///     Custom download path for client received files (if null, uses StorageRoot)
     /// </summary>
-    public string? ClientDownloadPath { get; private set; } //¶p™G¨∞™≈´h®œ•Œ StorageRoot
+    public string? ClientDownloadPath { get; private set; } //Â¶ÇÊûúÁÇ∫Á©∫Ââá‰ΩøÁî® StorageRoot
 
     /// <summary>
     ///     Custom upload path for server received files (if null, uses StorageRoot)
     /// </summary>
-    public string? ServerUploadPath { get; private set; } //¶p™G¨∞™≈´h®œ•Œ StorageRoot
+    public string? ServerUploadPath { get; private set; } //Â¶ÇÊûúÁÇ∫Á©∫Ââá‰ΩøÁî® StorageRoot
 
-    public string? UserStoragePath { get; private set; } //¶p™G¨∞™≈´h®œ•Œ StorageRoot
+    public string? UserStoragePath { get; private set; } //Â¶ÇÊûúÁÇ∫Á©∫Ââá‰ΩøÁî® StorageRoot
     /// <summary>
     ///     Station index (machine number) for device identification
     /// </summary>
-    private string stationIndex  = "-1";
+    private string stationIndex = "-1";
 
     public string StationIndex
     {
@@ -72,14 +72,14 @@ public sealed class GrpcConfig
                 LogFilePath = Path.Combine(AppContext.BaseDirectory, "Log", $"grpc_{stationIndex}.log");
             }
         }
-    } 
+    }
 
 
     public string EncryptedString { get; set; }
 
-    public GrpcConfig(string idx="-1")
+    public void SetStationIndex(string idx = "-1")
     {
-        StationIndex= idx;
+        StationIndex = idx;
     }
 
     public static GrpcConfig Load(string? path)
@@ -87,7 +87,19 @@ public sealed class GrpcConfig
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
             return new GrpcConfig();
         var json = File.ReadAllText(path);
-        return JsonSerializer.Deserialize<GrpcConfig>(json) ?? new GrpcConfig();
+        var config = JsonSerializer.Deserialize<GrpcConfig>(json) ?? new GrpcConfig();
+
+        // Normalize paths after loading
+        config.StorageRoot = NormalizePath(config.StorageRoot);
+        config.LogFilePath = NormalizePath(config.LogFilePath);
+        if (!string.IsNullOrEmpty(config.ClientDownloadPath))
+            config.ClientDownloadPath = NormalizePath(config.ClientDownloadPath);
+        if (!string.IsNullOrEmpty(config.ServerUploadPath))
+            config.ServerUploadPath = NormalizePath(config.ServerUploadPath);
+        if (!string.IsNullOrEmpty(config.UserStoragePath))
+            config.UserStoragePath = NormalizePath(config.UserStoragePath);
+
+        return config;
     }
 
 
@@ -112,6 +124,16 @@ public sealed class GrpcConfig
     {
         try
         {
+            // Normalize paths before saving
+            StorageRoot = NormalizePath(StorageRoot);
+            LogFilePath = NormalizePath(LogFilePath);
+            if (!string.IsNullOrEmpty(ClientDownloadPath))
+                ClientDownloadPath = NormalizePath(ClientDownloadPath);
+            if (!string.IsNullOrEmpty(ServerUploadPath))
+                ServerUploadPath = NormalizePath(ServerUploadPath);
+            if (!string.IsNullOrEmpty(UserStoragePath))
+                UserStoragePath = NormalizePath(UserStoragePath);
+
             var json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
             var folder = Directory.CreateDirectory(Path.HasExtension(path) ? Path.GetDirectoryName(path) : path);
             File.WriteAllText(path, json);
@@ -123,12 +145,12 @@ public sealed class GrpcConfig
 
     public void EnsureFolders()
     {
-        Directory.CreateDirectory(StorageRoot);
+        Directory.CreateDirectory(ExpandPath(StorageRoot));
         if (!string.IsNullOrWhiteSpace(ClientDownloadPath))
-            Directory.CreateDirectory(ClientDownloadPath);
+            Directory.CreateDirectory(ExpandPath(ClientDownloadPath));
         if (!string.IsNullOrWhiteSpace(ServerUploadPath))
-            Directory.CreateDirectory(ServerUploadPath);
-        var logDir = Path.GetDirectoryName(LogFilePath);
+            Directory.CreateDirectory(ExpandPath(ServerUploadPath));
+        var logDir = Path.GetDirectoryName(ExpandPath(LogFilePath));
         if (!string.IsNullOrWhiteSpace(logDir)) Directory.CreateDirectory(logDir);
     }
 
@@ -165,7 +187,7 @@ public sealed class GrpcConfig
 
     public void SetUserStoragePath(string filePath)
     {
-        UserStoragePath= filePath;
+        UserStoragePath = filePath;
     }
 
     public void SetServerUploadPath(string filePath)
@@ -176,5 +198,48 @@ public sealed class GrpcConfig
     public void SetClientDownloadPath(string filePath)
     {
         ClientDownloadPath = filePath;
+    }
+
+    /// <summary>
+    /// Normalize path to use backslashes and convert to relative path if under base directory
+    /// </summary>
+    private static string NormalizePath(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+            return path;
+
+        // Convert forward slashes to backslashes
+        path = path.Replace('/', '\\');
+
+        // Convert to relative path if under base directory
+        string baseDir = AppContext.BaseDirectory.TrimEnd('\\');
+        if (path.StartsWith(baseDir, StringComparison.OrdinalIgnoreCase))
+        {
+            string relativePath = path.Substring(baseDir.Length).TrimStart('\\');
+            return ".\\" + relativePath;
+        }
+
+        return path;
+    }
+
+    /// <summary>
+    /// Expand relative path (.\\) to full path based on executable directory
+    /// </summary>
+    public static string ExpandPath(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+            return path;
+
+        // Convert forward slashes to backslashes first
+        path = path.Replace('/', '\\');
+
+        // Expand relative path to full path
+        if (path.StartsWith(".\\"))
+        {
+            string relativePart = path.Substring(2); // Remove ".\"
+            return Path.Combine(AppContext.BaseDirectory, relativePart);
+        }
+
+        return path;
     }
 }
