@@ -19,7 +19,7 @@ jobs:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
           # 指定要處理的專案陣列
-          $targetProjects = @("LIB_Log.csproj", "LIB_RDP.csproj", "LIB_RPC.csproj")
+          $targetProjects = @("LIB_Log.csproj", "LIB_RDP.csproj", "LIB_RPC.csproj", "LIB_Machine.csproj")
           
           # 建立輸出資料夾
           New-Item -ItemType Directory -Force -Path "./nupkgs" | Out-Null
