@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LIB_Define", "LIB_Define\LI
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestGrpcServerApp", "TestGrpcServerApp\TestGrpcServerApp.csproj", "{2595EAF0-262A-4B17-B31F-D2907C7BC436}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LIB_Machine", "LIB_Machine\LIB_Machine.csproj", "{EE9DC5F9-FF10-E904-3244-58FC464BDE8B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -125,6 +127,18 @@ Global
 		{2595EAF0-262A-4B17-B31F-D2907C7BC436}.Release|x64.Build.0 = Release|Any CPU
 		{2595EAF0-262A-4B17-B31F-D2907C7BC436}.Release|x86.ActiveCfg = Release|Any CPU
 		{2595EAF0-262A-4B17-B31F-D2907C7BC436}.Release|x86.Build.0 = Release|Any CPU
+		{EE9DC5F9-FF10-E904-3244-58FC464BDE8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE9DC5F9-FF10-E904-3244-58FC464BDE8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE9DC5F9-FF10-E904-3244-58FC464BDE8B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EE9DC5F9-FF10-E904-3244-58FC464BDE8B}.Debug|x64.Build.0 = Debug|Any CPU
+		{EE9DC5F9-FF10-E904-3244-58FC464BDE8B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EE9DC5F9-FF10-E904-3244-58FC464BDE8B}.Debug|x86.Build.0 = Debug|Any CPU
+		{EE9DC5F9-FF10-E904-3244-58FC464BDE8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE9DC5F9-FF10-E904-3244-58FC464BDE8B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE9DC5F9-FF10-E904-3244-58FC464BDE8B}.Release|x64.ActiveCfg = Release|Any CPU
+		{EE9DC5F9-FF10-E904-3244-58FC464BDE8B}.Release|x64.Build.0 = Release|Any CPU
+		{EE9DC5F9-FF10-E904-3244-58FC464BDE8B}.Release|x86.ActiveCfg = Release|Any CPU
+		{EE9DC5F9-FF10-E904-3244-58FC464BDE8B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
