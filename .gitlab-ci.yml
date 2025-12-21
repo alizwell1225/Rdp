@@ -1,0 +1,4 @@
+include:
+  - local: 'ci/publish.yml'
+  - local: 'ci/select.yml'
+

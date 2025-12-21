@@ -1,0 +1,8 @@
+publish-nuget-manual:
+  stage: deploy
+  tags:
+    - windows
+  script:
+    - pwsh -File "ci/publish-nuget.ps1" -TargetProjectId 11
+  rules:
+    - when: manual
