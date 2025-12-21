@@ -1,16 +1,13 @@
 param(
     [int]$TargetProjectId = 11,
-    [string[]]$ProjectNames = @()   # 例如 "LIB_RPC","LIB_RDP","LIB_Machine","LIB_Log"
+    [string[]]$ProjectNames = @()   # "LIB_RPC","LIB_RDP","LIB_Machine","LIB_Log"
 )
 
 Write-Host "Target project = $TargetProjectId"
 Write-Host "Selected projects = $($ProjectNames -join ', ')"
 
-# ===== 1. 取得專案根目錄 =====
-# 目前路徑會是：C:\GitLab-Runner\builds\...\gavin\rdp_sdk\ci
-$ciPath    = Get-Location
-$rootPath  = Split-Path $ciPath -Parent   # -> C:\...\gavin\rdp_sdk
-Write-Host "CI path   = $ciPath"
+# ===== 1. 專案根目錄 = 目前路徑 (CI 會在 rdp_sdk 下執行) =====
+$rootPath = Get-Location
 Write-Host "Root path = $rootPath"
 
 # ===== 2. 找出所有 LIB_*.csproj =====
@@ -20,7 +17,6 @@ if ($allProjects.Count -eq 0) {
     exit 0
 }
 
-# 如果有指定 ProjectNames，就只挑那些；沒指定就全部 LIB_*
 if ($ProjectNames.Count -gt 0) {
     $projects = $allProjects | Where-Object {
         $name = [System.IO.Path]::GetFileNameWithoutExtension($_.Name)
@@ -36,12 +32,12 @@ if ($projects.Count -eq 0) {
     exit 0
 }
 
-# ===== 3. 建立 nupkgs 資料夾（在根目錄底下）=====
+# ===== 3. nupkgs 放在根目錄 =====
 $nupkgsPath = Join-Path $rootPath "nupkgs"
 New-Item -ItemType Directory -Force -Path $nupkgsPath | Out-Null
 Write-Host "nupkgs path = $nupkgsPath"
 
-# ===== 4. 逐一還原 / 建置 / 打包 / Push =====
+# ===== 4. 還原 / 建置 / 打包 / Push =====
 foreach ($p in $projects) {
     $projPath = $p.FullName
     $name     = [System.IO.Path]::GetFileNameWithoutExtension($p.Name)
@@ -59,7 +55,7 @@ foreach ($p in $projects) {
 
         $base   = $env:CI_API_V4_URL
         $source = "$base/projects/$TargetProjectId/packages/nuget/index.json"
-        $apiKey = $env:NUGET_API_KEY   # 建議用 CI 變數
+        $apiKey = $env:NUGET_API_KEY
 
         Write-Host ("HAS_API_KEY=" + ([string]::IsNullOrEmpty($apiKey) -eq $false))
 

@@ -4,25 +4,20 @@ param(
 
 Write-Host "Target project = $TargetProjectId"
 
-# ===== 1. 取得專案根目錄 =====
-$ciPath   = Get-Location                         # C:\...\gavin\rdp_sdk\ci
-$rootPath = Split-Path $ciPath -Parent           # C:\...\gavin\rdp_sdk
-Write-Host "CI path   = $ciPath"
+# 根目錄 = 目前路徑
+$rootPath = Get-Location
 Write-Host "Root path = $rootPath"
 
-# ===== 2. 找出所有 LIB_*.csproj =====
 $projects = Get-ChildItem -Path $rootPath -Recurse -Filter "*.csproj"
 if ($projects.Count -eq 0) {
-    Write-Host "No *.csproj found under $rootPath."
+    Write-Host "*.csproj found under $rootPath."
     exit 0
 }
 
-# ===== 3. 建立 nupkgs 資料夾（在根目錄底下）=====
 $nupkgsPath = Join-Path $rootPath "nupkgs"
 New-Item -ItemType Directory -Force -Path $nupkgsPath | Out-Null
 Write-Host "nupkgs path = $nupkgsPath"
 
-# ===== 4. 逐一還原 / 建置 / 打包 / Push =====
 foreach ($p in $projects) {
     $projPath = $p.FullName
     $name     = [System.IO.Path]::GetFileNameWithoutExtension($p.Name)
@@ -40,7 +35,7 @@ foreach ($p in $projects) {
 
         $base   = $env:CI_API_V4_URL
         $source = "$base/projects/$TargetProjectId/packages/nuget/index.json"
-        $apiKey = $env:NUGET_API_KEY   # 建議用 CI 變數
+        $apiKey = $env:NUGET_API_KEY
 
         Write-Host ("HAS_API_KEY=" + ([string]::IsNullOrEmpty($apiKey) -eq $false))
 
