@@ -1,58 +1,50 @@
 param(
     [int]$TargetProjectId = 11,
-    [string[]]$ProjectNames = @()   # 直接從 yml 傳 LIB_RPC,LIB_RDP...
+    [string[]]$ProjectNames = @()   # 例如：LIB_RPC,LIB_RDP,LIB_Machine,LIB_Log
 )
 
 Write-Host "Target project = $TargetProjectId"
-Write-Host "Raw ProjectNames = $($ProjectNames -join ', ')"
+Write-Host "ProjectNames   = $($ProjectNames -join ', ')"
 
-# ===== 1. 專案根目錄 = 目前路徑 =====
+# 1. 專案根目錄（GitLab 目前工作目錄）====================================
 $rootPath = Get-Location
 Write-Host "Root path = $rootPath"
 
-# ===== 2. 找出所有 LIB_*.csproj =====
-$allProjects = Get-ChildItem -Path $rootPath -Recurse -Filter "LIB_*.csproj"
-if ($allProjects.Count -eq 0) {
-    Write-Host "No LIB_*.csproj found under $rootPath."
+if ($ProjectNames.Count -eq 0) {
+    Write-Host "No ProjectNames specified. Nothing to do."
     exit 0
 }
 
-Write-Host "Found projects:"
-$allProjects | ForEach-Object {
-    Write-Host "  - $($_.FullName)"
-}
+# 2. 依名稱組出每個 .csproj 路徑 ======================================
+$projects = @()
 
-# ===== 3. 依名稱過濾（用 -in，比較直覺）=====
-if ($ProjectNames.Count -gt 0) {
-    # 轉成純字串陣列（防止前後有引號）
-    $normalized = $ProjectNames | ForEach-Object { $_.ToString().Trim('"') }
-    Write-Host "Normalized names = $($normalized -join ', ')"
+foreach ($name in $ProjectNames) {
+    $trimName = $name.ToString().Trim('"').Trim()
 
-    $projects = $allProjects | Where-Object {
-        $name = [System.IO.Path]::GetFileNameWithoutExtension($_.Name)
-        $name -in $normalized
+    # 組成像：<root>\LIB_RPC\LIB_RPC.csproj
+    $projPath = Join-Path $rootPath "$trimName\$trimName.csproj"
+
+    if (Test-Path $projPath) {
+        $item = Get-Item $projPath
+        $projects += $item
+        Write-Host "Add project: $($item.FullName)"
     }
-}
-else {
-    $projects = $allProjects
+    else {
+        Write-Host "Skip $trimName (project not found: $projPath)"
+    }
 }
 
 if ($projects.Count -eq 0) {
-    Write-Host "No matched project for given names."
+    Write-Host "No valid project for given names."
     exit 0
 }
 
-Write-Host "Matched projects:"
-$projects | ForEach-Object {
-    Write-Host "  * $($_.FullName)"
-}
-
-# ===== 4. nupkgs 放在根目錄 =====
+# 3. 在根目錄底下建立 nupkgs ==========================================
 $nupkgsPath = Join-Path $rootPath "nupkgs"
 New-Item -ItemType Directory -Force -Path $nupkgsPath | Out-Null
 Write-Host "nupkgs path = $nupkgsPath"
 
-# ===== 5. 還原 / 建置 / 打包 / Push =====
+# 4. 還原 / 建置 / 打包 / Push =========================================
 foreach ($p in $projects) {
     $projPath = $p.FullName
     $name     = [System.IO.Path]::GetFileNameWithoutExtension($p.Name)
