@@ -4,22 +4,25 @@ param(
 
 Write-Host "Target project = $TargetProjectId"
 
-# 專案根目錄 = 目前位置 (ci) 的上一層
-$rootPath = (Resolve-Path "..").Path
+# ===== 1. 取得專案根目錄 =====
+$ciPath   = Get-Location                         # C:\...\gavin\rdp_sdk\ci
+$rootPath = Split-Path $ciPath -Parent           # C:\...\gavin\rdp_sdk
+Write-Host "CI path   = $ciPath"
 Write-Host "Root path = $rootPath"
 
-# 從根目錄往下找所有 LIB_*.csproj
-$projects = Get-ChildItem -Path $rootPath -Recurse -Filter "LIB_*.csproj"
-
+# ===== 2. 找出所有 LIB_*.csproj =====
+$projects = Get-ChildItem -Path $rootPath -Recurse -Filter "*.csproj"
 if ($projects.Count -eq 0) {
-    Write-Host "No LIB_*.csproj found under $rootPath."
+    Write-Host "No *.csproj found under $rootPath."
     exit 0
 }
 
-# 在根目錄底下建立 nupkgs 資料夾
+# ===== 3. 建立 nupkgs 資料夾（在根目錄底下）=====
 $nupkgsPath = Join-Path $rootPath "nupkgs"
 New-Item -ItemType Directory -Force -Path $nupkgsPath | Out-Null
+Write-Host "nupkgs path = $nupkgsPath"
 
+# ===== 4. 逐一還原 / 建置 / 打包 / Push =====
 foreach ($p in $projects) {
     $projPath = $p.FullName
     $name     = [System.IO.Path]::GetFileNameWithoutExtension($p.Name)
@@ -30,15 +33,14 @@ foreach ($p in $projects) {
     dotnet build  -c Release --no-restore "$projPath"
     dotnet pack   -c Release --no-build "$projPath" -o "$nupkgsPath"
 
-    $pkg = Get-ChildItem (Join-Path $nupkgsPath "$name.*.nupkg") | Select-Object -First 1
+    $pattern = Join-Path $nupkgsPath "$name.*.nupkg"
+    $pkg = Get-ChildItem $pattern | Select-Object -First 1
     if ($pkg -ne $null) {
         Write-Host "Push package $($pkg.FullName)"
 
         $base   = $env:CI_API_V4_URL
         $source = "$base/projects/$TargetProjectId/packages/nuget/index.json"
-
-        # 用 CI 變數（建議）
-        $apiKey = $env:NUGET_API_KEY   # 如要寫死就改成 'glpat-xxxxxxx'
+        $apiKey = $env:NUGET_API_KEY   # 建議用 CI 變數
 
         Write-Host ("HAS_API_KEY=" + ([string]::IsNullOrEmpty($apiKey) -eq $false))
 
