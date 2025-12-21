@@ -4,15 +4,15 @@ param(
 
 Write-Host "Target project = $TargetProjectId"
 
-# 1. 專案根目錄（GitLab 目前工作目錄）====================================
+# 1. 專案根目錄（GitLab 目前工作目錄）
 $rootPath = Get-Location
 Write-Host "Root path = $rootPath"
 
-# 2. 找出所有 LIB_*.csproj ==============================================
+# 2. 找出所有 .csproj（不再只限 LIB_）
 $projects = Get-ChildItem -Path $rootPath -Recurse -Filter "*.csproj"
 
 if ($projects.Count -eq 0) {
-    Write-Host "No *.csproj found under $rootPath."
+    Write-Host "No .csproj found under $rootPath."
     exit 0
 }
 
@@ -21,12 +21,12 @@ $projects | ForEach-Object {
     Write-Host "  - $($_.FullName)"
 }
 
-# 3. 在根目錄底下建立 nupkgs ==========================================
+# 3. 在根目錄底下建立 nupkgs
 $nupkgsPath = Join-Path $rootPath "nupkgs"
 New-Item -ItemType Directory -Force -Path $nupkgsPath | Out-Null
 Write-Host "nupkgs path = $nupkgsPath"
 
-# 4. 逐一還原 / 建置 / 打包 / Push ====================================
+# 4. 逐一還原 / 建置 / 打包 / Push
 foreach ($p in $projects) {
     $projPath = $p.FullName
     $name     = [System.IO.Path]::GetFileNameWithoutExtension($p.Name)
