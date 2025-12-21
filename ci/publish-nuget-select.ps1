@@ -1,24 +1,14 @@
 param(
     [int]$TargetProjectId = 11,
-    [string[]]$ProjectNames = @()   # "LIB_RPC","LIB_RDP","LIB_Machine","LIB_Log"
+    [string[]]$ProjectNames = @()   # 直接從 yml 傳 LIB_RPC,LIB_RDP...
 )
 
 Write-Host "Target project = $TargetProjectId"
-Write-Host "Selected projects = $($ProjectNames -join ', ')"
+Write-Host "Raw ProjectNames = $($ProjectNames -join ', ')"
 
-# ===== 1. 找出包含解決方案的實際專案根目錄 =====
-$workspace = Get-Location
-Write-Host "Workspace = $workspace"
-
-# 這裡請把 RDP_SDK.sln 改成你實際的 sln 名稱
-$solution = Get-ChildItem -Path $workspace -Recurse -Filter "RDP_SDK.sln" | Select-Object -First 1
-if ($null -eq $solution) {
-    Write-Host "No RDP_SDK.sln found under $workspace."
-    exit 0
-}
-
-$rootPath = $solution.Directory.FullName
-Write-Host "Root path (solution folder) = $rootPath"
+# ===== 1. 專案根目錄 = 目前路徑 =====
+$rootPath = Get-Location
+Write-Host "Root path = $rootPath"
 
 # ===== 2. 找出所有 LIB_*.csproj =====
 $allProjects = Get-ChildItem -Path $rootPath -Recurse -Filter "LIB_*.csproj"
@@ -27,10 +17,20 @@ if ($allProjects.Count -eq 0) {
     exit 0
 }
 
+Write-Host "Found projects:"
+$allProjects | ForEach-Object {
+    Write-Host "  - $($_.FullName)"
+}
+
+# ===== 3. 依名稱過濾（用 -in，比較直覺）=====
 if ($ProjectNames.Count -gt 0) {
+    # 轉成純字串陣列（防止前後有引號）
+    $normalized = $ProjectNames | ForEach-Object { $_.ToString().Trim('"') }
+    Write-Host "Normalized names = $($normalized -join ', ')"
+
     $projects = $allProjects | Where-Object {
         $name = [System.IO.Path]::GetFileNameWithoutExtension($_.Name)
-        $ProjectNames -contains $name
+        $name -in $normalized
     }
 }
 else {
@@ -42,12 +42,17 @@ if ($projects.Count -eq 0) {
     exit 0
 }
 
-# ===== 3. nupkgs 放在 sln 同層 =====
+Write-Host "Matched projects:"
+$projects | ForEach-Object {
+    Write-Host "  * $($_.FullName)"
+}
+
+# ===== 4. nupkgs 放在根目錄 =====
 $nupkgsPath = Join-Path $rootPath "nupkgs"
 New-Item -ItemType Directory -Force -Path $nupkgsPath | Out-Null
 Write-Host "nupkgs path = $nupkgsPath"
 
-# ===== 4. 還原 / 建置 / 打包 / Push =====
+# ===== 5. 還原 / 建置 / 打包 / Push =====
 foreach ($p in $projects) {
     $projPath = $p.FullName
     $name     = [System.IO.Path]::GetFileNameWithoutExtension($p.Name)
