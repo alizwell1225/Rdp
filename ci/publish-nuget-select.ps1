@@ -6,9 +6,19 @@ param(
 Write-Host "Target project = $TargetProjectId"
 Write-Host "Selected projects = $($ProjectNames -join ', ')"
 
-# ===== 1. 專案根目錄 = 目前路徑 (CI 會在 rdp_sdk 下執行) =====
-$rootPath = Get-Location
-Write-Host "Root path = $rootPath"
+# ===== 1. 找出包含解決方案的實際專案根目錄 =====
+$workspace = Get-Location
+Write-Host "Workspace = $workspace"
+
+# 這裡請把 RDP_SDK.sln 改成你實際的 sln 名稱
+$solution = Get-ChildItem -Path $workspace -Recurse -Filter "RDP_SDK.sln" | Select-Object -First 1
+if ($null -eq $solution) {
+    Write-Host "No RDP_SDK.sln found under $workspace."
+    exit 0
+}
+
+$rootPath = $solution.Directory.FullName
+Write-Host "Root path (solution folder) = $rootPath"
 
 # ===== 2. 找出所有 LIB_*.csproj =====
 $allProjects = Get-ChildItem -Path $rootPath -Recurse -Filter "LIB_*.csproj"
@@ -32,7 +42,7 @@ if ($projects.Count -eq 0) {
     exit 0
 }
 
-# ===== 3. nupkgs 放在根目錄 =====
+# ===== 3. nupkgs 放在 sln 同層 =====
 $nupkgsPath = Join-Path $rootPath "nupkgs"
 New-Item -ItemType Directory -Force -Path $nupkgsPath | Out-Null
 Write-Host "nupkgs path = $nupkgsPath"
