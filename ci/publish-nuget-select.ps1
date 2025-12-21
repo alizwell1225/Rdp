@@ -6,11 +6,14 @@ param(
 Write-Host "Target project = $TargetProjectId"
 Write-Host "Selected projects = $($ProjectNames -join ', ')"
 
-# 1. 找出所有符合條件的 .csproj
-$allProjects = Get-ChildItem -Path . -Recurse -Filter "LIB_*.csproj"
+# 專案根目錄 = 目前位置 (ci 資料夾) 的上一層
+$rootPath = (Resolve-Path "..").Path
+Write-Host "Root path = $rootPath"
 
+# 1. 從根目錄往下找所有符合條件的 .csproj
+$allProjects = Get-ChildItem -Path $rootPath -Recurse -Filter "LIB_*.csproj"
 if ($allProjects.Count -eq 0) {
-    Write-Host "No LIB_*.csproj found."
+    Write-Host "No LIB_*.csproj found under $rootPath."
     exit 0
 }
 
@@ -30,7 +33,9 @@ if ($projects.Count -eq 0) {
     exit 0
 }
 
-New-Item -ItemType Directory -Force -Path "./nupkgs" | Out-Null
+# 在「根目錄」底下建立 nupkgs 資料夾
+$nupkgsPath = Join-Path $rootPath "nupkgs"
+New-Item -ItemType Directory -Force -Path $nupkgsPath | Out-Null
 
 foreach ($p in $projects) {
     $projPath = $p.FullName
@@ -39,10 +44,10 @@ foreach ($p in $projects) {
     Write-Host "== Process $name ($projPath) =="
 
     dotnet restore "$projPath"
-    dotnet build -c Release --no-restore "$projPath"
-    dotnet pack  -c Release --no-build "$projPath" -o "./nupkgs"
+    dotnet build  -c Release --no-restore "$projPath"
+    dotnet pack   -c Release --no-build "$projPath" -o "$nupkgsPath"
 
-    $pkg = Get-ChildItem "./nupkgs/$name.*.nupkg" | Select-Object -First 1
+    $pkg = Get-ChildItem (Join-Path $nupkgsPath "$name.*.nupkg") | Select-Object -First 1
     if ($pkg -ne $null) {
         Write-Host "Push package $($pkg.FullName)"
 
