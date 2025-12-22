@@ -1,0 +1,8 @@
+publish-nuget-manual-select:
+  stage: deploy
+  tags:
+    - windows
+  script:
+    - pwsh -File "ci/publish-nuget-select.ps1" -TargetProjectId 11 -ProjectNames LIB_Machine
+  rules:
+    - when: manual

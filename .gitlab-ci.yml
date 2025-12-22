@@ -1,4 +1,8 @@
 include:
   - local: 'ci/publish.yml'
   - local: 'ci/select.yml'
+  - local: 'ci/select_LIB_Log.yml'
+  - local: 'ci/select_LIB_Machine.yml'
+  - local: 'ci/select_LIB_RDP.yml'
+  - local: 'ci/select_LIB_RPC.yml'
 
